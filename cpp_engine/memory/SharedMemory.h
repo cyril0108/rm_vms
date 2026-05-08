@@ -55,7 +55,7 @@ public:
     virtual bool Create(const std::string& name, int numChannels, size_t sizePerChannel) = 0;
 
     virtual int ChannelForCamID(int camID) = 0;
-    virtual void ReleaseChannelForCamID(int camID);
+    virtual void ReleaseChannelForCamID(int camID) = 0;
 
     // Write a video frame to a specific channel (Thread-Safe via atomics)
     virtual bool WriteFrame(int channelIdx, const FrameMetadata& meta, const uint8_t* payload) = 0;

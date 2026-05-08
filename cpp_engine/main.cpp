@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 
                         // Extract the unique_ptr from the map
                         std::unique_ptr<VideoIngestion> viToKill = std::move(it->second);
-                        
+
                         // Erase the empty map entry
                         activeCameras.erase(it);
 
