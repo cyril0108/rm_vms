@@ -6,12 +6,17 @@ import (
 	"strconv"
 
 	"nvr_core/service"
+	"nvr_core/utils"
 )
 
 // HandlePlayVideo expects: GET /api/cameras/{id}/play?time=1711000050
 func (api *APIServer) HandlePlayVideo(w http.ResponseWriter, r *http.Request) {
 
-	camID := r.PathValue("cam_id")
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
 
 	timeStr := r.URL.Query().Get("time")
 	timestamp, err := strconv.ParseInt(timeStr, 10, 64)

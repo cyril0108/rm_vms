@@ -125,7 +125,7 @@ func (w *Worker) updateCameraSHMChannel(resp WorkerResponse) {
 func (w *Worker) handleSegmentDone(resp WorkerResponse) {
     // --- DB HOOK ---
     seg := &models.Segment{
-        CameraID:  strconv.Itoa(resp.CamID),
+        CameraID:  int64(resp.CamID),
         StartTime: resp.StartTime,
         EndTime:   resp.EndTime,
         FilePath:  resp.FilePath,

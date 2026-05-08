@@ -4,7 +4,7 @@ PRAGMA foreign_keys = ON;
 -- Cameras
 -- ======================================
 CREATE TABLE IF NOT EXISTS cameras (
-    id TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
 
     -- ONVIF Specific State
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS cameras (
     -- Networking & Discovery
     ip_address TEXT NOT NULL,
     http_port INTEGER DEFAULT 80,
-    type TEXT NOT NULL DEFAULT 'onvif', 
+    type TEXT NOT NULL,
 
     -- Authentication
     username TEXT,
@@ -48,7 +48,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_cam_dedup ON cameras(serial_number, ip_add
 -- ======================================
 CREATE TABLE IF NOT EXISTS segments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    camera_id TEXT NOT NULL,
+    camera_id INTEGER NOT NULL,
     start_time INTEGER NOT NULL,   -- Unix timestamp (seconds)
     end_time INTEGER NOT NULL,     -- Unix timestamp (seconds)
     file_path TEXT NOT NULL,       -- e.g., '/storage/cam_01/2026-03-20/19/44_00.mp4'
@@ -118,10 +118,10 @@ CREATE TABLE users (
 -- But for lower roles, if a row doesn't exist here, the camera is invisible to them.
 CREATE TABLE user_camera_access (
     user_id INTEGER NOT NULL,
-    camera_id INTEGER NOT NULL, -- References your existing cameras table ID
+    camera_id INTEGER NOT NULL,
     PRIMARY KEY (user_id, camera_id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    -- FOREIGN KEY (camera_id) REFERENCES cameras (id) ON DELETE CASCADE
+    FOREIGN KEY (camera_id) REFERENCES cameras (id) ON DELETE CASCADE
 ) WITHOUT ROWID;
 
 -- USER_PERMISSIONS (Direct Grants / Exceptions)

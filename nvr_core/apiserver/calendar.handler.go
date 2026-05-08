@@ -2,12 +2,18 @@ package apiserver
 
 import (
 	"net/http"
+	"nvr_core/utils"
 	"strconv"
 )
 
 // HandleGetDailySummary expects: GET /api/cameras/{cam_id}/summary?start=1714521600&end=1717200000
 func (s *APIServer) HandleGetDailySummary(w http.ResponseWriter, r *http.Request) {
-	camID := r.PathValue("cam_id")
+
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
 
 	startStr := r.URL.Query().Get("start")
 	endStr := r.URL.Query().Get("end")

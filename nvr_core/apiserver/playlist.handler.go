@@ -7,12 +7,16 @@ import (
 	"strconv"
 
 	"nvr_core/service"
+	"nvr_core/utils"
 )
-
 
 // HandleGetPlaylist expects: GET /api/cameras/{cam_id}/playlist.m3u8?start=1711000000&end=1711003600
 func (api *APIServer) HandleGetPlaylist(w http.ResponseWriter, r *http.Request) {
-	camID := r.PathValue("cam_id")
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
 
 	// Parse timestamps
 	startStr := r.URL.Query().Get("start")

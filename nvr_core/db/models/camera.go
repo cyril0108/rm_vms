@@ -5,7 +5,7 @@ const CameraTypeRTSP  = "rtsp"
 
 // Camera represents an IP camera (ONVIF or generic RTSP)
 type Camera struct {
-	ID                    string  `json:"id"`
+	ID                    int64   `json:"id"`
 	Name                  string  `json:"name"`
 
 	Manufacturer          string `json:"manufacturer"`

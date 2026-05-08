@@ -11,16 +11,16 @@ import (
 type PlaylistService interface {
 	// GeneratePlaylist creates an M3U8 playlist string for a specific time range.
 	// baseURL is injected by the HTTP handler so the service doesn't need to know the server's IP.
-	GeneratePlaylist(ctx context.Context, camID string, start, end int64, baseURL string) (string, error)
+	GeneratePlaylist(ctx context.Context, camID int64, start, end int64, baseURL string) (string, error)
 	// GeneratePlaylist creates an M3U8 VOD playlist string for a specific time range.
-	GenerateVODPlaylist(ctx context.Context, camID string, start, end int64, baseURL string) (string, error)
+	GenerateVODPlaylist(ctx context.Context, camID int64, start, end int64, baseURL string) (string, error)
 }
 
 func NewPlaylistService(repo repository.SegmentRepository) PlaylistService {
 	return &segmentServiceBase{repo: repo}
 }
 
-func (s *segmentServiceBase) GeneratePlaylist(ctx context.Context, camID string, start, end int64, baseURL string) (string, error) {
+func (s *segmentServiceBase) GeneratePlaylist(ctx context.Context, camID int64, start, end int64, baseURL string) (string, error) {
 	// Fetch all segments within the requested time window
 	segments, err := s.repo.GetSegmentsByRange(ctx, camID, start, end)
 	if err != nil {
@@ -43,7 +43,7 @@ func (s *segmentServiceBase) GeneratePlaylist(ctx context.Context, camID string,
 	return playlist.String(), nil
 }
 
-func (s *segmentServiceBase) GenerateVODPlaylist(ctx context.Context, camID string, start, end int64, baseURL string) (string, error) {
+func (s *segmentServiceBase) GenerateVODPlaylist(ctx context.Context, camID int64, start, end int64, baseURL string) (string, error) {
 	// Fetch all segments within the requested time window
 	segments, err := s.repo.GetSegmentsByRange(ctx, camID, start, end)
 	if err != nil {

@@ -15,7 +15,7 @@ import (
 )
 
 
-func (r *segmentRepo) GetSegmentsByRange(ctx context.Context, camID string, start, end int64) ([]*models.Segment, error) {
+func (r *segmentRepo) GetSegmentsByRange(ctx context.Context, camID int64, start, end int64) ([]*models.Segment, error) {
 	query := `
 		SELECT id, camera_id, start_time, end_time, file_path, size_bytes 
 		FROM segments 
@@ -40,7 +40,7 @@ func (r *segmentRepo) GetSegmentsByRange(ctx context.Context, camID string, star
 	return segments, rows.Err()
 }
 
-func (r *segmentRepo) GetSegmentAtTime(ctx context.Context, camID string, timestamp int64) (*models.Segment, error) {
+func (r *segmentRepo) GetSegmentAtTime(ctx context.Context, camID int64, timestamp int64) (*models.Segment, error) {
 	// Find the segment where the requested timestamp falls between start and end.
 	query := `
 		SELECT id, camera_id, start_time, end_time, file_path, size_bytes 
@@ -65,7 +65,7 @@ func (r *segmentRepo) GetSegmentAtTime(ctx context.Context, camID string, timest
 }
 
 // GetDailySummary(ctx context.Context, camID string, startUnix, endUnix int64) ([]dto.DailySummary, error)
-func (r *segmentRepo) GetDailySummary(ctx context.Context, camID string, startUnix, endUnix int64) ([]dto.DailySummary, error) {
+func (r *segmentRepo) GetDailySummary(ctx context.Context, camID int64, startUnix, endUnix int64) ([]dto.DailySummary, error) {
 	// The 'localtime' modifier tells SQLite to convert the Unix epoch into the 
 	// server's local timezone before extracting the YYYY-MM-DD date.
 	query := `

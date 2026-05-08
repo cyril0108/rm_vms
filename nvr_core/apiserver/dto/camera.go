@@ -4,8 +4,8 @@ import "nvr_core/db/models"
 
 type CreateCameraRequest struct {
 	Name             string  `json:"name" validate:"required"`
-	Manufacturer     string `json:"manufacturer"` // Pointers allow JSON "null"
-	Model            string `json:"model"`
+	Manufacturer     string  `json:"manufacturer"` // Pointers allow JSON "null"
+	Model            string  `json:"model"`
 	SerialNumber     string  `json:"serial_number"`
 
 	IPAddress        string  `json:"ip_address" validate:"required,ip"`
@@ -27,24 +27,24 @@ type CreateCameraRequest struct {
 
 // CameraDetailResponse is the safe, complete payload sent to the Vue frontend
 type CameraDetailResponse struct {
-	ID               string  `json:"id"`
+	ID               int64   `json:"id"`
 	Name             string  `json:"name"`
-	Manufacturer     string `json:"manufacturer"`
-	Model            string `json:"model"`
+	Manufacturer     string  `json:"manufacturer"`
+	Model            string  `json:"model"`
 	SerialNumber     string  `json:"serial_number"`
 
 	IPAddress        string  `json:"ip_address"`
 	HTTPPort         int     `json:"http_port"`
 	Type             string  `json:"type"`
 
-	Username         string `json:"username"`
+	Username         string  `json:"username"`
 	// Notice: No password field of any kind is sent back!
 
 	StreamURL        string  `json:"stream_url"`
-	SubStreamURL     string `json:"sub_stream_url"`
+	SubStreamURL     string  `json:"sub_stream_url"`
 
 	SupportsPTZ      bool    `json:"supports_ptz"`
-	RetentionGBLimit int    `json:"retention_gb_limit"`
+	RetentionGBLimit int     `json:"retention_gb_limit"`
 	IsActive         bool    `json:"is_active"`
 
 	CreatedAt        int64   `json:"created_at"`

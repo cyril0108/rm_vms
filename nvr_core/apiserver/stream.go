@@ -5,20 +5,19 @@ import (
 	// "encoding/json"
 	"log"
 	"net/http"
+
 	// "sync"
 	// "time"
-	"strconv"
 	"nvr_core/stream"
+	"nvr_core/utils"
 )
-
 
 // GetCameras safely iterates over the sync.Map
 func (s *APIServer) GetStream(w http.ResponseWriter, r *http.Request) {
 
-	id, err := strconv.Atoi(r.PathValue("id"))
-
-	if(err != nil) {
-		log.Println("[GetStream] failed to get camera id")
+	id, idErr := utils.Str2Int(r.PathValue("id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 

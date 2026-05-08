@@ -24,11 +24,11 @@ type SegmentRepository interface {
 
 	// Segment search
 	GetLastSegment(ctx context.Context) (*models.Segment, error)
-	GetSegmentsByRange(ctx context.Context, camID string, start, end int64) ([]*models.Segment, error)
-	GetSegmentAtTime(ctx context.Context, camID string, timestamp int64) (*models.Segment, error)
+	GetSegmentsByRange(ctx context.Context, camID int64, start, end int64) ([]*models.Segment, error)
+	GetSegmentAtTime(ctx context.Context, camID int64, timestamp int64) (*models.Segment, error)
 
 	// Calendar
-	GetDailySummary(ctx context.Context, camID string, startUnix, endUnix int64) ([]dto.DailySummary, error)
+	GetDailySummary(ctx context.Context, camID int64, startUnix, endUnix int64) ([]dto.DailySummary, error)
 
 	// Bulk Insert
 	BulkInsert(ctx context.Context, segments []*models.Segment) error

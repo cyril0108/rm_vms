@@ -16,12 +16,12 @@ var (
 
 type CameraRepository interface {
 	Create(ctx context.Context, cam *models.Camera) error
-	GetByID(ctx context.Context, id string) (*models.Camera, error)
+	GetByID(ctx context.Context, id int64) (*models.Camera, error)
 	GetAll(ctx context.Context) ([]*models.Camera, error)
 	Update(ctx context.Context, cam *models.Camera) error
-	SetActivate(ctx context.Context, id string, active int) error
-	Activate(ctx context.Context, id string) error
-	Deactivate(ctx context.Context, id string) error
+	SetActivate(ctx context.Context, id int64, active int) error
+	Activate(ctx context.Context, id int64) error
+	Deactivate(ctx context.Context, id int64) error
 }
 
 type cameraRepo struct {
@@ -71,7 +71,7 @@ func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) error {
 }
 
 // GetByID fetches a specific camera and safely handles SQLite NULLs.
-func (r *cameraRepo) GetByID(ctx context.Context, id string) (*models.Camera, error) {
+func (r *cameraRepo) GetByID(ctx context.Context, id int64) (*models.Camera, error) {
 	query := `
 		SELECT id, name, manufacturer, model, serial_number, ip_address, http_port, type, 
 		       username, password_enc, stream_url, sub_stream_url, 
@@ -215,16 +215,16 @@ func (r *cameraRepo) Update(ctx context.Context, cam *models.Camera) error {
 }
 
 // Deactivate performs a soft-delete to preserve evidence in the segments table.
-func (r *cameraRepo) Deactivate(ctx context.Context, id string) error {
+func (r *cameraRepo) Deactivate(ctx context.Context, id int64) error {
 	return r.SetActivate(ctx, id, 0)
 }
 
-func (r *cameraRepo) Activate(ctx context.Context, id string) error {
+func (r *cameraRepo) Activate(ctx context.Context, id int64) error {
 	return r.SetActivate(ctx, id, 1)
 }
 
 // Deactivate performs a soft-delete to preserve evidence in the segments table.
-func (r *cameraRepo) SetActivate(ctx context.Context, id string, active int) error {
+func (r *cameraRepo) SetActivate(ctx context.Context, id int64, active int) error {
 	query := `UPDATE cameras SET is_active = ?, updated_at = ? WHERE id = ?`
 
 	result, err := r.db.ExecContext(ctx, query, active, time.Now().Unix(), id)

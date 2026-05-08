@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 	"nvr_core/apiserver/dto"
-	"nvr_core/process"
 	"nvr_core/onvif"
+	"nvr_core/process"
+	"nvr_core/utils"
 )
 
 // GetCameras safely iterates over the sync.Map
@@ -146,14 +147,14 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 
 func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 
-	camID := r.PathValue("cam_id")
-	if camID == "" {
-		http.Error(w, "No cam id", http.StatusBadRequest)
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	ctx := r.Context()
-	if err := s.Services.Camera.ActivateCamera(ctx, camID); err != nil {
+	if err := s.Services.Camera.ActivateCamera(ctx, int64(camID)); err != nil {
 		log.Printf("Failed to deactivate camera: %v", err)
 		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
 		return
@@ -165,14 +166,14 @@ func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 
 func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 
-	camID := r.PathValue("cam_id")
-	if camID == "" {
-		http.Error(w, "No cam id", http.StatusBadRequest)
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	ctx := r.Context()
-	if err := s.Services.Camera.DeactivateCamera(ctx, camID); err != nil {
+	if err := s.Services.Camera.DeactivateCamera(ctx, int64(camID)); err != nil {
 		log.Printf("Failed to deactivate camera: %v", err)
 		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
 		return

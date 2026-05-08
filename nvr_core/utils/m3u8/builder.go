@@ -10,12 +10,12 @@ import (
 )
 
 type M3U8Builder struct {
-	camID   string
+	camID   int64
 	baseURL string
 	builder strings.Builder
 }
 
-func NewM3U8Builder(id string, url string) M3U8Builder {
+func NewM3U8Builder(id int64, url string) M3U8Builder {
 	return M3U8Builder {
 		camID: id,
 		baseURL: url,

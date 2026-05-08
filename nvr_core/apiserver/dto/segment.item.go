@@ -7,7 +7,7 @@ import (
 
 type SegmentItem struct {
 	ID         int    `json:"id"`
-	CameraID   string `json:"camera_id"`
+	CameraID   int64  `json:"camera_id"`
 	StartTime  int64  `json:"start_time"`
 	EndTime    int64  `json:"end_time"`
 	DurationMs int64  `json:"duration_ms"`
