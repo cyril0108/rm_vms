@@ -3,6 +3,7 @@ package onvif
 import (
 	"fmt"
 	"io"
+	"nvr_core/db/models"
 	"regexp"
 
 	goonvif "github.com/use-go/onvif"
@@ -11,21 +12,46 @@ import (
 	xsdonvif "github.com/use-go/onvif/xsd/onvif"
 )
 
-// CameraRecord represents the exact structure you will save to SQLite
-type CameraRecord struct {
+// OnvifRecord represents the exact structure you will save to SQLite
+type OnvifRecord struct {
 	IP           string
 	Manufacturer string
 	Model        string
 	Firmware     string
 	SerialNumber string
-	RTSPMain     string // Primary high-res stream
+	SupportsPTZ  bool
+	// Streams
+	MainStream       string
+	SubStream        string
+	MainStreamToken  string
+	SubStreamToken   string
 	// Camera user/pwd
-	Username     string
-	Password     string
+	Username         string
+	Password         string
 }
 
+func (cr *OnvifRecord) MapToDBCamera() *models.Camera {
+	// ID should be created elsewhere.
+	return &models.Camera{
+		Manufacturer:     cr.Manufacturer,
+		Model:            cr.Model,
+		SerialNumber:     cr.SerialNumber,
+		IPAddress:        cr.IP,
+		Type:             models.CameraTypeONVIF,
+		Username:         cr.Username,
+		StreamURL:        cr.MainStream,
+		SubStreamURL:     cr.SubStream,
+		OnvifProfileToken: cr.MainStreamToken,
+		SubStreamProfileToken: cr.SubStreamToken,
+		SupportsPTZ:      cr.SupportsPTZ,
+		// RetentionGBLimit: cr.RetentionGBLimit,
+		// IsActive:         cr.IsActive,
+	}
+}
+
+
 // FetchCameraONVIFData connects to an ONVIF device and extracts its DB-ready metadata
-func FetchCameraONVIFData(ip, username, password string) (*CameraRecord, error) {
+func FetchCameraONVIFData(ip string, username string, password string) (*OnvifRecord, error) {
 	address := fmt.Sprintf("%s:80", ip)
 
 	// Initialize authenticated ONVIF device client
@@ -38,7 +64,7 @@ func FetchCameraONVIFData(ip, username, password string) (*CameraRecord, error) 
 		return nil, fmt.Errorf("failed to connect to ONVIF device: %w", err)
 	}
 
-	record := &CameraRecord{
+	record := &OnvifRecord{
 		IP:       ip,
 		Username: username,
 		Password: password,
@@ -63,10 +89,10 @@ func FetchCameraONVIFData(ip, username, password string) (*CameraRecord, error) 
 	if err != nil || resp == nil {
 		return record, fmt.Errorf("could not get media profiles: %w", err)
 	}
-	
+
 	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
-	
+
 	// Extract the first profile token (usually the main stream)
 	mainProfileToken := extractToken(body)
 	if mainProfileToken == "" {
@@ -89,8 +115,8 @@ func FetchCameraONVIFData(ip, username, password string) (*CameraRecord, error) 
 	if err == nil && resp != nil {
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		
-		record.RTSPMain = extractTag(body, "Uri")
+
+		record.MainStream = extractTag(body, "Uri")
 	}
 
 	return record, nil

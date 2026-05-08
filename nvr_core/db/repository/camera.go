@@ -19,6 +19,8 @@ type CameraRepository interface {
 	GetByID(ctx context.Context, id string) (*models.Camera, error)
 	GetAll(ctx context.Context) ([]*models.Camera, error)
 	Update(ctx context.Context, cam *models.Camera) error
+	SetActivate(ctx context.Context, id string, active int) error
+	Activate(ctx context.Context, id string) error
 	Deactivate(ctx context.Context, id string) error
 }
 
@@ -101,16 +103,16 @@ func (r *cameraRepo) GetByID(ctx context.Context, id string) (*models.Camera, er
 	}
 
 	// Map the safe temporary variables back into the struct pointers
-	if manufacturer.Valid { c.Manufacturer = &manufacturer.String }
-	if model.Valid { c.Model = &model.String }
-	if username.Valid { c.Username = &username.String }
-	if passwordEnc.Valid { c.PasswordEnc = &passwordEnc.String }
-	if subStream.Valid { c.SubStreamURL = &subStream.String }
-	if onvifToken.Valid { c.OnvifProfileToken = &onvifToken.String }
-	if subStreamToken.Valid { c.SubStreamProfileToken = &subStreamToken.String }
+	if manufacturer.Valid { c.Manufacturer = manufacturer.String }
+	if model.Valid { c.Model = model.String }
+	if username.Valid { c.Username = username.String }
+	if passwordEnc.Valid { c.PasswordEnc = passwordEnc.String }
+	if subStream.Valid { c.SubStreamURL = subStream.String }
+	if onvifToken.Valid { c.OnvifProfileToken = onvifToken.String }
+	if subStreamToken.Valid { c.SubStreamProfileToken = subStreamToken.String }
 	if retentionLimit.Valid { 
 		limit := int(retentionLimit.Int64)
-		c.RetentionGBLimit = &limit 
+		c.RetentionGBLimit = limit
 	}
 
 	c.SupportsPTZ = supportsPTZ == 1
@@ -152,16 +154,16 @@ func (r *cameraRepo) GetAll(ctx context.Context) ([]*models.Camera, error) {
 			return nil, err
 		}
 
-		if manufacturer.Valid { c.Manufacturer = &manufacturer.String }
-		if model.Valid { c.Model = &model.String }
-		if username.Valid { c.Username = &username.String }
-		if passwordEnc.Valid { c.PasswordEnc = &passwordEnc.String }
-		if subStream.Valid { c.SubStreamURL = &subStream.String }
-		if onvifToken.Valid { c.OnvifProfileToken = &onvifToken.String }
-		if subStreamToken.Valid { c.SubStreamProfileToken = &subStreamToken.String }
+		if manufacturer.Valid { c.Manufacturer = manufacturer.String }
+		if model.Valid { c.Model = model.String }
+		if username.Valid { c.Username = username.String }
+		if passwordEnc.Valid { c.PasswordEnc = passwordEnc.String }
+		if subStream.Valid { c.SubStreamURL = subStream.String }
+		if onvifToken.Valid { c.OnvifProfileToken = onvifToken.String }
+		if subStreamToken.Valid { c.SubStreamProfileToken = subStreamToken.String }
 		if retentionLimit.Valid { 
 			limit := int(retentionLimit.Int64)
-			c.RetentionGBLimit = &limit 
+			c.RetentionGBLimit = limit
 		}
 		c.SupportsPTZ = supportsPTZ == 1
 		c.IsActive = isActive == 1
@@ -214,9 +216,18 @@ func (r *cameraRepo) Update(ctx context.Context, cam *models.Camera) error {
 
 // Deactivate performs a soft-delete to preserve evidence in the segments table.
 func (r *cameraRepo) Deactivate(ctx context.Context, id string) error {
-	query := `UPDATE cameras SET is_active = 0, updated_at = ? WHERE id = ?`
+	return r.SetActivate(ctx, id, 0)
+}
 
-	result, err := r.db.ExecContext(ctx, query, time.Now().Unix(), id)
+func (r *cameraRepo) Activate(ctx context.Context, id string) error {
+	return r.SetActivate(ctx, id, 1)
+}
+
+// Deactivate performs a soft-delete to preserve evidence in the segments table.
+func (r *cameraRepo) SetActivate(ctx context.Context, id string, active int) error {
+	query := `UPDATE cameras SET is_active = ?, updated_at = ? WHERE id = ?`
+
+	result, err := r.db.ExecContext(ctx, query, active, time.Now().Unix(), id)
 	if err != nil {
 		return err
 	}

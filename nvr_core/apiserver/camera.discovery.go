@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"nvr_core/network"
 	"nvr_core/onvif"
 	"nvr_core/onvif/discovery"
 	"time"
@@ -72,7 +73,7 @@ func (s *APIServer) HandleCameraSweep(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[HandleCameraScan] Start scan process")
 
 	// Detect the subnet
-	baseIP, err := discovery.GetPrimarySubnetBase()
+	baseIP, err := network.GetPrimarySubnetBase()
 	if err != nil {
 		http.Error(w, "Failed to detect LAN subnet", http.StatusInternalServerError)
 		return
@@ -97,4 +98,26 @@ func (s *APIServer) HandleCameraSweep(w http.ResponseWriter, r *http.Request) {
 	if err := RespondJSON(w, result); err != nil {
 		log.Printf("Error encoding results: %v", err)
 	}
+}
+
+// HandleFetchCameraONVIF
+func (s *APIServer) HandleFetchCameraONVIF(w http.ResponseWriter, r *http.Request) {
+
+	v := discovery.NewVerifier(discovery.Config{
+		Timeout: 3 * time.Second,
+	})
+
+	targetIP := r.PathValue("ip")
+	if targetIP == "" {
+		http.Error(w, "No IP", http.StatusBadRequest)
+		return
+	}
+
+	result := v.Verify(targetIP)
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		log.Printf("Error probing camera: %v", err)
+	}
+
 }

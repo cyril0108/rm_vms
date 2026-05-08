@@ -1,12 +1,12 @@
 package apiserver
 
 import (
-	// "context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"nvr_core/apiserver/dto"
 	"nvr_core/process"
+	"nvr_core/onvif"
 )
 
 // GetCameras safely iterates over the sync.Map
@@ -70,12 +70,12 @@ JSON Payload {
 
 	stream_url: string
 	sub_stream_url: string
-		
+
 	retention_gb_limit: int
 	is_active: bool
 }
  */
-// AddCamera stores the camera and triggers the IPC pipeline
+// AddCamera stores the camera and start up
 func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 
 	var newCamera dto.CreateCameraRequest
@@ -94,11 +94,90 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 	// newCam.Status = "initializing"
 	// s.State.Cameras.Store(newCam.ID, newCam)
 
-	// TODO: Send JSON payload via Stdin to the target C++ Worker Subprocess
+	// TODO: Send camera start up command to the target C++ Worker Subprocess
 
 
 	w.WriteHeader(http.StatusCreated)
 	if err := RespondJSON(w, newCamera); err != nil {
 		log.Printf("Error encoding new camera response: %v", err)
 	}
+}
+
+/*
+JSON Payload {
+	username: string
+	password: string
+}
+*/
+// AddONVIFCamera stores the camera and start up
+func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
+
+	var camReq dto.CreateCameraRequest
+	if err := json.NewDecoder(r.Body).Decode(&camReq); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	cam, camErr := onvif.FetchCameraONVIFData(camReq.IPAddress, camReq.Username, camReq.Password)
+	if camErr != nil {
+		log.Printf("Failed to get ONVIF data: %v", camErr)
+		http.Error(w, "Failed to get ONVIF data", http.StatusInternalServerError)
+		return
+	}
+
+	ctx := r.Context()
+	if err := s.Services.Camera.AddCamera(ctx, cam.MapToDBCamera()); err != nil {
+		log.Printf("Failed to add camera: %v", err)
+		http.Error(w, "Failed to add camera", http.StatusInternalServerError)
+		return
+	}
+
+	// newCam.Status = "initializing"
+	// s.State.Cameras.Store(newCam.ID, newCam)
+
+	// TODO: Send camera start up command to the target C++ Worker Subprocess
+
+
+	w.WriteHeader(http.StatusCreated)
+	if err := RespondJSON(w, cam); err != nil {
+		log.Printf("Error encoding new camera response: %v", err)
+	}
+}
+
+func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
+
+	camID := r.PathValue("cam_id")
+	if camID == "" {
+		http.Error(w, "No cam id", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	if err := s.Services.Camera.ActivateCamera(ctx, camID); err != nil {
+		log.Printf("Failed to deactivate camera: %v", err)
+		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: Start camera recording
+
+}
+
+func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
+
+	camID := r.PathValue("cam_id")
+	if camID == "" {
+		http.Error(w, "No cam id", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	if err := s.Services.Camera.DeactivateCamera(ctx, camID); err != nil {
+		log.Printf("Failed to deactivate camera: %v", err)
+		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: Stop camera recording
+
 }

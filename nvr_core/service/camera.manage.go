@@ -13,6 +13,7 @@ type CameraManagementService interface {
 	GetAll(ctx context.Context) ([]*models.Camera, error)
 	AddCamera(ctx context.Context, cam *models.Camera) error
 	UpdateCamera(ctx context.Context, cam *models.Camera) error
+	ActivateCamera(ctx context.Context, id string) error
 	DeactivateCamera(ctx context.Context, id string) error
 }
 
@@ -35,6 +36,10 @@ func (s *cameraServiceBase) AddCamera(ctx context.Context, cam *models.Camera) e
 
 func (s *cameraServiceBase) UpdateCamera(ctx context.Context, cam *models.Camera) error {
 	return s.repo.Update(ctx, cam)
+}
+
+func (s *cameraServiceBase) ActivateCamera(ctx context.Context, id string) error {
+	return s.repo.Activate(ctx, id)
 }
 
 func (s *cameraServiceBase) DeactivateCamera(ctx context.Context, id string) error {

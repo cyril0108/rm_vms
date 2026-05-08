@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"nvr_core/logger"
@@ -87,4 +88,19 @@ func (m *Manager) CameraWorker(camID int) *Worker {
 
 	index := m.camWorker[camID];
 	return m.workers[index];
+}
+
+func (m *Manager) StopCameraRecording(camID int) error {
+
+	if worker := m.CameraWorker(camID); worker == nil {
+
+		return errors.New("No worker for given camera")
+
+	} else {
+
+		worker.StopCam(camID);
+
+	}
+
+	return nil
 }

@@ -247,6 +247,20 @@ func (w *Worker) StartCam(cam *Camera) error {
 
 }
 
+func (w *Worker) StopCam(camID int) error {
+
+    w.mu.Lock()
+
+    cam := w.cameras[camID]
+    cam.Status = "stop recording"
+    command := fmt.Sprintf("STOP %d", cam.ID)
+
+    w.mu.Unlock()
+
+    return w.SendCommand(command)
+
+}
+
 func (w *Worker) RestartCam(camID int) error {
 
     w.mu.Lock()

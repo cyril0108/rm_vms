@@ -2,20 +2,21 @@ package apiserver
 
 import (
 	"context"
-	// "database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"path"
 	"sync"
 	"time"
 
-	"nvr_core/apiserver/webserver"
 	"nvr_core/apiserver/middleware"
+	"nvr_core/apiserver/webserver"
+	"nvr_core/network"
 	"nvr_core/process"
-	"nvr_core/utils"
+	"nvr_core/security/cert"
 	"nvr_core/service"
+	"nvr_core/utils"
 )
-
 
 // NVRState uses sync.Map for highly concurrent, lock-free (mostly) reads/writes
 type NVRState struct {
@@ -47,6 +48,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 		PM: pm,
 		Services: svcs,
 	}
+
 
 	mux := http.NewServeMux()
 
@@ -87,6 +89,10 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/cameras", api.GetCameras)
 	mux.HandleFunc("GET /api/cameras/db", api.GetDBCameras)
 	mux.HandleFunc("POST /api/cameras", api.AddCamera)
+	mux.HandleFunc("POST /api/cameras/{ip}/onvif", api.AddONVIFCamera)
+	mux.HandleFunc("POST /api/cameras/{cam_id}/stop", api.DeactivateCamera)
+	mux.HandleFunc("POST /api/cameras/{cam_id}/start", api.ActivateCamera)
+
 
 	// =============================================
 	// Timeline and Playback
@@ -129,11 +135,13 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 		IdleTimeout:  120 * time.Second, // Max time for keep-alive connections
 	}
 
+	certfile, keyfile := api.InitCert()
+
 	// Start the server in a background goroutine
 	go func() {
 		log.Printf("[API] Server listening on %s", addr)
 		// ErrServerClosed is expected when we call srv.Shutdown()
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServeTLS(certfile, keyfile); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("[API] Server critically failed: %v", err)
 		}
 	}()
@@ -158,5 +166,32 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	} else {
 		log.Println("[API] Server gracefully stopped.")
 	}
+
+}
+
+func (s *APIServer) InitCert() (string, string) {
+
+	mainIP, err := network.GetPrimaryIP()
+	if err != nil {
+		log.Printf("failed to get primary ip, use localhost as CERT address.")
+		mainIP = "localhost"
+	}
+
+	certfile, keyfile := CertKeyPathsForAddress(mainIP, "./")
+	cert.EnsureExists(mainIP, certfile, keyfile)
+
+	return certfile, keyfile
+
+}
+
+func CertKeyPathsForAddress(addr string, rootPath string) (string, string) {
+
+	certfile := fmt.Sprintf("%s.cer", addr)
+	cert := path.Join(rootPath, certfile)
+
+	keyfile := fmt.Sprintf("%s.key", addr)
+	key := path.Join(rootPath, keyfile)
+
+	return cert, key
 
 }
