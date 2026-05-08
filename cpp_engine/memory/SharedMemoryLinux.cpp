@@ -1,4 +1,5 @@
 #include "SharedMemory.h"
+#include <stack>
 #include <vector>
 #include <cstring>
 #include <iostream>
@@ -23,7 +24,7 @@ private:
     uint8_t* _basePtr = nullptr;
     size_t _totalSize = 0;
     int _maxChannel = 0;
-    int _lastChannelId = 0;
+    // int _lastChannelId = 0;
 
     // Helper struct to cache pointers for each channel
     // This prevents recalculating offsets on every single frame write
@@ -33,7 +34,9 @@ private:
         uint32_t capacity;
     };
     std::vector<ChannelCtx> _channels;
+    std::stack<int>         _availChannels;
     std::unordered_map<int, int> _channelForCam;
+    std::mutex _channelMutex;
 
 public:
     bool Create(const std::string& name, int numChannels, size_t sizePerChannel) override {
@@ -97,6 +100,7 @@ public:
             ctx.header->readTail.store(0);
 
             _channels.push_back(ctx);
+            _availChannels.push(i);
 
             // Move cursor to next channel
             cursor += sizePerChannel;
@@ -105,26 +109,62 @@ public:
         return true;
     }
 
-    int ChannelForCamID(int camID) {
+    void ReleaseChannelForCamID(int camID) {
 
-        if (_channelForCam.find(camID) == _channelForCam.end()) {
+        // Lock for thread safety
+        std::lock_guard<std::mutex> lock(_channelMutex);
 
-            if(_lastChannelId < _maxChannel) {
+        auto it = _channelForCam.find(camID);
 
-                // Key does not exist, assign last one
-                _channelForCam[camID] = _lastChannelId;
-                _lastChannelId++;
+        if (it != _channelForCam.end()) {
 
-            } else {
+            // Get the channel ID
+            int chID = it->second;
 
-                // Reached max channel number
-                return -1;
-
-            }
+            _channelForCam.erase(it);
+            _availChannels.push(chID);
+            CleanUpChannel(chID);
 
         }
 
-        return _channelForCam[camID];
+    }
+
+    void CleanUpChannel(int chID) {
+        ChannelCtx& ch = _channels[chID];
+        ch.header->writeHead.store(0, std::memory_order_relaxed);
+        ch.header->readTail.store(0, std::memory_order_relaxed);
+    }
+
+    // Return available relased channel id, -1 when there is none.
+    int PopAvailableChannel() {
+        if(!_availChannels.empty()) {
+            int val = _availChannels.top();
+            _availChannels.pop();
+            return val;
+        }
+        return -1;
+    }
+
+    int ChannelForCamID(int camID) {
+
+        // Lock the mutex for thread safety
+        std::lock_guard<std::mutex> lock(_channelMutex);
+
+        auto it = _channelForCam.find(camID);
+        if (it != _channelForCam.end()) {
+            return it->second;
+        }
+
+        // Key does not exist, assign new one
+        int newChId = PopAvailableChannel();
+        if(newChId >= 0) {
+            _channelForCam[camID] = newChId;
+        } else {
+            Log::error("[SHM] Failed to assign channel for Cam " + std::to_string(camID) + ". No channels available.");
+        }
+
+        // Return -1 when ther is no channel available
+        return newChId;
 
     }
 
@@ -167,14 +207,6 @@ public:
             // Buffer is full (Reader is too slow)
             return false;
         }
-
-        // Write Metadata
-        // FrameMetadata meta;
-        // meta.magic = WrapMagicNumber;
-        // meta.frameSize = static_cast<uint32_t>(size);
-        // meta.timestamp = timestamp;
-        // meta.isKeyFrame = isKey ? 1 : 0;
-        // meta.mediaType = mediaType;
 
         uint8_t* writePtr = ch.dataStart + effectiveWriteStart;
         memcpy(writePtr, &meta, sizeof(FrameMetadata));

@@ -32,7 +32,7 @@ public:
         queue.push(item);
         lock.unlock(); // Unlock before notifying to save CPU cycles
         cv.notify_one(); // Wake up the writer thread
-        
+
         return true;
     }
 

@@ -22,6 +22,7 @@ VideoIngestion::VideoIngestion(std::shared_ptr<ISharedMemory> mm, int id, const 
     if(shmChannelID < 0) {
 
         Log::error(camName + "SHM reached max channel!");
+        throw std::runtime_error("Failed to allocate SHM channel for camera.");
 
     } else {
 
@@ -34,10 +35,12 @@ VideoIngestion::VideoIngestion(std::shared_ptr<ISharedMemory> mm, int id, const 
 // --- Destructor ---
 VideoIngestion::~VideoIngestion() {
 
-    // Signal the thread to stop
-    stopSignal = true;
+    stopIngestion();
 
-    stopAndJoinDiskWriterThread();
+    // Signal the thread to stop
+    // stopSignal = true;
+
+    // stopAndJoinDiskWriterThread();
 
     // Wait for the thread to finish (Join)
     // If we don't join, the thread might try to access 'this' after the object is destroyed -> Crash.
@@ -100,6 +103,19 @@ int VideoIngestion::startIngestion() {
     return cleanup();
 }
 
+/**
+ * =========================================================
+ * --- Method: stopIngestion ---
+ * =========================================================
+ */
+
+void VideoIngestion::stopIngestion() {
+
+    Log::info(camName + " Stop requested by orchestrator...");
+
+    stopSignal = true;
+
+}
 
 /**
  * =========================================================
@@ -319,6 +335,15 @@ int VideoIngestion::openInput() {
 
     Log::info(camName + "Connecting to: " + url);
 
+    fmtCtx = avformat_alloc_context();
+    if (!fmtCtx) {
+        Log::error(camName + " Failed to allocate AVFormatContext.");
+        return -1;
+    }
+
+    fmtCtx->interrupt_callback.callback = VideoIngestion::interruptCallback;
+    fmtCtx->interrupt_callback.opaque = this;
+
     int ret = avformat_open_input(&fmtCtx, url.c_str(), nullptr, &options);
     if (ret != 0) {
         // Create a buffer for the error message
@@ -330,6 +355,10 @@ int VideoIngestion::openInput() {
         std::cerr << camName << "[FFmpeg Error] Could not open source: " << url << std::endl;
         std::cerr << "Reason: " << errbuf << " (Code: " << ret << ")" << std::endl;
         // Log::send("{\"status\":\"stopped\", \"cam\":" + std::to_string(camID) + "}");
+
+        // Note: avformat_open_input automatically frees fmtCtx on failure, 
+                // so we must set it back to nullptr to prevent double-free in cleanup()
+        fmtCtx = nullptr;
 
         return -1;
     }
@@ -356,12 +385,35 @@ void VideoIngestion::stopAndJoinDiskWriterThread() {
 
 /**
  * =========================================================
+ * --- FFmpeg Interrupt Callback ---
+ * =========================================================
+ */
+int VideoIngestion::interruptCallback(void* ctx) {
+    // Cast the opaque pointer back to our class instance
+    VideoIngestion* vi = static_cast<VideoIngestion*>(ctx);
+
+    // If the instance exists and the stop signal is true, return 1 to abort!
+    if (vi && vi->stopSignal.load(std::memory_order_relaxed)) {
+        return 1;
+    }
+
+    // Return 0 to let FFmpeg continue blocking/reading
+    return 0;
+}
+
+/**
+ * =========================================================
  * --- Private Method: cleanup ---
  * =========================================================
  */
 int VideoIngestion::cleanup() {
 
     stopAndJoinDiskWriterThread();
+
+    if (shmChannelID >= 0) {
+        shm->ReleaseChannelForCamID(camID);
+        shmChannelID = -1; // Reset to prevent double-release if cleanup is called twice
+    }
 
     // Free the Bitstream Filter (Fixes the memory leak!)
     if (bsfCtx) {

@@ -79,8 +79,46 @@ int main(int argc, char* argv[]) {
                 }
             }
 
+            if(cmd.Name == "STOP") {
+                try {
+
+                    std::string idStr = cmd.Args.front();
+                    cmd.Args.pop();
+
+                    Log::info("stop cam id:" + idStr);
+
+                    // Remove VI
+                    int camID = std::stoi(idStr);
+                    auto it = activeCameras.find(camID);
+                    if (it != activeCameras.end()) {
+
+                        // Extract the unique_ptr from the map
+                        std::unique_ptr<VideoIngestion> viToKill = std::move(it->second);
+                        
+                        // Erase the empty map entry
+                        activeCameras.erase(it);
+
+                        std::thread([vi = std::move(viToKill)]() mutable {
+                            // As soon as this lambda scope ends, 'vi' is destroyed, 
+                            // triggering the destructor and joining the threads safely in the background.
+                        }).detach();
+
+                    }
+
+                    // Respond to Go
+                    // Log::send("{\"status\":\"stop\", \"cam\":" + idStr + "}");
+
+                } catch (...) {
+                    Log::error("Error stopping video ingestion.");
+                }
+            }
+
         }
 
     }
+
+    Log::info("Worker shutting down. Closing Shared Memory.");
+    SHM->Close();
+
     return 0;
 }

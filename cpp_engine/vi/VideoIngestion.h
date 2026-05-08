@@ -22,6 +22,8 @@ class VideoIngestion
 public:
     VideoIngestion(std::shared_ptr<ISharedMemory> mm, int id, const std::string u, const std::string rp);
     ~VideoIngestion();
+    // stop
+    void stopIngestion();
 
 private:
 
@@ -47,8 +49,8 @@ private:
     // --- Stream Tracking ---
     int videoStreamIndex = -1;
     int audioStreamIndex = -1;
-    uint32_t videoCodecID = -1;
-    uint32_t audioCodecID = -1;
+    uint32_t videoCodecID = 0;
+    uint32_t audioCodecID = 0;
     bool waitForKeyFrame = true;       // Ensures we drop P-frames until our first IDR
 
     int startIngestion();       // The main worker thread loop
@@ -62,6 +64,9 @@ private:
     int initVideoFilter();
     FrameMetadata makeFrameMetadataV(AVPacket* packet, bool isKey);
     FrameMetadata makeFrameMetadataA(AVPacket* packet);
+
+    // FFMPEG interrupt callback
+    static int interruptCallback(void* ctx);
 
     // --- Packet Routing & Processing ---
     void routePacket(AVPacket* packet);
