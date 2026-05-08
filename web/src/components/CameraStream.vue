@@ -20,15 +20,21 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import JMuxer from 'jmuxer';
 
+import config from "@/config"
+
+const wshosturl = "wss:" + config.hostUrl;
+
+console.log("ws host:", wshosturl);
+
 const props = defineProps({
   camId: {
     type: String,
     required: true
   },
-  wsHost: {
-    type: String,
-    default: 'ws://localhost:59180' // Go API Server address
-  }
+  // wsHost: {
+  //   type: String,
+  //   default: wshosturl
+  // }
 });
 
 const videoPlayer = ref(null);
@@ -49,11 +55,13 @@ const reconnect = () => {
   initPlayer()
 }
 
-const initPlayer = () => {
-  //  Initialize JMuxer
-  jmuxer = new JMuxer({
+const makeMuxer = function(mode) {
+
+  console.log(`[makeMuxer] start with mode: ${mode}`);
+
+  return new JMuxer({
     node: 'player-' + props.camId,
-    mode: 'both',          // We only have video right now
+    mode: mode,
     flushingTime: 0,        // 0 = ultra-low latency. Flushes frames instantly.
     clearBuffer: true,      // Keeps memory usage low over long periods
     fps: 30,                // Fallback FPS, though the H.264 stream usually dictates this
@@ -62,9 +70,17 @@ const initPlayer = () => {
       console.error(`[JMuxer Cam ${props.camId}] Error:`, data);
     }
   });
+}
+
+const initPlayer = () => {
+  //  Initialize JMuxer
+  // jmuxer = makeMuxer("both");
+  let jmuxer;
+  let cnt = 0;
+  let mode = "video"; // Default to video only
 
   //  Initialize the WebSocket
-  const wsUrl = `${props.wsHost}/ws/stream/${props.camId}`;
+  const wsUrl = `${wshosturl}/ws/stream/${props.camId}`;
   ws = new WebSocket(wsUrl);
 
   // CRITICAL: Tell the browser we expect raw binary data, not text
@@ -87,28 +103,43 @@ const initPlayer = () => {
     // Extract the payload (everything after index 0)
     // const payload = data.subarray(1);
 
-    // Route to the correct JMuxer buffer
-    if (mediaType === 0) {
-      // Video Packet (H.264 Annex-B)
-      jmuxer.feed({
-        video: payload
-      });
-    } else if (mediaType === 1) {
-      // Audio Packet (Typically AAC)
-      jmuxer.feed({
-        audio: payload
-      });
+    if(!jmuxer) {
+
+      cnt++;
+
+      if( mediaType===1 ) {
+
+        mode = 'both'
+        jmuxer = makeMuxer(mode);
+
+      } else {
+
+        if(cnt > 9) {
+          jmuxer = makeMuxer(mode);
+        }
+
+      }
+
+
     } else {
-      console.warn("Unknown media type received:", mediaType);
+
+      // Route to the correct JMuxer buffer
+      if (mediaType === 0) {
+        // Video Packet (H.264 Annex-B)
+        jmuxer.feed({
+          video: payload
+        });
+      } else if (mediaType === 1) {
+        // Audio Packet (Typically AAC)
+        jmuxer.feed({
+          audio: payload
+        });
+      } else {
+        console.warn("Unknown media type received:", mediaType);
+      }
+
     }
 
-    // //  Feed the binary frame directly to JMuxer
-    // // Because C++ worker injected the SPS/PPS, JMuxer instantly knows what to do!
-    // if (jmuxer) {
-    //   jmuxer.feed({
-    //     video: new Uint8Array(event.data)
-    //   });
-    // }
   };
 
   ws.onclose = () => {

@@ -93,6 +93,9 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("POST /api/cameras/{cam_id}/stop", api.DeactivateCamera)
 	mux.HandleFunc("POST /api/cameras/{cam_id}/start", api.ActivateCamera)
 
+	// Becareful with this
+	mux.HandleFunc("DELETE /api/cameras/{cam_id}", api.DeleteCamera)
+
 
 	// =============================================
 	// Timeline and Playback

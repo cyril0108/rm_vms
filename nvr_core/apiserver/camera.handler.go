@@ -104,6 +104,24 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
+
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	if err := s.Services.Camera.DeleteCamera(ctx, int64(camID)); err != nil {
+		log.Printf("Failed to delete camera: %v", err)
+		http.Error(w, "Failed to delete camera", http.StatusInternalServerError)
+		return
+	}
+
+}
+
+
 /*
 JSON Payload {
 	username: string

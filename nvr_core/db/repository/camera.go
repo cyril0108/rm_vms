@@ -20,6 +20,7 @@ type CameraRepository interface {
 	GetAll(ctx context.Context) ([]*models.Camera, error)
 	Update(ctx context.Context, cam *models.Camera) error
 	SetActivate(ctx context.Context, id int64, active int) error
+	Delete(ctx context.Context, id int64) error
 	Activate(ctx context.Context, id int64) error
 	Deactivate(ctx context.Context, id int64) error
 }
@@ -228,6 +229,25 @@ func (r *cameraRepo) SetActivate(ctx context.Context, id int64, active int) erro
 	query := `UPDATE cameras SET is_active = ?, updated_at = ? WHERE id = ?`
 
 	result, err := r.db.ExecContext(ctx, query, active, time.Now().Unix(), id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrCameraNotFound
+	}
+
+	return nil
+}
+
+func (r *cameraRepo) Delete(ctx context.Context, id int64) error {
+	query := `DELETE FROM cameras WHERE id = ?`
+
+	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}

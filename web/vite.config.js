@@ -3,13 +3,15 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import mkcert from 'vite-plugin-mkcert'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/",
+  base: "/web/",
   plugins: [
     vue(),
     vueDevTools(),
+    mkcert(),
   ],
   resolve: {
     alias: {
@@ -17,9 +19,10 @@ export default defineConfig({
     },
   },
   server: {
+    https: true,
     proxy: {
-      '/config.js': {
-        target: 'http://localhost:9980',
+      '/web/config.js': {
+        target: 'https://localhost:59180',
         changeOrigin: true,
         configure: (proxy, options) => {
                   proxy.on('proxyReq', (proxyReq, req, _res) => {
@@ -32,7 +35,7 @@ export default defineConfig({
       },
       // Bonus: Proxy all your API calls to avoid CORS issues in dev mode
       '/api': {
-        target: 'http://localhost:59180',
+        target: 'https://localhost:59180',
         changeOrigin: true,
       }
     }
