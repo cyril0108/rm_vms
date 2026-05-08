@@ -33,6 +33,9 @@ type SegmentRepository interface {
 	// Bulk Insert
 	BulkInsert(ctx context.Context, segments []*models.Segment) error
 
+	// Camera Data Check
+	HasSegments(ctx context.Context, camID int64) (bool, error)
+
 	// DB/file sanity check
 	GetAllFilePaths(ctx context.Context) (map[string]struct{}, error)
 	DeleteByFilePaths(ctx context.Context, paths []string) error
@@ -117,4 +120,16 @@ func (r *segmentRepo) GetLastSegment(ctx context.Context) (*models.Segment, erro
 	}
 
 	return &seg, nil
+}
+
+func (r *segmentRepo) HasSegments(ctx context.Context, camID int64) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM segments WHERE camera_id = ?)`
+	
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, camID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	
+	return exists, nil
 }

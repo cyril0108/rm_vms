@@ -20,6 +20,7 @@ type userServiceBase struct {
 
 type cameraServiceBase struct {
 	repo repository.CameraRepository
+	segRepo repository.SegmentRepository
 }
 
 type segmentServiceBase struct {

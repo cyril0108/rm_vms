@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"nvr_core/db/models"
 	"nvr_core/db/repository"
 )
+
+var ErrCameraHasSegments = errors.New("cannot delete camera: existing video segments must be cleared first")
 
 type CameraManagementService interface {
 	// UpdateUserPermissions(ctx context.Context, adminID, targetUserID int64, permIDs []int64) error
@@ -19,8 +22,8 @@ type CameraManagementService interface {
 }
 
 
-func NewCameraManagementService(cRepo repository.CameraRepository) CameraManagementService {
-	return &cameraServiceBase{repo: cRepo}
+func NewCameraManagementService(cRepo repository.CameraRepository, segRepo repository.SegmentRepository) CameraManagementService {
+	return &cameraServiceBase{repo: cRepo, segRepo: segRepo}
 }
 
 func (s *cameraServiceBase) GetByID(ctx context.Context, id int64) (*models.Camera, error) {
@@ -40,6 +43,15 @@ func (s *cameraServiceBase) UpdateCamera(ctx context.Context, cam *models.Camera
 }
 
 func (s *cameraServiceBase) DeleteCamera(ctx context.Context, id int64) error {
+	hasSegments, err := s.segRepo.HasSegments(ctx, id)
+	if err != nil {
+		return err // Database error during check
+	}
+
+	if hasSegments {
+		return ErrCameraHasSegments
+	}
+
 	return s.repo.Delete(ctx, id)
 }
 

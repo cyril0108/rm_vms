@@ -34,7 +34,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	// Some random secret key for now
 	authSvc := NewAuthService(userRepo, permRepo, ")($#YHdsJdsx")
 	userSvc := NewUserManagementService(userRepo, permRepo)
-	camSvc := NewCameraManagementService(cameraRepo)
+	camSvc := NewCameraManagementService(cameraRepo, segRepo)
 
 	return &Services{
 		Auth:     authSvc,
