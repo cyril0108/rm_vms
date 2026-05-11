@@ -72,7 +72,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/scan", api.HandleCameraScan)
 	mux.HandleFunc("GET /api/scansweep", api.HandleCameraSweep)
 	mux.HandleFunc("GET /api/scan/{ip}", api.HandleCameraProbe)
-
+	mux.HandleFunc("POST /api/scan/{ip}/onvif", api.HandleFetchCameraONVIF)
 
 	// =============================================
 	// Camera stream
@@ -88,7 +88,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	mux.HandleFunc("GET /api/cameras", api.GetCameras)
 	mux.HandleFunc("GET /api/cameras/db", api.GetDBCameras)
-	mux.HandleFunc("POST /api/cameras", api.AddCamera)
+	mux.HandleFunc("POST /api/cameras/add", api.AddCamera)
 	mux.HandleFunc("POST /api/cameras/{ip}/onvif", api.AddONVIFCamera)
 	mux.HandleFunc("POST /api/cameras/{cam_id}/stop", api.DeactivateCamera)
 	mux.HandleFunc("POST /api/cameras/{cam_id}/start", api.ActivateCamera)
@@ -138,13 +138,14 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 		IdleTimeout:  120 * time.Second, // Max time for keep-alive connections
 	}
 
-	certfile, keyfile := api.InitCert()
+	// certfile, keyfile := api.InitCert()
 
 	// Start the server in a background goroutine
 	go func() {
 		log.Printf("[API] Server listening on %s", addr)
 		// ErrServerClosed is expected when we call srv.Shutdown()
-		if err := srv.ListenAndServeTLS(certfile, keyfile); err != nil && err != http.ErrServerClosed {
+		// if err := srv.ListenAndServeTLS(certfile, keyfile); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("[API] Server critically failed: %v", err)
 		}
 	}()

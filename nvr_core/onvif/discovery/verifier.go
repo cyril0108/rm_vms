@@ -17,6 +17,7 @@ var commonOnvifPorts = []int{80, 8080, 8899, 8000}
 
 // VerifyResult holds the findings of the camera verification probe.
 type VerifyResult struct {
+	IP        string  `json:"ip"`
 	IsValid   bool    `json:"isValid"`
 	Protocol  string  `json:"protocol"`
 	PortFound int     `json:"portFound"`
@@ -50,6 +51,7 @@ func (v *Verifier) Verify(ip string) VerifyResult {
 	// Try Unicast ONVIF Probe (Highest Confidence)
 	if isONVIF, response := v.unicastProbe(ip); isONVIF {
 		return VerifyResult{
+			IP: ip,
 			IsValid:   true,
 			Protocol:  "onvif-verified",
 			PortFound: wsDiscoveryPort,
@@ -60,6 +62,7 @@ func (v *Verifier) Verify(ip string) VerifyResult {
 	// Fallback: Check standard RTSP port
 	if v.checkPort(ip, standardRtspPort) {
 		return VerifyResult{
+			IP: ip,
 			IsValid:   true,
 			Protocol:  "rtsp",
 			PortFound: standardRtspPort,
@@ -70,6 +73,7 @@ func (v *Verifier) Verify(ip string) VerifyResult {
 	for _, port := range commonOnvifPorts {
 		if v.checkPort(ip, port) {
 			return VerifyResult{
+				IP: ip,
 				IsValid:   true,
 				Protocol:  "onvif-port-only",
 				PortFound: port,
@@ -86,12 +90,12 @@ func (v *Verifier) Verify(ip string) VerifyResult {
 // checkPort attempts a raw TCP connection to determine if a service is listening.
 func (v *Verifier) checkPort(ip string, port int) bool {
 	address := fmt.Sprintf("%s:%d", ip, port)
-	
+
 	conn, err := net.DialTimeout("tcp", address, v.timeout)
 	if err != nil {
 		return false
 	}
-	
+
 	if conn != nil {
 		conn.Close() // Immediately close to prevent socket exhaustion on the camera
 		return true
@@ -102,7 +106,7 @@ func (v *Verifier) checkPort(ip string, port int) bool {
 // unicastProbe sends a directed UDP WS-Discovery packet.
 func (v *Verifier) unicastProbe(ip string) (bool, string) {
 	address := fmt.Sprintf("%s:%d", ip, wsDiscoveryPort)
-	
+
 	udpAddr, err := net.ResolveUDPAddr("udp4", address)
 	if err != nil {
 		return false, ""
