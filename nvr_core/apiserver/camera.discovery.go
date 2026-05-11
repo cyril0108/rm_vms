@@ -144,6 +144,12 @@ func (s *APIServer) HandleCameraSweep(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 
+		// Prevent non-private ip can
+		if err := network.IsSafeTarget(startIP); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		res, err := ScanSweepSubnetRange(ctx, startIP, endIP)
 		if err != nil {
 			http.Error(w, "Failed scan subnet range", http.StatusInternalServerError)

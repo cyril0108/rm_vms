@@ -173,3 +173,18 @@ func GetActiveSubnets() ([]*net.IPNet, error) {
 
 	return activeNetworks, nil
 }
+
+// IsSafeTarget checks if the requested IP is a valid private network address.
+func IsSafeTarget(ipStr string) error {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return fmt.Errorf("invalid IP format")
+	}
+
+	// Blocks public IPs, loopback (127.0.0.1), and multicast addresses
+	if !ip.IsPrivate() {
+		return fmt.Errorf("security violation: target %s is not a private LAN address", ipStr)
+	}
+
+	return nil
+}
