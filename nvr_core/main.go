@@ -18,6 +18,11 @@ import (
 	"nvr_core/utils"
 )
 
+// @title           NVR Core API
+// @version         0.1
+// @description     API for NVR system.
+// @host            localhost:9080
+// @BasePath        /
 func main() {
 
 	// application-wide context

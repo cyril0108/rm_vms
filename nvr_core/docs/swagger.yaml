@@ -1,0 +1,331 @@
+basePath: /
+definitions:
+  dto.CameraDetailResponse:
+    properties:
+      created_at:
+        type: integer
+      http_port:
+        type: integer
+      id:
+        type: integer
+      ip_address:
+        type: string
+      is_active:
+        type: boolean
+      manufacturer:
+        type: string
+      model:
+        type: string
+      name:
+        type: string
+      retention_gb_limit:
+        type: integer
+      serial_number:
+        type: string
+      stream_url:
+        type: string
+      sub_stream_url:
+        type: string
+      supports_ptz:
+        type: boolean
+      type:
+        type: string
+      updated_at:
+        type: integer
+      username:
+        type: string
+    type: object
+  dto.CreateCameraRequest:
+    properties:
+      http_port:
+        type: integer
+      ip_address:
+        type: string
+      is_active:
+        type: boolean
+      manufacturer:
+        description: Pointers allow JSON "null"
+        type: string
+      model:
+        type: string
+      name:
+        type: string
+      password:
+        description: Raw password from the UI form!
+        type: string
+      retention_gb_limit:
+        type: integer
+      serial_number:
+        type: string
+      stream_url:
+        type: string
+      sub_stream_url:
+        type: string
+      supports_ptz:
+        type: boolean
+      type:
+        enum:
+        - onvif
+        - rtsp
+        type: string
+      username:
+        type: string
+    required:
+    - ip_address
+    - name
+    - type
+    type: object
+  models.Camera:
+    properties:
+      created_at:
+        type: integer
+      http_port:
+        type: integer
+      id:
+        type: integer
+      ip_address:
+        type: string
+      is_active:
+        type: boolean
+      manufacturer:
+        type: string
+      model:
+        type: string
+      name:
+        type: string
+      onvif_profile_token:
+        type: string
+      retention_gb_limit:
+        type: integer
+      serial_number:
+        type: string
+      stream_url:
+        type: string
+      sub_stream_profile_token:
+        type: string
+      sub_stream_url:
+        type: string
+      supports_ptz:
+        type: boolean
+      type:
+        type: string
+      updated_at:
+        type: integer
+      username:
+        type: string
+    type: object
+  process.Camera:
+    properties:
+      channel:
+        type: integer
+      id:
+        type: integer
+      status:
+        type: string
+      url:
+        type: string
+      worker_id:
+        type: integer
+    type: object
+host: localhost:9080
+info:
+  contact: {}
+  description: API for NVR system.
+  title: NVR Core API
+  version: "0.1"
+paths:
+  /api/cameras:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of cameras currently loaded in memory by the C++
+        workers, including their live runtime status.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/process.Camera'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get active camera runtime list
+      tags:
+      - Cameras
+  /api/cameras/{cam_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a camera by its ID. Note that a camera with existing recording
+        data will be rejected.
+      parameters:
+      - description: Camera ID
+        in: path
+        name: cam_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: deleted
+          schema:
+            type: string
+        "400":
+          description: Invalid cam id or development lock
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete camera
+      tags:
+      - Cameras
+  /api/cameras/{cam_id}/start:
+    post:
+      consumes:
+      - application/json
+      description: Start camera recording and processing.
+      parameters:
+      - description: Camera ID
+        in: path
+        name: cam_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CameraDetailResponse'
+        "400":
+          description: Invalid cam id
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Activate camera
+      tags:
+      - Cameras
+  /api/cameras/{cam_id}/stop:
+    post:
+      consumes:
+      - application/json
+      description: Stop camera recording and processing.
+      parameters:
+      - description: Camera ID
+        in: path
+        name: cam_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CameraDetailResponse'
+        "400":
+          description: Invalid cam id
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Deactivate camera
+      tags:
+      - Cameras
+  /api/cameras/add:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new IP camera in the NVR database using the provided
+        manual data.
+      parameters:
+      - description: Camera creation payload
+        in: body
+        name: camera
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCameraRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CameraDetailResponse'
+        "400":
+          description: Invalid JSON or missing fields
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Add a new manual camera
+      tags:
+      - Cameras
+  /api/cameras/db:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the complete list of saved cameras directly from the
+        database configuration.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Camera'
+            type: array
+        "500":
+          description: Failed to get db cameras
+          schema:
+            type: string
+      summary: Get database camera list
+      tags:
+      - Cameras
+  /api/cameras/onvif:
+    post:
+      consumes:
+      - application/json
+      description: Creates a camera by dynamically fetching ONVIF profile tokens and
+        streams using the provided IP and credentials.
+      parameters:
+      - description: ONVIF credentials and payload
+        in: body
+        name: camera
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCameraRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CameraDetailResponse'
+        "400":
+          description: Invalid JSON payload
+          schema:
+            type: string
+        "500":
+          description: Failed to get ONVIF data or internal server error
+          schema:
+            type: string
+      summary: Add a new ONVIF camera
+      tags:
+      - Cameras
+swagger: "2.0"

@@ -10,7 +10,15 @@ import (
 	"nvr_core/utils"
 )
 
-// GetCameras safely iterates over the sync.Map
+// GetCameras godoc
+// @Summary      Get active camera runtime list
+// @Description  Retrieves a list of cameras currently loaded in memory by the C++ workers, including their live runtime status.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Success      200     {array}   process.Camera
+// @Failure      500     {string}  string "Internal server error"
+// @Router       /api/cameras [get]
 func (s *APIServer) GetCameras(w http.ResponseWriter, r *http.Request) {
 	var camList []*process.Camera
 
@@ -37,6 +45,15 @@ func (s *APIServer) GetCameras(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetDBCameras godoc
+// @Summary      Get database camera list
+// @Description  Retrieves the complete list of saved cameras directly from the database configuration.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Success      200     {array}   models.Camera
+// @Failure      500     {string}  string "Failed to get db cameras"
+// @Router       /api/cameras/db [get]
 func (s *APIServer) GetDBCameras(w http.ResponseWriter, r *http.Request) {
 
 	camList, err := s.Services.Camera.GetAll(r.Context())
@@ -76,7 +93,18 @@ JSON Payload {
 	is_active: bool
 }
  */
-// AddCamera stores the camera and start up
+
+// AddCamera godoc
+// @Summary      Add a new manual camera
+// @Description  Creates a new IP camera in the NVR database using the provided manual data.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Param        camera  body      dto.CreateCameraRequest  true  "Camera creation payload"
+// @Success      201     {object}  dto.CameraDetailResponse
+// @Failure      400     {string}  string "Invalid JSON or missing fields"
+// @Failure      500     {string}  string "Internal server error"
+// @Router       /api/cameras/add [post]
 func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 
 	var newCamera dto.CreateCameraRequest
@@ -97,13 +125,25 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Send camera start up command to the target C++ Worker Subprocess
 
+	theCamera := dto.MapCameraToDetail(*newCamera.MapToDBCamera())
 
 	w.WriteHeader(http.StatusCreated)
-	if err := RespondJSON(w, newCamera); err != nil {
+	if err := RespondJSON(w, theCamera); err != nil {
 		log.Printf("Error encoding new camera response: %v", err)
 	}
 }
 
+// DeleteCamera godoc
+// @Summary      Delete camera
+// @Description  Delete a camera by its ID. Note that a camera with existing recording data will be rejected.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Param        cam_id  path      string  true  "Camera ID"
+// @Success      200     {string}  string  "deleted"
+// @Failure      400     {string}  string  "Invalid cam id or development lock"
+// @Failure      500     {string}  string  "Internal server error"
+// @Router       /api/cameras/{cam_id} [delete]
 func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
@@ -124,6 +164,10 @@ func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := RespondJSON(w, "deleted"); err != nil {
+		log.Printf("Error encoding delete camera response: %v", err)
+	}
+
 }
 
 
@@ -133,7 +177,17 @@ JSON Payload {
 	password: string
 }
 */
-// AddONVIFCamera stores the camera and start up
+// AddONVIFCamera godoc
+// @Summary      Add a new ONVIF camera
+// @Description  Creates a camera by dynamically fetching ONVIF profile tokens and streams using the provided IP and credentials.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Param        camera  body      dto.CreateCameraRequest  true  "ONVIF credentials and payload"
+// @Success      201     {object}  dto.CameraDetailResponse
+// @Failure      400     {string}  string "Invalid JSON payload"
+// @Failure      500     {string}  string "Failed to get ONVIF data or internal server error"
+// @Router       /api/cameras/onvif [post]
 func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 
 	var camReq dto.CreateCameraRequest
@@ -168,6 +222,17 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ActivateCamera godoc
+// @Summary      Activate camera
+// @Description  Start camera recording and processing.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Param        cam_id  path      string  true  "Camera ID"
+// @Success      201     {object}  dto.CameraDetailResponse
+// @Failure      400     {string}  string "Invalid cam id"
+// @Failure      500     {string}  string "Internal server error"
+// @Router       /api/cameras/{cam_id}/start [post]
 func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
@@ -187,6 +252,17 @@ func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// DeactivateCamera godoc
+// @Summary      Deactivate camera
+// @Description  Stop camera recording and processing.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Param        cam_id  path      string  true  "Camera ID"
+// @Success      201     {object}  dto.CameraDetailResponse
+// @Failure      400     {string}  string "Invalid cam id"
+// @Failure      500     {string}  string "Internal server error"
+// @Router       /api/cameras/{cam_id}/stop [post]
 func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
