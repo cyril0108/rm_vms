@@ -14,7 +14,7 @@ type CameraManagementService interface {
 	// UpdateUserPermissions(ctx context.Context, adminID, targetUserID int64, permIDs []int64) error
 	GetByID(ctx context.Context, id int64) (*models.Camera, error)
 	GetAll(ctx context.Context) ([]*models.Camera, error)
-	AddCamera(ctx context.Context, cam *models.Camera) error
+	AddCamera(ctx context.Context, cam *models.Camera) (int64, error)
 	UpdateCamera(ctx context.Context, cam *models.Camera) error
 	DeleteCamera(ctx context.Context, id int64) error
 	ActivateCamera(ctx context.Context, id int64) error
@@ -34,7 +34,7 @@ func (s *cameraServiceBase) GetAll(ctx context.Context) ([]*models.Camera, error
 	return s.repo.GetAll(ctx)
 }
 
-func (s *cameraServiceBase) AddCamera(ctx context.Context, cam *models.Camera) error {
+func (s *cameraServiceBase) AddCamera(ctx context.Context, cam *models.Camera) (int64, error) {
 	return s.repo.Create(ctx, cam)
 }
 

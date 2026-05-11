@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS cameras (
 
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
-);
+)STRICT;
 
 -- Prevents adding the exact same camera hardware twice, but allows 
 -- two cheap cameras with blank serials if they have different IPs.

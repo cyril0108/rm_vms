@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"nvr_core/db/models"
@@ -11,11 +12,12 @@ import (
 
 var (
 	ErrCameraNotFound = errors.New("camera not found")
-	ErrCameraExists   = errors.New("camera id already exists")
+	ErrCameraExists   = errors.New("camera already exists")
+	ErrCameraHardwareConflict = errors.New("a camera with this serial number and IP address already exists")
 )
 
 type CameraRepository interface {
-	Create(ctx context.Context, cam *models.Camera) error
+	Create(ctx context.Context, cam *models.Camera) (int64, error)
 	GetByID(ctx context.Context, id int64) (*models.Camera, error)
 	GetAll(ctx context.Context) ([]*models.Camera, error)
 	Update(ctx context.Context, cam *models.Camera) error
@@ -34,14 +36,14 @@ func NewCameraRepository(db *sql.DB) CameraRepository {
 }
 
 // Create inserts a new camera. The 'cam.ID' must be pre-generated (e.g., UUID).
-func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) error {
+func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) (int64, error){
 	query := `
 		INSERT INTO cameras (
-			id, name, manufacturer, model, serial_number, ip_address, http_port, type, 
+			name, manufacturer, model, serial_number, ip_address, http_port, type, 
 			username, password_enc, stream_url, sub_stream_url, 
 			onvif_profile_token, sub_stream_profile_token, supports_ptz, 
 			retention_gb_limit, is_active, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	now := time.Now().Unix()
@@ -54,8 +56,8 @@ func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) error {
 	isActive := 0
 	if cam.IsActive { isActive = 1 }
 
-	_, err := r.db.ExecContext(ctx, query,
-		cam.ID, cam.Name, cam.Manufacturer, cam.Model, cam.SerialNumber,
+	result, err := r.db.ExecContext(ctx, query,
+		cam.Name, cam.Manufacturer, cam.Model, cam.SerialNumber,
 		cam.IPAddress, cam.HTTPPort, cam.Type, cam.Username, cam.PasswordEnc,
 		cam.StreamURL, cam.SubStreamURL, cam.OnvifProfileToken, cam.SubStreamProfileToken,
 		supportsPTZ, cam.RetentionGBLimit, isActive, cam.CreatedAt, cam.UpdatedAt,
@@ -63,12 +65,26 @@ func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) error {
 
 	if err != nil {
 		if isUniqueConstraintViolation(err) {
-			return ErrCameraExists 
+
+			errStr := err.Error()
+			if strings.Contains(errStr, "serial_number") || strings.Contains(errStr, "ip_address") || strings.Contains(errStr, "idx_cam_dedup") {
+				return 0, ErrCameraHardwareConflict
+			}
+
+			// Fallback for any other unique constraints you might add later (like name)
+			return 0, ErrCameraExists
 		}
-		return err
+		return 0, err
 	}
 
-	return nil
+	generatedID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	cam.ID = generatedID
+
+	return generatedID, nil
 }
 
 // GetByID fetches a specific camera and safely handles SQLite NULLs.

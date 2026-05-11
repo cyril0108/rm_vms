@@ -67,7 +67,6 @@ func (cr *CreateCameraRequest) MapToDBCamera() *models.Camera {
 		SupportsPTZ:      cr.SupportsPTZ,
 		RetentionGBLimit: cr.RetentionGBLimit,
 		IsActive:         cr.IsActive,
-
 	}
 }
 
