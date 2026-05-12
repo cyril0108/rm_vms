@@ -16,6 +16,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id int64) (*models.User, error)
 	GetByUsername(ctx context.Context, username string) (*models.User, error)
 	UpdateRole(ctx context.Context, id int64, roleID int64) error
+	UpdatePassword(ctx context.Context, id int64, newHash string) error
 	Deactivate(ctx context.Context, id int64) error
 }
 
@@ -89,6 +90,14 @@ func (r *userRepo) UpdateRole(ctx context.Context, id int64, roleID int64) error
 	_, err := r.db.ExecContext(ctx, query, roleID, id)
 	return err
 }
+
+// Update user password
+func (r *userRepo) UpdatePassword(ctx context.Context, id int64, newHash string) error {
+	query := `UPDATE users SET password = ? WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query, newHash, id)
+	return err
+}
+
 
 // Deactivate performs a soft-delete, immediately stripping their login access without destroying audit history.
 func (r *userRepo) Deactivate(ctx context.Context, id int64) error {

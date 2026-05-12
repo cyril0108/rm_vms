@@ -19,7 +19,7 @@ var (
 
 type AuthService interface {
 	// Login validates credentials and returns a signed JWT and the permission list
-	Login(ctx context.Context, username, password string) (string, []string, error)
+	Login(ctx context.Context, username string, password string) (string, []string, error)
 	// ValidateToken parses a JWT and returns its claims if valid
 	ValidateToken(tokenString string) (jwt.MapClaims, error)
 }
@@ -34,7 +34,7 @@ func NewAuthService(userRepo repository.UserRepository, permRepo repository.Perm
 	}
 }
 
-func (s *authServiceBase) Login(ctx context.Context, username, password string) (string, []string, error) {
+func (s *authServiceBase) Login(ctx context.Context, username string, password string) (string, []string, error) {
 	// Fetch user by username
 	user, err := s.userRepo.GetByUsername(ctx, username)
 	if err != nil {
@@ -50,8 +50,19 @@ func (s *authServiceBase) Login(ctx context.Context, username, password string) 
 	}
 
 	// Verify bcrypt password hash
-	if !security.CheckPasswordHash(password, user.Password) {
+	match, err := security.CheckPasswordHash(password, user.Password)
+	if err != nil || !match {
 		return "", nil, ErrInvalidCredentials
+	}
+
+	// Try to migrate to new hash algorithm automatically
+	if security.IsLegacyHash(user.Password) {
+
+		newHash, hashErr := security.HashPassword(password)
+		if hashErr == nil {
+			_ = s.userRepo.UpdatePassword(ctx, user.ID, newHash)
+		}
+
 	}
 
 	// Fetch the aggregated permissions (Role + Direct Grants)
