@@ -19,6 +19,7 @@ var commonOnvifPorts = []int{80, 8080, 8899, 8000}
 type VerifyResult struct {
 	IP        string  `json:"ip"`
 	IsValid   bool    `json:"isValid"`
+	Added     bool    `json:"added"`
 	Protocol  string  `json:"protocol"`
 	PortFound int     `json:"portFound"`
 	RawData   string  `json:"rawData"`
@@ -53,7 +54,8 @@ func (v *Verifier) Verify(ip string) VerifyResult {
 		return VerifyResult{
 			IP: ip,
 			IsValid:   true,
-			Protocol:  "onvif-verified",
+			// Protocol:  "onvif-verified",
+			Protocol:  "onvif",
 			PortFound: wsDiscoveryPort,
 			RawData:   response,
 		}
@@ -69,17 +71,18 @@ func (v *Verifier) Verify(ip string) VerifyResult {
 		}
 	}
 
+	// Comment our to speed up single ip scan
 	// Fallback: Check common HTTP/ONVIF management ports
-	for _, port := range commonOnvifPorts {
-		if v.checkPort(ip, port) {
-			return VerifyResult{
-				IP: ip,
-				IsValid:   true,
-				Protocol:  "onvif-port-only",
-				PortFound: port,
-			}
-		}
-	}
+	// for _, port := range commonOnvifPorts {
+	// 	if v.checkPort(ip, port) {
+	// 		return VerifyResult{
+	// 			IP: ip,
+	// 			IsValid:   true,
+	// 			Protocol:  "onvif-port-only",
+	// 			PortFound: port,
+	// 		}
+	// 	}
+	// }
 
 	return VerifyResult{
 		IsValid:  false,
