@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"nvr_core/logger"
 	"nvr_core/apiserver/middleware"
 	"nvr_core/apiserver/webserver"
 	"nvr_core/network"
@@ -28,6 +29,7 @@ func NewNVRState() *NVRState {
 }
 
 type APIServer struct {
+	logger *logger.Logger
 	Context context.Context
 	CFG   *utils.Config
 	State *NVRState
@@ -42,6 +44,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	state := NewNVRState()
 
 	api := &APIServer{
+		logger: LOG,
 		Context: ctx,
 		State: state,
 		CFG: cfg,

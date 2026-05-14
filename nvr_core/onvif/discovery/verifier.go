@@ -18,11 +18,11 @@ var commonOnvifPorts = []int{80, 8080, 8899, 8000}
 // VerifyResult holds the findings of the camera verification probe.
 type VerifyResult struct {
 	IP        string  `json:"ip"`
-	IsValid   bool    `json:"isValid"`
-	Added     bool    `json:"added"`
+	IsValid   bool    `json:"is_valid"`
+	InSystem  bool    `json:"in_system"`
 	Protocol  string  `json:"protocol"`
-	PortFound int     `json:"portFound"`
-	RawData   string  `json:"rawData"`
+	PortFound int     `json:"port_found"`
+	RawData   string  `json:"raw_data"`
 }
 
 // Config allows customization of the verifier's behavior.

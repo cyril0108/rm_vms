@@ -14,20 +14,20 @@ import (
 
 // OnvifRecord represents the exact structure you will save to SQLite
 type OnvifRecord struct {
-	IP           string
-	Manufacturer string
-	Model        string
-	Firmware     string
-	SerialNumber string
-	SupportsPTZ  bool
+	IP           string  `json:"ip"`
+	Manufacturer string  `json:"manufacturer"`
+	Model        string  `json:"model"`
+	Firmware     string  `json:"firmware"`
+	SerialNumber string  `json:"serial_number"`
+	SupportsPTZ  bool    `json:"supports_ptz"`
 	// Streams
-	MainStream       string
-	SubStream        string
-	MainStreamToken  string
-	SubStreamToken   string
+	MainStream       string  `json:"mainstream"`
+	SubStream        string  `json:"substream"`
+	MainStreamToken  string  `json:"mainstream_token"`
+	SubStreamToken   string  `json:"substream_token"`
 	// Camera user/pwd
-	Username         string
-	Password         string
+	Username         string  `json:"username"`
+	Password         string  `json:"password"`
 }
 
 func (cr *OnvifRecord) MapToDBCamera() *models.Camera {

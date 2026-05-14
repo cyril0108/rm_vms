@@ -15,12 +15,12 @@ type CreateCameraRequest struct {
 	Username         string `json:"username"`
 	Password         string `json:"password"` // Raw password from the UI form!
 
-	StreamURL        string  `json:"stream_url"`
-	SubStreamURL     string `json:"sub_stream_url"`
+	MainStreamURL    string  `json:"mainstream"`
+	SubStreamURL     string  `json:"substream"`
 
 	SupportsPTZ      bool    `json:"supports_ptz"`
 
-	RetentionGBLimit int    `json:"retention_gb_limit"`
+	RetentionGBLimit int     `json:"retention_gb_limit"`
 	IsActive         bool    `json:"is_active"`
 }
 
@@ -40,8 +40,8 @@ type CameraDetailResponse struct {
 	Username         string  `json:"username"`
 	// Notice: No password field of any kind is sent back!
 
-	StreamURL        string  `json:"stream_url"`
-	SubStreamURL     string  `json:"sub_stream_url"`
+	MainStreamURL    string  `json:"mainstream"`
+	SubStreamURL     string  `json:"substream"`
 
 	SupportsPTZ      bool    `json:"supports_ptz"`
 	RetentionGBLimit int     `json:"retention_gb_limit"`
@@ -62,7 +62,7 @@ func (cr *CreateCameraRequest) MapToDBCamera() *models.Camera {
 		HTTPPort:         cr.HTTPPort,
 		Type:             cr.Type,
 		Username:         cr.Username,
-		StreamURL:        cr.StreamURL,
+		StreamURL:        cr.MainStreamURL,
 		SubStreamURL:     cr.SubStreamURL,
 		SupportsPTZ:      cr.SupportsPTZ,
 		RetentionGBLimit: cr.RetentionGBLimit,
@@ -81,7 +81,7 @@ func MapCameraToDetail(cam models.Camera) CameraDetailResponse {
 		HTTPPort:         cam.HTTPPort,
 		Type:             cam.Type,
 		Username:         cam.Username,
-		StreamURL:        cam.StreamURL,
+		MainStreamURL:    cam.StreamURL,
 		SubStreamURL:     cam.SubStreamURL,
 		SupportsPTZ:      cam.SupportsPTZ,
 		RetentionGBLimit: cam.RetentionGBLimit,

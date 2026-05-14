@@ -17,9 +17,12 @@ var (
 )
 
 type CameraRepository interface {
-	Create(ctx context.Context, cam *models.Camera) (int64, error)
+	// Get
 	GetByID(ctx context.Context, id int64) (*models.Camera, error)
 	GetAll(ctx context.Context) ([]*models.Camera, error)
+	GetAllForInSystemCheck(ctx context.Context) ([]*models.Camera, error)
+	// Create and Manage
+	Create(ctx context.Context, cam *models.Camera) (int64, error)
 	Update(ctx context.Context, cam *models.Camera) error
 	SetActivate(ctx context.Context, id int64, active int) error
 	Delete(ctx context.Context, id int64) error
@@ -183,6 +186,42 @@ func (r *cameraRepo) GetAll(ctx context.Context) ([]*models.Camera, error) {
 			c.RetentionGBLimit = limit
 		}
 		c.SupportsPTZ = supportsPTZ == 1
+		c.IsActive = isActive == 1
+
+		cameras = append(cameras, &c)
+	}
+
+	return cameras, rows.Err()
+}
+
+/**
+ * Get id, serial_number, ip_address, is_active
+ * for in-system check
+ * @return {([]*models.Camera, error)}
+ */
+func (r *cameraRepo) GetAllForInSystemCheck(ctx context.Context) ([]*models.Camera, error) {
+	query := `
+		SELECT id, serial_number, ip_address, is_active
+		FROM cameras ORDER BY created_at ASC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var cameras []*models.Camera
+	for rows.Next() {
+		var c models.Camera
+		var isActive int
+
+		if err := rows.Scan(
+			&c.ID, &c.SerialNumber,&c.IPAddress, &isActive,
+		); err != nil {
+			return nil, err
+		}
+
 		c.IsActive = isActive == 1
 
 		cameras = append(cameras, &c)

@@ -3,7 +3,13 @@ package apiserver
 import (
 	"encoding/json"
 	"net/http"
+
+	"nvr_core/logger"
 )
+
+// var ll = LOG.WithPrefix("sub/")
+var LOG = logger.NewLogger("[nvr_core]","[apiserver]")
+
 
 type APIResponse struct {
 	Data     any
