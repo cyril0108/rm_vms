@@ -73,6 +73,10 @@ func (s *APIServer) HandleFetchCameraONVIF(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if err != nil {
+		result.ErrorMSG = err.Error()
+	}
+
 	if err := RespondJSON(w, result); err != nil {
 		log.Printf("Error fetching camera ONVIF data: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

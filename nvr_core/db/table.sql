@@ -5,6 +5,7 @@ PRAGMA foreign_keys = ON;
 -- ======================================
 CREATE TABLE IF NOT EXISTS cameras (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT UNIQUE NOT NULL,             -- Deterministic UUIDv5 for cross-system sync
     name TEXT NOT NULL,
 
     -- ONVIF Specific State
