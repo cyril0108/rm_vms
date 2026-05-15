@@ -74,6 +74,8 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	mux.HandleFunc("GET /api/scan", api.HandleCameraScan)
 	mux.HandleFunc("GET /api/scansweep", api.HandleCameraSweep)
+	mux.HandleFunc("POST /api/scansweep/detail", api.HandleBulkONVIFScan)
+
 	mux.HandleFunc("GET /api/scan/{ip}", api.HandleCameraProbe)
 	mux.HandleFunc("POST /api/scan/{ip}/onvif", api.HandleFetchCameraONVIF)
 

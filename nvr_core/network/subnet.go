@@ -16,6 +16,10 @@ func GetPrimarySubnetBase() (string, error) {
 		return "", err
 	}
 
+	if err := IsSafeTarget(ipStr); err != nil {
+		return "", fmt.Errorf("not private IP: %s", ipStr)
+	}
+
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
 		return "", fmt.Errorf("invalid IP address format: %s", ipStr)

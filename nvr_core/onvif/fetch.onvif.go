@@ -1,39 +1,24 @@
 package onvif
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"nvr_core/db/models"
+	"log"
+	"net/http"
+
+	// "net/http/httputil"
 	"regexp"
 
 	goonvif "github.com/use-go/onvif"
 	"github.com/use-go/onvif/device"
 	"github.com/use-go/onvif/media"
 	xsdonvif "github.com/use-go/onvif/xsd/onvif"
+
+	"nvr_core/db/models"
+	"nvr_core/utils"
 )
 
-// OnvifRecord
-type OnvifRecord struct {
-	IP           string  `json:"ip"`
-	MACAddress   string  `json:"mac_address"`
-	Manufacturer string  `json:"manufacturer"`
-	Model        string  `json:"model"`
-	Firmware     string  `json:"firmware"`
-	SerialNumber string  `json:"serial_number"`
-	SupportsPTZ  bool    `json:"supports_ptz"`
-
-	// Streams
-	MainStream       string  `json:"mainstream"`
-	SubStream        string  `json:"substream"`
-	MainStreamToken  string  `json:"mainstream_token"`
-	SubStreamToken   string  `json:"substream_token"`
-
-	// Camera user/pwd
-	Username         string  `json:"username"`
-	Password         string  `json:"password"`
-
-	ErrorMSG         string  `json:"error_msg"`
-}
 
 func (cr *OnvifRecord) MapToDBCamera() *models.Camera {
 	return &models.Camera{
@@ -55,14 +40,25 @@ func (cr *OnvifRecord) MapToDBCamera() *models.Camera {
 func FetchCameraONVIFData(ip string, username string, password string) (*OnvifRecord, error) {
 	address := fmt.Sprintf("%s:80", ip)
 
+	customClient := &http.Client{
+		Transport: &AuthInterceptor{
+			Proxied:  http.DefaultTransport,
+			Username: username,
+			Password: password,
+		},
+	}
+
 	dev, err := goonvif.NewDevice(goonvif.DeviceParams{
 		Xaddr:    address,
 		Username: username,
 		Password: password,
+		HttpClient: customClient,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to ONVIF device: %w", err)
 	}
+
+	// dev.Authenticate(username, password)
 
 	record := &OnvifRecord{
 		IP:       ip,
@@ -105,11 +101,23 @@ func FetchCameraONVIFData(ip string, username string, password string) (*OnvifRe
 	body, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
 
+	// If the string "PTZConfiguration" exists anywhere in the profiles XML, 
+	// the camera physically supports PTZ movement.
+	// It's "Configuration", meaing you've config for it
+	record.SupportsPTZ = bytes.Contains(body, []byte("PTZConfiguration"))
+
 	// Extract ALL profile tokens as a slice
 	tokens := extractTokens(body)
 	if len(tokens) == 0 {
+		utils.PrintSimplifiedXML(body)
+		sec, err := CheckCameraTimeDrift(ip)
+		if err == nil {
+			return record, fmt.Errorf("no media profiles found on device. Camera time drift: %f", sec)
+		}
 		return record, fmt.Errorf("no media profiles found on device")
 	}
+
+	log.Printf("Found media tokens: %v", tokens)
 
 	// Assign Main Stream (Usually the first token)
 	record.MainStreamToken = tokens[0]
@@ -156,13 +164,16 @@ func extractTag(xmlData []byte, tag string) string {
 }
 
 // extractTokens parses ALL profile tokens from the GetProfiles response
+// extractTokens parses ONLY the main Profile tokens from the GetProfiles response,
+// actively ignoring sub-configuration tokens (VideoSource, Audio, etc.)
 func extractTokens(xmlData []byte) []string {
-	// Matches token="Profile_1", token="Profile_2", etc.
-	re := regexp.MustCompile(`token="([^"]+)"`)
-
+	// This regex looks specifically for the <Profiles> tag (with or without a namespace like trt:)
+	// and extracts ONLY the token attribute attached directly to it.
+	re := regexp.MustCompile(`<(?:\w+:)?Profiles[^>]*\btoken="([^"]+)"`)
+	
 	// -1 means find all matches
 	matches := re.FindAllSubmatch(xmlData, -1) 
-
+	
 	var tokens []string
 	for _, match := range matches {
 		if len(match) > 1 {

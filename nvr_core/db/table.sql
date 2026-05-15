@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS cameras (
     http_port INTEGER DEFAULT 80,
     type TEXT NOT NULL,
 
+    mac_address TEXT,
+
     -- Authentication
     username TEXT,
     password_enc TEXT, 

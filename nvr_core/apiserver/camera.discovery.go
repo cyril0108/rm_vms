@@ -146,6 +146,11 @@ func (s *APIServer) HandleCameraSweep(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if err := network.IsSafeTarget(baseIP+"1"); err != nil {
+			http.Error(w, "Failed to get private subnet.", http.StatusInternalServerError)
+			return
+		}
+
 		result = ScanSweepPrimarySubnet(ctx, baseIP)
 
 	} else {
