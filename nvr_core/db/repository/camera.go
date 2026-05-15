@@ -24,6 +24,7 @@ type CameraRepository interface {
 	// Create and Manage
 	Create(ctx context.Context, cam *models.Camera) (int64, error)
 	Update(ctx context.Context, cam *models.Camera) error
+	UpdatePartial(ctx context.Context, id int64, updates map[string]interface{}) error
 	SetActivate(ctx context.Context, id int64, active int) error
 	Delete(ctx context.Context, id int64) error
 	Activate(ctx context.Context, id int64) error
@@ -314,6 +315,54 @@ func (r *cameraRepo) Delete(ctx context.Context, id int64) error {
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrCameraNotFound
+	}
+
+	return nil
+}
+
+
+func (r *cameraRepo) UpdatePartial(ctx context.Context, id int64, updates map[string]interface{}) error {
+	// If the map is empty, there is nothing to update
+	if len(updates) == 0 {
+		return nil
+	}
+
+	query := "UPDATE cameras SET "
+	var args []interface{}
+	var setClauses []string
+
+	// Iterate through the safely constructed map
+	for col, val := range updates {
+		setClauses = append(setClauses, col+" = ?")
+		args = append(args, val)
+	}
+
+	// Always enforce the updated_at timestamp
+	setClauses = append(setClauses, "updated_at = ?")
+	args = append(args, time.Now().Unix())
+
+	// Stitch the query together safely
+	query += strings.Join(setClauses, ", ") + " WHERE id = ?"
+	args = append(args, id)
+
+	result, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		if isUniqueConstraintViolation(err) {
+			errStr := err.Error()
+			if strings.Contains(errStr, "serial_number") || strings.Contains(errStr, "ip_address") || strings.Contains(errStr, "idx_cam_dedup") {
+				return ErrCameraHardwareConflict
+			}
+			return ErrCameraExists
+		}
 		return err
 	}
 

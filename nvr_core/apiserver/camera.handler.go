@@ -138,6 +138,54 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateCamera godoc
+// @Summary      Add a new manual camera
+// @Description  Creates a new IP camera in the NVR database using the provided manual data.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Param        camera  body      dto.UpdateCameraRequest  true  "Camera creation payload"
+// @Success      201     {object}  dto.CameraDetailResponse
+// @Failure      400     {string}  string "Invalid JSON or missing fields"
+// @Failure      500     {string}  string "Internal server error"
+// @Router       /api/cameras/{cam_id}/update [put]
+func (s *APIServer) UpdateCamera(w http.ResponseWriter, r *http.Request) {
+
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
+
+	var newCamera dto.UpdateCameraRequest
+	if err := json.NewDecoder(r.Body).Decode(&newCamera); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+
+	ctx := r.Context()
+	cam := newCamera.ToMapInterface(s.CFG.Server.MasterKey())
+	if err := s.Services.Camera.UpdateCamera(ctx, camID, cam); err != nil {
+		errstr := fmt.Sprintf("Failed to update camera: %v", err)
+		log.Print(errstr)
+		http.Error(w, errstr, http.StatusBadRequest)
+		return
+	}
+
+	// newCam.Status = "initializing"
+	// s.State.Cameras.Store(cam.ID, cam)
+
+	// TODO: Send camera start up command to the target C++ Worker Subprocess
+
+	// theCamera := dto.MapCameraToDetail(*cam)
+
+	w.WriteHeader(http.StatusCreated)
+	if err := RespondJSON(w, "success"); err != nil {
+		log.Printf("Error encoding new camera response: %v", err)
+	}
+}
+
 // DeleteCamera godoc
 // @Summary      Delete camera
 // @Description  Delete a camera by its ID. Note that a camera with existing recording data will be rejected.
