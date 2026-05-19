@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+func IsValidIP(s string) bool {
+	return net.ParseIP(s) != nil
+}
+
 // GetPrimarySubnetBase uses the routing table to find the main LAN IP.
 // Returns a string like "192.168.1."
 func GetPrimarySubnetBase() (string, error) {
