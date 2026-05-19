@@ -3,7 +3,7 @@ package models
 import (
 	"strconv"
 	"nvr_core/network"
-	"nvr_core/secret"
+	"nvr_core/security"
 )
 
 const CameraTypeONVIF = "onvif"
@@ -61,10 +61,10 @@ func (c *Camera) DefaultName() string {
 
 func (c *Camera) EncryptPassword(plaintext string, masterKey []byte) {
 
-	c.PasswordEnc = secret.Encrypt(plaintext, masterKey)
+	c.PasswordEnc, _ = security.Encrypt(plaintext, masterKey)
 
 }
 
-func (c *Camera) DecryptPassword(masterKey []byte) string {
-	return secret.Encrypt(c.PasswordEnc, masterKey)
+func (c *Camera) DecryptPassword(masterKey []byte) (string, error) {
+	return security.Encrypt(c.PasswordEnc, masterKey)
 }

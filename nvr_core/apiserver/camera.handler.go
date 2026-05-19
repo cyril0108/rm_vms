@@ -75,6 +75,57 @@ func (s *APIServer) GetDBCameras(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HandleFetchSystemCameraONVIF godoc
+// @Summary      Fetch ONVIF data
+// @Description  Fetch ONVIF camera detail data that is already in our system
+// @Tags         Cameras, Fetch
+// @Accept       json
+// @Produce      json
+// @Success      201     {object}  onvif.OnvifRecord
+// @Failure      500     {string}  string "Failed to get ONVIF data or internal server error"
+// @Router       /api/camera/{id}/onvif [get]
+func (s *APIServer) HandleFetchSystemCameraONVIF(w http.ResponseWriter, r *http.Request) {
+
+	camID, idErr := utils.Str2CamID(r.PathValue("id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
+
+
+	ctx := r.Context()
+	cam, camErr := s.Services.Camera.GetByID(ctx, camID)
+	if camErr != nil {
+
+		http.Error(w, "No camera data with given ID", http.StatusNotFound)
+		return
+
+	}
+
+	pwd, pwdErr := cam.DecryptPassword(s.CFG.Server.MasterKey())
+	if pwdErr != nil {
+		http.Error(w, "Failed to decrypt camera password", http.StatusInternalServerError)
+		return
+	}
+
+	result, err := onvif.FetchCameraONVIFData(cam.IPAddress, cam.Username, pwd)
+	if result==nil && err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err != nil {
+		result.ErrorMSG = err.Error()
+	}
+
+	if err := RespondJSON(w, result); err != nil {
+		log.Printf("Error fetching camera ONVIF data: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+}
+
+
 /**
 JSON Payload {
 	name: string
