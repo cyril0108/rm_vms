@@ -90,6 +90,8 @@ func (s *APIServer) HandleBulkONVIFScan(w http.ResponseWriter, r *http.Request) 
 		detailedRecords = make([]*onvif.OnvifRecord, 0)
 	}
 
+	detailedRecords = s.ApplyCamerasOnvifRecordInSystemCheck(ctx, detailedRecords)
+
 	if err := RespondJSON(w, detailedRecords); err != nil {
 		log.Printf("Error encoding bulk results: %v", err)
 	}

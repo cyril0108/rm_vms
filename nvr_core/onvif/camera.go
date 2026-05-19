@@ -12,6 +12,7 @@ type DiscoveredCamera struct {
 
 // OnvifRecord
 type OnvifRecord struct {
+	InSystem     bool    `json:"in_system"`
 	IP           string  `json:"ip"`
 	MACAddress   string  `json:"mac_address"`
 	Manufacturer string  `json:"manufacturer"`
