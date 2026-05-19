@@ -118,6 +118,7 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	cam := newCamera.MapToDBCamera()
+	cam.EncryptPassword(newCamera.Password, s.CFG.Server.MasterKey())
 	if _, err := s.Services.Camera.AddCamera(ctx, cam); err != nil {
 		errstr := fmt.Sprintf("Failed to add camera: %v", err)
 		log.Print(errstr)
@@ -262,6 +263,7 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	newCam := cam.MapToDBCamera()
+	newCam.EncryptPassword(camReq.Password, s.CFG.Server.MasterKey())
 	if _, err := s.Services.Camera.AddCamera(ctx, newCam); err != nil {
 		log.Printf("Failed to add camera: %v", err)
 		http.Error(w, "Failed to add camera", http.StatusInternalServerError)
