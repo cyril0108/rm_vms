@@ -53,7 +53,7 @@ public:
     void StopSegment();
 
     void WritePacket(AVPacket* packet);
-    double GetVideoDurationSeconds() const;
+    double GetVideoDurationMilliseconds() const;
 
     inline bool IsRecording() const { return isRecording; }
 };

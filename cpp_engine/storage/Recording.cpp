@@ -16,29 +16,29 @@ const int RECORDING_ROTATE_TIME = 1; // By minute
 
 
 
-RecorderWorker::RecorderWorker(std::string rp) : rootPath(rp) {}
+RecorderWorker::RecorderWorker(std::string rp, std::string prof) : rootPath(rp), profile(prof) {}
 
-long RecorderWorker::getEndTimeUnix(SegmentRecorder& recorder) {
-    double duration = recorder.GetVideoDurationSeconds();
-    return currentStartTimeUnix + static_cast<long>(duration);
+long RecorderWorker::getEndTimeMs(SegmentRecorder& recorder) {
+    double duration = recorder.GetVideoDurationMilliseconds();
+    return currentStartTimeMs + static_cast<long>(duration);
 }
 
 // --- IPC Helper Function ---
-void RecorderWorker::sendSegmentDoneIPC(int camID, long startTimeUnix, long endTimeUnix, const std::string& filePath) {
-    // If there is no file path (e.g., the very first startup iteration), do nothing.
+void RecorderWorker::sendSegmentDoneIPC(int camID, long startTimeMs, long endTimeMs, const std::string& filePath) {
     if (filePath.empty()) return;
 
-    // Get exact bytes written to the physical disk
     long sizeBytes = 0;
     std::error_code ec;
     sizeBytes = std::filesystem::file_size(filePath, ec);
-    if (ec) sizeBytes = 0; // Failsafe if the file didn't write correctly
+    if (ec) sizeBytes = 0;
+    // std::string profile = "main";
 
     // Construct and send JSON down the STDOUT pipe
     std::string json = "{\"status\":\"segment_done\", "
                        "\"cam\":" + std::to_string(camID) + ", "
-                       "\"start_time\":" + std::to_string(startTimeUnix) + ", "
-                       "\"end_time\":" + std::to_string(endTimeUnix) + ", "
+                       "\"profile\": \"" + profile + "\", "
+                       "\"start_time\":" + std::to_string(startTimeMs) + ", "
+                       "\"end_time\":" + std::to_string(endTimeMs) + ", "
                        "\"file_path\":\"" + filePath + "\", "
                        "\"size_bytes\":" + std::to_string(sizeBytes) + "}";
 
@@ -49,14 +49,13 @@ void RecorderWorker::writerWorker(SafeQueue<AVPacket*>& queue, AVStream* inVideo
     StorePath pathGenerator;
 
     if(!rootPath.empty()) {
-        pathGenerator = StorePath(rootPath);
+        pathGenerator = StorePath(rootPath, profile);
     }
 
     auto lastSwitchTime = std::chrono::steady_clock::now();
     bool isFirstSegment = true;
 
-    // std::string currentFilePath;
-    long endTimeUnix;
+    long endTimeMs;
 
     // The loop runs infinitely until the destructor pushes a nullptr
     while (true) {
@@ -79,15 +78,15 @@ void RecorderWorker::writerWorker(SafeQueue<AVPacket*>& queue, AVStream* inVideo
         // Start the first file or rotate with Video Keyframe boundary
         if (isFirstSegment || (timeToRotate && isVideoKeyframe)) {
 
-            endTimeUnix = getEndTimeUnix(recorder);
+            endTimeMs = getEndTimeMs(recorder);
             recorder.StopSegment();
 
             // Fire the IPC event for the completed file (Safely ignores the first run)
-            sendSegmentDoneIPC(camID, currentStartTimeUnix, endTimeUnix, currentFilePath);
+            sendSegmentDoneIPC(camID, currentStartTimeMs, endTimeMs, currentFilePath);
 
             // Generate the precise directory tree and filename (e.g., /recordings/cam01/2026/03/12/15-30-00.mp4)
             currentFilePath = pathGenerator.For(camID, packet); 
-            currentStartTimeUnix = utils::getCurrentUnixTime();
+            currentStartTimeMs = utils::getCurrentEpochMSTime();
 
             // Pass both streams to the SegmentRecorder so it can allocate the MP4 tracks
             recorder.StartSegment(currentFilePath, inVideoStream, inAudioStream);
@@ -104,10 +103,10 @@ void RecorderWorker::writerWorker(SafeQueue<AVPacket*>& queue, AVStream* inVideo
         av_packet_free(&packet);
     }
 
-    endTimeUnix = getEndTimeUnix(recorder);
+    endTimeMs = getEndTimeMs(recorder);
     recorder.StopSegment();
 
     // Fire the IPC event for latest file
-    sendSegmentDoneIPC(camID, currentStartTimeUnix, endTimeUnix, currentFilePath);
+    sendSegmentDoneIPC(camID, currentStartTimeMs, endTimeMs, currentFilePath);
 
 }

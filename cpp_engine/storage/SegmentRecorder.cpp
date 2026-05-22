@@ -229,12 +229,23 @@ void SegmentRecorder::sanitizeTimestamps(AVPacket* packet, int64_t* lastDTS) {
 
 }
 
-double SegmentRecorder::GetVideoDurationSeconds() const {
+// double SegmentRecorder::GetVideoDurationSeconds() const {
+//     if (firstVideoPTS == AV_NOPTS_VALUE || lastVideoPTS == AV_NOPTS_VALUE || !outFormatCtx) {
+//         return 0.0;
+//     }
+//     AVStream* outStream = outFormatCtx->streams[outVideoStreamIndex];
+//     int64_t duration = lastVideoPTS - firstVideoPTS;
+//     // Convert FFmpeg timebase to real seconds
+//     return duration * av_q2d(outStream->time_base);
+// }
+
+double SegmentRecorder::GetVideoDurationMilliseconds() const {
     if (firstVideoPTS == AV_NOPTS_VALUE || lastVideoPTS == AV_NOPTS_VALUE || !outFormatCtx) {
         return 0.0;
     }
     AVStream* outStream = outFormatCtx->streams[outVideoStreamIndex];
     int64_t duration = lastVideoPTS - firstVideoPTS;
-    // Convert FFmpeg timebase to real seconds
-    return duration * av_q2d(outStream->time_base);
+
+    // Convert FFmpeg timebase to real seconds, then to milliseconds
+    return duration * av_q2d(outStream->time_base) * 1000.0;
 }

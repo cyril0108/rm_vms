@@ -16,15 +16,21 @@ class RecorderWorker {
 private:
     SegmentRecorder recorder;
 
+    std::string profile;
     std::string rootPath;
     std::string currentFilePath;
-    long currentStartTimeUnix = 0;
+    long currentStartTimeMs = 0;
 
-    void sendSegmentDoneIPC(int camID, long startTimeUnix, long endTimeUnix, const std::string& filePath);
-    long getEndTimeUnix(SegmentRecorder& recorder);
+    // Update the method signatures
+    void sendSegmentDoneIPC(int camID, long startTimeMs, long endTimeMs, const std::string& filePath);
+    long getEndTimeMs(SegmentRecorder& recorder);
+
+    // long currentStartTimeUnix = 0;
+    // void sendSegmentDoneIPC(int camID, long startTimeUnix, long endTimeUnix, const std::string& filePath);
+    // long getEndTimeUnix(SegmentRecorder& recorder);
 
 public:
-    RecorderWorker(std::string rp = "");
+    RecorderWorker(std::string rp = "", std::string prof = "");
     ~RecorderWorker() = default;
 
     void writerWorker(SafeQueue<AVPacket*>& queue, AVStream* inVideoStream, AVStream* inAudioStream, int camID);

@@ -17,7 +17,7 @@ import (
 
 func (r *segmentRepo) GetSegmentsByRange(ctx context.Context, camID int64, start, end int64) ([]*models.Segment, error) {
 	query := `
-		SELECT id, camera_id, start_time, end_time, file_path, size_bytes 
+		SELECT id, camera_id, profile, start_time, end_time, file_path, size_bytes 
 		FROM segments 
 		WHERE camera_id = ? AND start_time >= ? AND start_time <= ?
 		ORDER BY start_time ASC
@@ -32,7 +32,7 @@ func (r *segmentRepo) GetSegmentsByRange(ctx context.Context, camID int64, start
 	var segments []*models.Segment
 	for rows.Next() {
 		var seg models.Segment
-		if err := rows.Scan(&seg.ID, &seg.CameraID, &seg.StartTime, &seg.EndTime, &seg.FilePath, &seg.SizeBytes); err != nil {
+		if err := rows.Scan(&seg.ID, &seg.CameraID, &seg.Profile, &seg.StartTime, &seg.EndTime, &seg.FilePath, &seg.SizeBytes); err != nil {
 			return nil, err
 		}
 		segments = append(segments, &seg)
@@ -43,7 +43,7 @@ func (r *segmentRepo) GetSegmentsByRange(ctx context.Context, camID int64, start
 func (r *segmentRepo) GetSegmentAtTime(ctx context.Context, camID int64, timestamp int64) (*models.Segment, error) {
 	// Find the segment where the requested timestamp falls between start and end.
 	query := `
-		SELECT id, camera_id, start_time, end_time, file_path, size_bytes 
+		SELECT id, camera_id, profile, start_time, end_time, file_path, snapshot_path, size_bytes 
 		FROM segments 
 		WHERE camera_id = ? AND start_time <= ? AND end_time >= ?
 		LIMIT 1
@@ -51,7 +51,7 @@ func (r *segmentRepo) GetSegmentAtTime(ctx context.Context, camID int64, timesta
 
 	var seg models.Segment
 	err := r.db.QueryRowContext(ctx, query, camID, timestamp, timestamp).Scan(
-		&seg.ID, &seg.CameraID, &seg.StartTime, &seg.EndTime, &seg.FilePath, &seg.SizeBytes,
+		&seg.ID, &seg.CameraID, &seg.Profile, &seg.StartTime, &seg.EndTime, &seg.FilePath, &seg.SnapshotPath, &seg.SizeBytes,
 	)
 
 	if err != nil {

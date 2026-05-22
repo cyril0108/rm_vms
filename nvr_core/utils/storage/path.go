@@ -19,11 +19,19 @@ func NewStorePath(root string) *StorePath {
 }
 
 
+// The profile is usually "snapshot"
 // It replicates the ROOT/camID/profile/YYYY/MM/DD/HH-MM-SS.jpg structure.
 func (s *StorePath) ForSnapshot(cam *models.Segment, profile string) (string, error) {
 
+	t := cam.StartTimeTime()
+	folder, err := s.MakeFolder(int(cam.CameraID), profile, t)
+	if err != nil {
+		return "", err
+	}
 
+	file := SnapshotName(t)
 
+	return filepath.Join(folder, file), nil
 
 }
 

@@ -7,19 +7,25 @@ import (
 	"nvr_core/db/models"
 	"nvr_core/utils/storage"
 	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 const SnapshotProfile = "snapshot"
 
 func GenerateSnapshot(storagePath string, seg *models.Segment) (string, error) {
 
-	
-	p := storage.NewStorePath(storagePath)
+	sPath := storage.NewStorePath(storagePath)
 
-	p.MakeFolder(int(seg.CameraID), SnapshotProfile)
+	snap, err := sPath.ForSnapshot(seg, SnapshotProfile)
+	if err != nil {
+		return "", err
+	}
 
+	result, err := ExtractSnapshot(seg.FilePath, snap)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 
 }
 

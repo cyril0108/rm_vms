@@ -51,10 +51,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_cam_dedup ON cameras(serial_number, ip_add
 -- ======================================
 CREATE TABLE IF NOT EXISTS segments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    camera_id INTEGER NOT NULL,
-    start_time INTEGER NOT NULL,   -- Unix timestamp (seconds)
-    end_time INTEGER NOT NULL,     -- Unix timestamp (seconds)
-    file_path TEXT NOT NULL,       -- e.g., '/storage/cam_01/2026-03-20/19/44_00.mp4'
+    camera_id  INTEGER NOT NULL,
+    start_time INTEGER NOT NULL,   -- Unix timestamp (milliseconds)
+    end_time   INTEGER NOT NULL,   -- Unix timestamp (milliseconds)
+    file_path  TEXT NOT NULL,      -- e.g., '/storage/cam_01/main/2026-03-20/19/44_00.mp4'
+    profile    TEXT NOT NULL,      -- e.g., 'main', 'sub'
+    snapshot_path TEXT NOT NULL DEFAULT '',   -- e.g., '/storage/cam_01/snapshot/2026-03-20/19/44_00.jpg'
     size_bytes INTEGER NOT NULL,   -- Tracked for watermark calculations
 
     FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE

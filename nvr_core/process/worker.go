@@ -27,6 +27,7 @@ const LOGSEP = "==============================================\n"
 type WorkerResponse struct {
     Status    string `json:"status"`
     CamID     int    `json:"cam"`
+    Profile   string `json:"profile"`
     ChannelID int    `json:"channel"`
     Size      int    `json:"size"`
 
@@ -104,7 +105,11 @@ func (w *Worker) updateCameraSHMChannel(resp WorkerResponse) {
     w.mu.Lock()
     cam := w.cameras[resp.CamID]
     cam.ChannelID = resp.ChannelID
-    cam.Status = "streaming"
+
+    // Set to recording for now, it could be streaming
+    // but not recording.
+    cam.Status = "recording"
+
     existingHub := w.streamHubs[resp.ChannelID]
     w.mu.Unlock()
 
@@ -126,10 +131,17 @@ func (w *Worker) handleSegmentDone(resp WorkerResponse) {
     // --- DB HOOK ---
     seg := &models.Segment{
         CameraID:  int64(resp.CamID),
+        Profile:   resp.Profile,
         StartTime: resp.StartTime,
         EndTime:   resp.EndTime,
         FilePath:  resp.FilePath,
         SizeBytes: resp.SizeBytes,
+    }
+
+    if seg.IsSubProfile() {
+        if snap, err := utils.GenerateSnapshot(w.storagePath, seg); err != nil {
+            seg.SnapshotPath = snap
+        }
     }
 
     // Push it to the non-blocking Go channel

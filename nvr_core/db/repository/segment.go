@@ -50,10 +50,10 @@ func NewSegmentRepository(db *sql.DB) SegmentRepository {
 }
 
 func (r *segmentRepo) Insert(ctx context.Context, seg *models.Segment) error {
-	query := `INSERT INTO segments (camera_id, start_time, end_time, file_path, size_bytes) 
-	          VALUES (?, ?, ?, ?, ?)`
+	query := `INSERT INTO segments (camera_id, profile, start_time, end_time, file_path, snapshot_path, size_bytes) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?)`
 	
-	result, err := r.db.ExecContext(ctx, query, seg.CameraID, seg.StartTime, seg.EndTime, seg.FilePath, seg.SizeBytes)
+	result, err := r.db.ExecContext(ctx, query, seg.CameraID, seg.Profile, seg.StartTime, seg.EndTime, seg.FilePath, seg.SnapshotPath, seg.SizeBytes)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (r *segmentRepo) IncrementalVacuum(ctx context.Context, pages int) error {
 
 func (r *segmentRepo) GetLastSegment(ctx context.Context) (*models.Segment, error) {
 	query := `
-		SELECT id, camera_id, start_time, end_time, file_path, size_bytes 
+		SELECT id, camera_id, profile, start_time, end_time, file_path, snapshot_path, size_bytes 
 		FROM segments 
 		ORDER BY start_time DESC 
 		LIMIT 1
@@ -106,9 +106,11 @@ func (r *segmentRepo) GetLastSegment(ctx context.Context) (*models.Segment, erro
 	err := r.db.QueryRowContext(ctx, query).Scan(
 		&seg.ID,
 		&seg.CameraID,
+		&seg.Profile,
 		&seg.StartTime,
 		&seg.EndTime,
 		&seg.FilePath,
+		&seg.SnapshotPath,
 		&seg.SizeBytes,
 	)
 

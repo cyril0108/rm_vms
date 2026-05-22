@@ -17,7 +17,7 @@ VideoIngestion::VideoIngestion(std::shared_ptr<ISharedMemory> mm, int id, const 
 {
     camName = "[Cam" + std::to_string(camID) + "]";
     shmChannelID = shm->ChannelForCamID(camID);
-    recorderWorker = std::make_unique<RecorderWorker>(rp);
+    recorderWorker = std::make_unique<RecorderWorker>(rp, "main");
 
     if(shmChannelID < 0) {
 

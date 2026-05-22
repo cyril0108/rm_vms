@@ -10,23 +10,24 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-StorePath::StorePath(const std::string& root) : rootPath(root) {}
+StorePath::StorePath(const std::string& root, const std::string& prof) : rootPath(root), profile(prof) {}
 
 std::string StorePath::For(int camID, AVPacket* packet) {
 
     //  Capture the exact wall-clock time the segment starts
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
-    
+
     std::tm bt{};
-    
+
     // POSIX thread-safe localtime. Perfect for macOS and Linux.
     localtime_r(&in_time_t, &bt);
 
     //  Construct the directory path: ROOT/camID/YYYY/MM/DD
     std::ostringstream folderStream;
-    folderStream << rootPath 
-                 << "/cam" << std::setfill('0') << std::setw(2) << camID 
+    folderStream << rootPath
+                 << "/cam" << std::setfill('0') << std::setw(2) << camID
+                 << "/" << profile
                  << "/" << std::put_time(&bt, "%Y/%m/%d");
 
     std::string folderPath = folderStream.str();
@@ -42,7 +43,7 @@ std::string StorePath::For(int camID, AVPacket* packet) {
 
     //  Construct the final filename: HH-MM-SS.mp4
     std::ostringstream fileStream;
-    fileStream << folderPath << "/" << std::put_time(&bt, "%H-%M-%S") << ".mkv";
+    fileStream << folderPath << "/" << std::to_string(in_time_t) << ".mkv";
 
     return fileStream.str();
 }
