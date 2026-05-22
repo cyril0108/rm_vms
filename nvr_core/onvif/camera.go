@@ -29,7 +29,7 @@ type OnvifRecord struct {
 
 	// Camera user/pwd
 	Username         string  `json:"username"`
-	Password         string  `json:"password"`
+	Password         string  `json:"-"`
 
 	ErrorMSG         string  `json:"error_msg"`
 }

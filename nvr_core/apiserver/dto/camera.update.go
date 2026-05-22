@@ -72,3 +72,19 @@ func (u *UpdateCameraRequest) ToMapInterface(masterKey []byte) map[string]interf
 	return updates
 
 }
+
+func (u *UpdateCameraRequest) ToUserPWDMapInterface(masterKey []byte) map[string]interface{} {
+
+	updates := make(map[string]interface{})
+
+	if u.Username != nil { updates["username"] = *u.Username }
+
+	if u.Password != nil {
+		if pwd, err := security.Encrypt(*u.Password, masterKey); err!=nil {
+			updates["password_enc"] = pwd
+		}
+	}
+
+	return updates
+
+}

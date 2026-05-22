@@ -98,6 +98,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("POST /api/cameras/add", api.AddCamera)
 	mux.HandleFunc("POST /api/cameras/add/onvif", api.AddONVIFCamera)
 	mux.HandleFunc("PUT /api/cameras/{cam_id}/update", api.UpdateCamera)
+	mux.HandleFunc("PUT /api/cameras/{cam_id}/auth", api.UpdateCameraAuth)
 	mux.HandleFunc("POST /api/cameras/{cam_id}/update", api.UpdateCamera)
 	mux.HandleFunc("POST /api/cameras/{cam_id}/stop", api.DeactivateCamera)
 	mux.HandleFunc("POST /api/cameras/{cam_id}/start", api.ActivateCamera)

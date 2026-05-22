@@ -182,3 +182,48 @@ func extractTokens(xmlData []byte) []string {
 	}
 	return tokens
 }
+
+// VerifyCredentials performs a lightweight check against the camera's locked
+// media profiles to definitively prove if the username/password are correct.
+func VerifyCredentials(ip, username, password string) (bool, error) {
+	address := fmt.Sprintf("%s:80", ip)
+
+	// Reuse our bulletproof interceptor to guarantee WS-Security and Basic Auth are sent
+	customClient := &http.Client{
+		Transport: &AuthInterceptor{
+			Proxied:  http.DefaultTransport,
+			Username: username,
+			Password: password,
+		},
+	}
+
+	// Initialize the connection
+	dev, err := goonvif.NewDevice(goonvif.DeviceParams{
+		Xaddr:      address,
+		Username:   username,
+		Password:   password,
+		HttpClient: customClient,
+	})
+	if err != nil {
+		// Network error (camera offline, blocked port, etc.)
+		return false, fmt.Errorf("network error or ONVIF not supported: %w", err)
+	}
+
+	// The Authentication Test
+	// We ask for the profiles. If the credentials are bad, this throws a NotAuthorized error.
+	req := media.GetProfiles{}
+	resp, err := dev.CallMethod(req)
+	
+	if err != nil {
+		// Credentials failed!
+		return false, fmt.Errorf("authentication rejected by camera: %w", err)
+	}
+
+	// Clean up the HTTP response
+	if resp != nil {
+		resp.Body.Close()
+	}
+
+	// Success! The credentials are valid.
+	return true, nil
+}
