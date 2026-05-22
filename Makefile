@@ -32,8 +32,9 @@ CP := cp
 # -- Targets --
 .PHONY: all help clean build-cpp build-go docker-build docker-run export docker dockers
 
-# .DEFAULT_GOAL := help
-# help: ## Show this help message
+.DEFAULT_GOAL := help
+help: ## Show this help message
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf " \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 # 	@awk -F ':.*##' 'NF==2 {printf "%-20s %s\\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Default target: Build everything
@@ -41,7 +42,7 @@ all: build-go build-cpp
 
 # Build C++ Worker
 # Steps: Create build dir -> Run CMake -> Run Make -> Copy binary to root
-build-cpp:
+build-cpp: ## Build C++ Worker
 	@echo "--- Building C++ Worker ---"
 	$(MKDIR) $(CPP_ENGINE_BUILD_DIR)
 	cd $(CPP_ENGINE_BUILD_DIR) && $(CMAKE) .. && $(MAKE)
@@ -50,7 +51,7 @@ build-cpp:
 	@echo "✔ C++ Worker built successfully: ./$(WORKER_BIN_NAME)"
 
 # Build Go NVR Service
-build-go:
+build-go: ## Build Go NVR Service
 	@echo "--- Building Go NVR Service ---"
 	# Ensure go.mod exists (create if missing)
 	@[ -f go.mod ] || $(GO) mod init nvr-core
@@ -59,25 +60,25 @@ build-go:
 	@echo "✔ Go Manager built successfully: ./$(SERVICE_BIN_NAME)"
 
 # Clean Build Artifacts
-clean:
+clean: ## Clean Build Artifacts
 	@echo "--- Cleaning ---"
 	$(RM) $(CPP_ENGINE_BUILD_DIR)
 	$(RM) $(WORKER_BIN_NAME)
 	$(RM) $(SERVICE_BIN_NAME)
 	@echo "✔ Clean complete"
 
-vue:
+vue: ## Build Vue
 	cd $(VUE_DIR) && npm run build
 
 # Build Docker image
-docker:
+docker: ## Build Docker image
 	docker build --platform linux/amd64 -t $(DOCKER_IMAGE_NAME) .
 # 	docker build -t $(DOCKER_IMAGE_NAME) .
 
-dockersave:
+dockersave: ## export docker image
 	docker save $(DOCKER_IMAGE_NAME):latest | gzip > ../nvr_image.$(VERSION).tar.gz
 
-export:
+export: ## extract build programs to /dist
 	docker create --platform linux/amd64 --name nvr-extractor $(DOCKER_IMAGE_NAME)
 	docker cp nvr-extractor:/app/nvr_service ./dist/nvr_service
 	docker cp nvr-extractor:/app/nvr_worker ./dist/nvr_worker
@@ -85,5 +86,5 @@ export:
 	docker rm nvr-extractor
 
 # Run the Docker container
-docker-run:
+docker-run: ## Run the Docker container
 	docker run -it --rm $(DOCKER_IMAGE_NAME)
