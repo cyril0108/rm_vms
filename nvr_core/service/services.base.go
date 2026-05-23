@@ -27,7 +27,13 @@ type segmentServiceBase struct {
 	repo repository.SegmentRepository
 }
 
-type debugServiceBase struct {
+type systemServiceBase struct {
 	db *sql.DB
-	repo repository.SegmentRepository
+	repo repository.UserRepository
 }
+
+
+// type debugServiceBase struct {
+// 	db *sql.DB
+// 	repo repository.SegmentRepository
+// }

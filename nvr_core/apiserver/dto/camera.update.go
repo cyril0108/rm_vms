@@ -2,6 +2,7 @@ package dto
 
 import (
 	"nvr_core/security"
+	"nvr_core/onvif"
 )
 
 // UpdateCameraRequest uses pointers so we can differentiate between
@@ -25,6 +26,23 @@ type UpdateCameraRequest struct {
 	SupportsPTZ           *bool   `json:"supports_ptz"`
 	RetentionGBLimit      *int    `json:"retention_gb_limit"`
 	IsActive              *bool   `json:"is_active"`
+}
+
+func Onvif2UpdateCameraRequest(cam *onvif.OnvifRecord) *UpdateCameraRequest {
+	return &UpdateCameraRequest{
+		Manufacturer: &cam.Manufacturer,
+		Model: &cam.Model,
+		SerialNumber: &cam.SerialNumber,
+		IPAddress: &cam.IP,
+		MACAddress: &cam.MACAddress,
+		Username: &cam.Username,
+		Password: &cam.Password,
+		StreamURL: &cam.MainStream,
+		SubStreamURL: &cam.SubStream,
+		OnvifProfileToken: &cam.MainStreamToken,
+		SubStreamProfileToken: &cam.SubStreamToken,
+		SupportsPTZ: &cam.SupportsPTZ,
+	}
 }
 
 func (u *UpdateCameraRequest) ToMapInterface(masterKey []byte) map[string]interface{} {

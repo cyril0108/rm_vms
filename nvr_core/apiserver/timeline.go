@@ -29,6 +29,9 @@ func (api *APIServer) GetTimeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Convert to milliseconds
+	start = start*1000
+	end = end*1000
 
 	svcs := api.Services
 	blocks, errTimeline := svcs.Timeline.GetContiguousBlocks(api.Context, camID, start, end)

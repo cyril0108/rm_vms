@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"nvr_core/db/models"
+	"nvr_core/utils"
 )
 
 var (
@@ -58,6 +59,8 @@ func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) (int64, err
 		cam.Name = cam.DefaultName()
 	}
 
+	cam.UUID = utils.GenerateCameraUUID(cam.MACAddress, cam.StreamURL)
+
 	// Safely map booleans to SQLite integers
 	supportsPTZ := 0
 	if cam.SupportsPTZ { supportsPTZ = 1 }
@@ -98,7 +101,7 @@ func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) (int64, err
 // GetByID fetches a specific camera and safely handles SQLite NULLs.
 func (r *cameraRepo) GetByID(ctx context.Context, id int64) (*models.Camera, error) {
 	query := `
-		SELECT id, name, manufacturer, model, serial_number, 
+		SELECT id, uuid, name, manufacturer, model, serial_number, 
 		       ip_address, mac_address, http_port, type, 
 		       username, password_enc, stream_url, sub_stream_url, 
 		       onvif_profile_token, sub_stream_profile_token, supports_ptz, 
@@ -116,7 +119,7 @@ func (r *cameraRepo) GetByID(ctx context.Context, id int64) (*models.Camera, err
 	var supportsPTZ, isActive int
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&c.ID, &c.Name, &manufacturer, &model, &c.SerialNumber,
+		&c.ID, &c.UUID, &c.Name, &manufacturer, &model, &c.SerialNumber,
 		&c.IPAddress, &macAddress, &c.HTTPPort, &c.Type, &username, &passwordEnc,
 		&c.StreamURL, &subStream, &onvifToken, &subStreamToken,
 		&supportsPTZ, &retentionLimit, &isActive, &c.CreatedAt, &c.UpdatedAt,
@@ -152,7 +155,7 @@ func (r *cameraRepo) GetByID(ctx context.Context, id int64) (*models.Camera, err
 // GetAll fetches all cameras to initialize the NVR ingestion workers on startup.
 func (r *cameraRepo) GetAll(ctx context.Context) ([]*models.Camera, error) {
 	query := `
-		SELECT id, name, manufacturer, model, serial_number, 
+		SELECT id, uuid, name, manufacturer, model, serial_number, 
 		       ip_address, mac_address, http_port, type, 
 		       username, password_enc, stream_url, sub_stream_url, 
 		       onvif_profile_token, sub_stream_profile_token, supports_ptz, 
@@ -176,7 +179,7 @@ func (r *cameraRepo) GetAll(ctx context.Context) ([]*models.Camera, error) {
 		var supportsPTZ, isActive int
 
 		if err := rows.Scan(
-			&c.ID, &c.Name, &manufacturer, &model, &c.SerialNumber,
+			&c.ID, &c.UUID, &c.Name, &manufacturer, &model, &c.SerialNumber,
 			&c.IPAddress, &macAddress, &c.HTTPPort, &c.Type, &username, &passwordEnc,
 			&c.StreamURL, &subStream, &onvifToken, &subStreamToken,
 			&supportsPTZ, &retentionLimit, &isActive, &c.CreatedAt, &c.UpdatedAt,

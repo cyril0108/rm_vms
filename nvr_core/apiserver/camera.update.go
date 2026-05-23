@@ -131,4 +131,78 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateCameraONVIF godoc
+// @Summary      Add a new ONVIF camera
+// @Description  Creates a camera by dynamically fetching ONVIF profile tokens and streams using the provided IP and credentials.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Param        camera  body      dto.CreateCameraRequest  true  "ONVIF credentials and payload"
+// @Success      201     {object}  dto.CameraDetailResponse
+// @Failure      400     {string}  string "Invalid JSON payload"
+// @Failure      500     {string}  string "Failed to get ONVIF data or internal server error"
+// @Router       /api/cameras/{cam_id}/onvif [put]
+func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
+
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
+
+	var camReq dto.CreateCameraRequest
+	if err := json.NewDecoder(r.Body).Decode(&camReq); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+
+	// Check authenticity of user/pwd combination
+	// before save
+	cam, err := s.Services.Camera.GetByID(ctx, camID)
+	if err != nil {
+		http.Error(w, "Failed to get camera data or it does not exist.", http.StatusBadRequest)
+		return
+	}
+
+	user := cam.Username
+	pwd, err := cam.DecryptPassword(s.CFG.Server.MasterKey())
+
+	if camReq.Username != "" {
+		user = camReq.Username
+		pwd = camReq.Password
+	}
+
+	camOnvif, err := onvif.FetchCameraONVIFData(cam.IPAddress, user, pwd)
+	if err != nil {
+
+		// http.Error(w, "Failed to get ONVIF data", http.StatusInternalServerError)
+		errstr := fmt.Sprintf("Failed to get ONVIF data: %v", err)
+		log.Print(errstr)
+		http.Error(w, errstr, http.StatusBadRequest)
+
+		return
+	}
+
+	updateCam := dto.Onvif2UpdateCameraRequest(camOnvif)
+	data := updateCam.ToMapInterface(s.CFG.Server.MasterKey())
+
+	if err := s.Services.Camera.UpdateCamera(ctx, camID, data); err != nil {
+		log.Printf("Failed to update camera: %v", err)
+		http.Error(w, "Failed to update camera", http.StatusInternalServerError)
+		return
+	}
+
+
+	// newCam.Status = "initializing"
+	// s.State.Cameras.Store(newCam.ID, newCam)
+
+	// TODO: Send camera start up command to the target C++ Worker Subprocess
+
+	w.WriteHeader(http.StatusCreated)
+	if err := RespondJSON(w, updateCam); err != nil {
+		log.Printf("Error encoding new camera response: %v", err)
+	}
+}
 

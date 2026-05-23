@@ -190,43 +190,6 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// DeleteCamera godoc
-// @Summary      Delete camera
-// @Description  Delete a camera by its ID. Note that a camera with existing recording data will be rejected.
-// @Tags         Cameras
-// @Accept       json
-// @Produce      json
-// @Param        cam_id  path      string  true  "Camera ID"
-// @Success      200     {string}  string  "deleted"
-// @Failure      400     {string}  string  "Invalid cam id or development lock"
-// @Failure      500     {string}  string  "Internal server error"
-// @Router       /api/cameras/{cam_id} [delete]
-func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
-
-	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
-	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
-		return
-	}
-
-	if(camID <= 3 && camID>0) {
-		http.Error(w, "[dev] testing camera id should not be deleted.", http.StatusBadRequest)
-		return
-	}
-
-	ctx := r.Context()
-	if err := s.Services.Camera.DeleteCamera(ctx, int64(camID)); err != nil {
-		log.Printf("Failed to delete camera: %v", err)
-		http.Error(w, "Failed to delete camera", http.StatusInternalServerError)
-		return
-	}
-
-	if err := RespondJSON(w, "deleted"); err != nil {
-		log.Printf("Error encoding delete camera response: %v", err)
-	}
-
-}
-
 
 /*
 JSON Payload {
@@ -351,3 +314,41 @@ func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+// DeleteCamera godoc
+// @Summary      Delete camera
+// @Description  Delete a camera by its ID. Note that a camera with existing recording data will be rejected.
+// @Tags         Cameras
+// @Accept       json
+// @Produce      json
+// @Param        cam_id  path      string  true  "Camera ID"
+// @Success      200     {string}  string  "deleted"
+// @Failure      400     {string}  string  "Invalid cam id or development lock"
+// @Failure      500     {string}  string  "Internal server error"
+// @Router       /api/cameras/{cam_id} [delete]
+func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
+
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
+
+	if(camID <= 3 && camID>0) {
+		http.Error(w, "[dev] testing camera id should not be deleted.", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	if err := s.Services.Camera.DeleteCamera(ctx, int64(camID)); err != nil {
+		log.Printf("Failed to delete camera: %v", err)
+		http.Error(w, "Failed to delete camera", http.StatusInternalServerError)
+		return
+	}
+
+	if err := RespondJSON(w, "deleted"); err != nil {
+		log.Printf("Error encoding delete camera response: %v", err)
+	}
+
+}
+

@@ -30,7 +30,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	timelineSvc := NewTimelineService(segRepo)
 	playbackSvc := NewPlaybackService(segRepo)
 	playlistSvc := NewPlaylistService(segRepo)
-	systemSvc := NewSystemService(dbConn, segRepo)
+	systemSvc := NewSystemService(dbConn, userRepo)
 	// Some random secret key for now
 	authSvc := NewAuthService(userRepo, permRepo, ")($#YHdsJdsx")
 	userSvc := NewUserManagementService(userRepo, permRepo)

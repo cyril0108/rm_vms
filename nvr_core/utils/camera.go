@@ -13,7 +13,7 @@ import (
 var nvrNamespace = uuid.MustParse("7e297cc6-32fa-4b98-a1bf-ab0a822b7b9b")
 
 // Generate creates a deterministic UUIDv5 based on hardware MAC or RTSP URL.
-func Generate(macAddress string, rtspURL string) string {
+func GenerateCameraUUID(macAddress string, rtspURL string) string {
 	// Primary Strategy: Use the Hardware MAC Address (ONVIF Cameras)
 	if macAddress != "" {
 		cleanMAC := normalizeMAC(macAddress)

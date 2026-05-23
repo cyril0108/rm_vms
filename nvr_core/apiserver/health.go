@@ -5,15 +5,17 @@ import (
 	"net/http"
 )
 
-// A quick health check path
-
 // GetCameras safely iterates over the sync.Map
 func (s *APIServer) GetHealth(w http.ResponseWriter, r *http.Request) {
 
-	if err := RespondJSON(w, "ok"); err != nil {
-		log.Printf("Error checking health: %v", err)
+	data, err := s.Services.System.GetDebugData(s.Context)
+	if err != nil {
+		http.Error(w, "failed to get health info.", http.StatusInternalServerError)
+		return
 	}
 
-	// TODO: return different HTTP Code for more sound health check
+	if err := RespondJSON(w, data); err != nil {
+		log.Printf("Error checking health: %v", err)
+	}
 
 }
