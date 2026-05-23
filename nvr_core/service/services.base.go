@@ -3,8 +3,11 @@ package service
 import (
 	"database/sql"
 	"nvr_core/db/repository"
+	"nvr_core/logger"
 	"time"
 )
+
+var LOG = logger.NewLogger("[nvr_core]","[service]")
 
 type authServiceBase struct {
 	userRepo   repository.UserRepository

@@ -46,19 +46,25 @@ const selectDayStr = computed(() => {
 
 const fetchTimeline = function(day) {
 
-  // let ll = log.lin("[fetchTimeline]");
-
-  // ll.log(day);
+  let ll = log.lin("[fetchTimeline]");
+  ll.log(day);
 
   day = APIDayRange(day);
 
   API.timeline(1, day.start, day.end)
   .then(response=>{
 
-    let data = response.data ?? {}
-    let list = data.timelines ?? []
+    if( typeof response.data === "object" ) {
 
-    updateTimelineItems(list);
+      let data = response.data.Data ?? {}
+
+      ll.log("data", data);
+
+      let list = data.timelines ?? []
+
+      updateTimelineItems(list);
+
+    }
 
   })
 
@@ -68,8 +74,13 @@ fetchTimeline(selectDay.value);
 
 const Timeline2Items = function(apitl) {
 
+  let ll = log.lin("[Timeline2Items]");
+  ll.log(apitl);
+
   let start = APITime(apitl.start_time).WebTime().Timeline();
   let end = APITime(apitl.end_time).WebTime().Timeline();
+
+  ll.log("start, end", start, end);
 
   return {
     id: apitl.start_time,

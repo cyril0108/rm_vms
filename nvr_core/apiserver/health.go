@@ -8,7 +8,7 @@ import (
 // GetCameras safely iterates over the sync.Map
 func (s *APIServer) GetHealth(w http.ResponseWriter, r *http.Request) {
 
-	data, err := s.Services.System.GetDebugData(s.Context)
+	data, err := s.Services.System.GetHealthData(s.Context)
 	if err != nil {
 		http.Error(w, "failed to get health info.", http.StatusInternalServerError)
 		return

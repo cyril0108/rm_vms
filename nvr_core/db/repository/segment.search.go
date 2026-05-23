@@ -3,18 +3,17 @@ package repository
 import (
 	"context"
 	"database/sql"
-	// "fmt"
-
-	// "database/sql"
-	// "errors"
-	// "fmt"
-	// "strings"
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/db/models"
 )
 
 func (r *segmentRepo) GetProfileSegmentsByRange(ctx context.Context, camID int64, profile string, start, end int64) ([]*models.Segment, error) {
+
+	log := LOG.Lin("camID", camID, "profile", profile, "start", start, "end", end)
+
+	log.Info("[GetProfileSegmentsByRange]")
+
 	query := `
 		SELECT id, camera_id, profile, start_time, end_time, file_path, size_bytes 
 		FROM segments 
@@ -36,6 +35,9 @@ func (r *segmentRepo) GetProfileSegmentsByRange(ctx context.Context, camID int64
 		}
 		segments = append(segments, &seg)
 	}
+
+	log.Info("[GetProfileSegmentsByRange]", "segments", len(segments))
+
 	return segments, rows.Err()
 }
 

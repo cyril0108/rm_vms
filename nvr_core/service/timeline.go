@@ -20,6 +20,7 @@ func NewTimelineService(repo repository.SegmentRepository) TimelineService {
 
 func (s *segmentServiceBase) GetProfileContiguousBlocks(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.TimelineBlock, error) {
 	segments, err := s.repo.GetProfileSegmentsByRange(ctx, camID, profile, start, end)
+	LOG.Info("[GetProfileContiguousBlocks]", "segments", len(segments))
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +38,8 @@ func (s *segmentServiceBase) GetContiguousBlocks(ctx context.Context, camID int6
 }
 
 func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error) {
+
+	LOG.Info("[segmentsToTimeline]", "segments", len(segments))
 
 	if len(segments) == 0 {
 		return []dto.TimelineBlock{}, nil
@@ -72,6 +75,8 @@ func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error)
 			}
 		}
 	}
+
+	currentBlock.ConvertToSeconds()
 
 	// Append the final block
 	blocks = append(blocks, currentBlock)

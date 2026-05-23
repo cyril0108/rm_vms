@@ -26,6 +26,7 @@ func (api *APIServer) HandlePlayVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	profile := GetQueryProfile(r)
+	timestamp = timestamp
 
 	// Get the validated physical path from the Service
 	filePath, err := api.Services.Playback.GetVideoFilePath(r.Context(), camID, profile, timestamp)

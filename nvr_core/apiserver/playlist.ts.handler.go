@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"nvr_core/service"
 	"nvr_core/utils"
@@ -18,14 +17,8 @@ func (api *APIServer) HandleGetTSPlaylist(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Parse timestamps
-	startStr := r.URL.Query().Get("start")
-	endStr := r.URL.Query().Get("end")
-
-	start, errStart := strconv.ParseInt(startStr, 10, 64)
-	end, errEnd := strconv.ParseInt(endStr, 10, 64)
-
-	if errStart != nil || errEnd != nil {
+	start, end, err := GetMSTimeRange(r)
+	if err != nil {
 		http.Error(w, "Invalid start or end timestamps", http.StatusBadRequest)
 		return
 	}

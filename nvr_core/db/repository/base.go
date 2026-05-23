@@ -1,0 +1,5 @@
+package repository
+
+import "nvr_core/logger"
+
+var LOG = logger.NewLogger("[nvr_core]", "[db][repository]")
