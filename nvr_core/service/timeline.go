@@ -4,16 +4,26 @@ import (
 	"context"
 
 	"nvr_core/apiserver/dto"
+	"nvr_core/db/models"
 	"nvr_core/db/repository"
 )
 
 type TimelineService interface {
 	GetContiguousBlocks(ctx context.Context, camID int64, start, end int64) ([]dto.TimelineBlock, error)
-	GetDailySummary(ctx context.Context, camID int64, start, end int64) ([]dto.DailySummary, error)
+	GetProfileContiguousBlocks(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.TimelineBlock, error)
+	GetDailySummary(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.DailySummary, error)
 }
 
 func NewTimelineService(repo repository.SegmentRepository) TimelineService {
 	return &segmentServiceBase{repo: repo}
+}
+
+func (s *segmentServiceBase) GetProfileContiguousBlocks(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.TimelineBlock, error) {
+	segments, err := s.repo.GetProfileSegmentsByRange(ctx, camID, profile, start, end)
+	if err != nil {
+		return nil, err
+	}
+	return segmentsToTimeline(segments)
 }
 
 func (s *segmentServiceBase) GetContiguousBlocks(ctx context.Context, camID int64, start, end int64) ([]dto.TimelineBlock, error) {
@@ -22,12 +32,18 @@ func (s *segmentServiceBase) GetContiguousBlocks(ctx context.Context, camID int6
 		return nil, err
 	}
 
+	return segmentsToTimeline(segments)
+
+}
+
+func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error) {
+
 	if len(segments) == 0 {
 		return []dto.TimelineBlock{}, nil
 	}
 
 	var blocks []dto.TimelineBlock
-	
+
 	// Start the first block
 	currentBlock := dto.TimelineBlock{
 		StartTime: segments[0].StartTime,
@@ -36,7 +52,7 @@ func (s *segmentServiceBase) GetContiguousBlocks(ctx context.Context, camID int6
 
 	// FFmpeg segments aren't always exactly 60 seconds due to keyframe alignment.
 	// We allow a 5-second gap between segments before considering it a true "break" in the recording.
-	const gapToleranceSeconds = 5 
+	const gapToleranceSeconds = 5000
 
 	for i := 1; i < len(segments); i++ {
 		seg := segments[i]
@@ -61,8 +77,9 @@ func (s *segmentServiceBase) GetContiguousBlocks(ctx context.Context, camID int6
 	blocks = append(blocks, currentBlock)
 
 	return blocks, nil
+
 }
 
-func (s *segmentServiceBase) GetDailySummary(ctx context.Context, camID int64, start, end int64) ([]dto.DailySummary, error) {
-	return s.repo.GetDailySummary(ctx, camID, start, end)
+func (s *segmentServiceBase) GetDailySummary(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.DailySummary, error) {
+	return s.repo.GetDailySummary(ctx, camID, profile, start, end)
 }

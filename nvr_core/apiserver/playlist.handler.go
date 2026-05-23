@@ -37,8 +37,10 @@ func (api *APIServer) HandleGetPlaylist(w http.ResponseWriter, r *http.Request) 
 	}
 	baseURL := fmt.Sprintf("%s://%s", scheme, r.Host)
 
+	profile := GetQueryProfile(r)
+
 	// Call the Service
-	playlist, err := api.Services.Playlist.GeneratePlaylist(r.Context(), camID, start, end, baseURL)
+	playlist, err := api.Services.Playlist.GeneratePlaylist(r.Context(), camID, profile, start, end, baseURL)
 
 	if err != nil {
 		if errors.Is(err, service.ErrVideoNotFound) {

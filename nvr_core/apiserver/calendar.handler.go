@@ -26,7 +26,10 @@ func (s *APIServer) HandleGetDailySummary(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	summaries, err := s.Services.Timeline.GetDailySummary(r.Context(), camID, startUnix, endUnix)
+	// Default to main as that we don't have sub profile now
+	profile := "main"
+
+	summaries, err := s.Services.Timeline.GetDailySummary(r.Context(), camID, profile, startUnix, endUnix)
 	if err != nil {
 		http.Error(w, "Failed to fetch summary", http.StatusInternalServerError)
 		return

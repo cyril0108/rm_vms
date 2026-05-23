@@ -22,3 +22,11 @@ func RespondJSON(w http.ResponseWriter, data any) error {
 	})
 }
 
+func GetQueryProfile(r *http.Request) string {
+	profile := r.URL.Query().Get("profile")
+	if profile == "" {
+		profile = "main"
+	}
+	return profile
+}
+

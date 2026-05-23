@@ -12,17 +12,17 @@ var ErrVideoNotFound = errors.New("video not found at requested time")
 var ErrFileMissing = errors.New("video file is missing from disk")
 
 type PlaybackService interface {
-	GetVideoFilePath(ctx context.Context, camID int64, timestamp int64) (string, error)
+	GetVideoFilePath(ctx context.Context, camID int64, profile string, timestamp int64) (string, error)
 }
 
 func NewPlaybackService(repo repository.SegmentRepository) PlaybackService {
 	return &segmentServiceBase{repo: repo}
 }
 
-func (s *segmentServiceBase) GetVideoFilePath(ctx context.Context, camID int64, timestamp int64) (string, error) {
+func (s *segmentServiceBase) GetVideoFilePath(ctx context.Context, camID int64, profile string, timestamp int64) (string, error) {
 
 	// Ask the database which file contains this timestamp
-	seg, err := s.repo.GetSegmentAtTime(ctx, camID, timestamp)
+	seg, err := s.repo.GetSegmentAtTime(ctx, camID, profile, timestamp)
 	if err != nil {
 		return "", err
 	}
