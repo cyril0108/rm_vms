@@ -1,16 +1,14 @@
 package utils
 
 import (
-	"crypto/sha256"
 	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
+
+	"nvr_core/security"
 )
 
-// nvrNamespace is a custom, static UUIDv4 used as the mathematical root for our NVR.
-// DO NOT change this once your system is in production, or all future IDs will shift.
-var nvrNamespace = uuid.MustParse("7e297cc6-32fa-4b98-a1bf-ab0a822b7b9b")
 
 // Generate creates a deterministic UUIDv5 based on hardware MAC or RTSP URL.
 func GenerateCameraUUID(macAddress string, rtspURL string) string {
@@ -18,14 +16,14 @@ func GenerateCameraUUID(macAddress string, rtspURL string) string {
 	if macAddress != "" {
 		cleanMAC := normalizeMAC(macAddress)
 		// uuid.NewHash uses SHA256 under the hood when '5' (UUIDv5) is passed
-		id := uuid.NewHash(sha256.New(), nvrNamespace, []byte(cleanMAC), 5)
+		id := security.HashUUID(cleanMAC)
 		return id.String()
 	}
 
 	// Fallback Strategy: Use the sanitized RTSP URL (Manual/RTSP-only Cameras)
 	if rtspURL != "" {
 		cleanURL := sanitizeURL(rtspURL)
-		id := uuid.NewHash(sha256.New(), nvrNamespace, []byte(cleanURL), 5)
+		id := security.HashUUID(cleanURL)
 		return id.String()
 	}
 
