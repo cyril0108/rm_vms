@@ -92,6 +92,22 @@ CREATE TABLE permissions (
     description TEXT
 );
 
+INSERT INTO permissions (id, code, description)
+VALUES
+(1, "system", "常駐系統權限，admin only"),
+(2, "user_manage", "使用者管理"),
+(3, "user_no_self_manage", "無法修改自身角色"),
+(4, "layout_all", "佈局操作"),
+(5, "view_all_device", "裝置檢視權限"),
+(6, "camera_configure", "攝影機設定"),
+(7, "camera_ptz", "PTZ 控制"),
+(8, "camera_playback", "錄影回放 / 搜尋"),
+(9, "camera_live", "即時影像監看"),
+(10, "recording_export", "錄影匯出");
+
+UPDATE sqlite_sequence SET seq = (SELECT MAX(id) FROM permissions) WHERE name = 'permissions';
+
+
 -- ROLE_PERMISSIONS (Mapping Table)
 -- Dynamically binds many permissions to a role.
 -- If you want to change what a 'guard' can do, you add/remove rows here.
@@ -117,6 +133,12 @@ CREATE TABLE users (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE RESTRICT
 );
+
+INSERT INTO users (username, role_id)
+VALUES ("admin", 1);
+
+UPDATE sqlite_sequence SET seq = (SELECT MAX(id) FROM users) WHERE name = 'users';
+
 
 -- USER_CAMERA_ACCESS (Resource-Level Mapping)
 -- NVR Specific: Binds a user to specific cameras. 
