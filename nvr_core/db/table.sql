@@ -62,8 +62,9 @@ CREATE TABLE IF NOT EXISTS segments (
     FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE
 );
 
--- Optimizes: SELECT * FROM segments WHERE camera_id = ? AND start_time >= ? AND end_time <= ?
-CREATE INDEX IF NOT EXISTS idx_segments_timeline ON segments(camera_id, start_time, end_time);
+-- Optimizes: SELECT * FROM segments WHERE camera_id = ? AND profile = ? AND start_time >= ? AND end_time <= ?
+CREATE INDEX IF NOT EXISTS idx_segments_timeline ON segments(camera_id, profile, start_time, end_time);
+
 -- Optimizes: SELECT * FROM segments ORDER BY start_time ASC LIMIT ?
 CREATE INDEX IF NOT EXISTS idx_segments_pruning ON segments(start_time);
 
