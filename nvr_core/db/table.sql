@@ -83,6 +83,12 @@ CREATE TABLE roles (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+INSERT INTO roles (id, name, description)
+VALUES (1, "擁有者", "admin");
+
+UPDATE sqlite_sequence SET seq = (SELECT MAX(id) FROM roles) WHERE name = 'roles';
+
+
 -- PERMISSIONS TABLE
 -- The granular actions allowed in the system. 
 -- Best practice is using colon-separated domain notation (e.g., 'camera:add', 'timeline:view')
@@ -134,8 +140,8 @@ CREATE TABLE users (
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE RESTRICT
 );
 
-INSERT INTO users (username, role_id)
-VALUES ("admin", 1);
+INSERT INTO users (username, password, role_id)
+VALUES ("admin", "", 1);
 
 UPDATE sqlite_sequence SET seq = (SELECT MAX(id) FROM users) WHERE name = 'users';
 

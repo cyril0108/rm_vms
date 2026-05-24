@@ -2,12 +2,16 @@ package transmux
 
 import (
 	"context"
-	// "log"
 	"net/http"
-	"nvr_core/stream"
 
 	"github.com/asticode/go-astits"
+
+	"nvr_core/logger"
+	"nvr_core/stream"
 )
+
+var LOG = logger.NewLogger("[nvr_core]","[transmux]")
+
 
 const (
 	VideoPID   uint16 = 256
@@ -66,6 +70,8 @@ func (s *TSMuxSession) ProcessPacket(packet stream.StreamPacket) error {
 	// --- VIDEO KEYFRAME / INITIAL BINDING LOGIC ---
 	if packet.MediaType == stream.MediaTypeVideo && packet.IsKeyFrame {
 		if !s.pmtWritten {
+
+			LOG.Info("[ProcessPacket] ", "VideoCodec", stream.GetTSStreamType(packet.CodecID))
 			//  Bind Video
 			s.muxer.AddElementaryStream(astits.PMTElementaryStream{
 				ElementaryPID: VideoPID,

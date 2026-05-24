@@ -18,7 +18,7 @@ func (r *segmentRepo) BulkInsert(ctx context.Context, segments []*models.Segment
 	}
 
 	// Prepare Statement
-	stmt, err := tx.PrepareContext(ctx, `INSERT INTO segments (camera_id, start_time, end_time, file_path, size_bytes) VALUES (?, ?, ?, ?, ?)`)
+	stmt, err := tx.PrepareContext(ctx, `INSERT INTO segments (camera_id, profile, start_time, end_time, file_path, size_bytes) VALUES (?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to prepare statement: %w", err)
@@ -27,7 +27,7 @@ func (r *segmentRepo) BulkInsert(ctx context.Context, segments []*models.Segment
 
 	// Execute Batch
 	for _, seg := range segments {
-		if _, err := stmt.ExecContext(ctx, seg.CameraID, seg.StartTime, seg.EndTime, seg.FilePath, seg.SizeBytes); err != nil {
+		if _, err := stmt.ExecContext(ctx, seg.CameraID, seg.Profile, seg.StartTime, seg.EndTime, seg.FilePath, seg.SizeBytes); err != nil {
 			// Depending on strictness, you might choose to log and continue, but Rollback is safer for data integrity
 			tx.Rollback()
 			return fmt.Errorf("failed to insert segment %s: %w", seg.FilePath, err)

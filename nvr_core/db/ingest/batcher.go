@@ -65,7 +65,7 @@ func (b *BatchIngester) flush(batch []*models.Segment) {
 		return
 	}
 
-	stmt, err := tx.Prepare(`INSERT INTO segments (camera_id, start_time, end_time, file_path, size_bytes) VALUES (?, ?, ?, ?, ?)`)
+	stmt, err := tx.Prepare(`INSERT INTO segments (camera_id, profile, start_time, end_time, file_path, size_bytes) VALUES (?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		tx.Rollback()
 		log.Printf("Failed to prepare statement: %v", err)
@@ -74,7 +74,7 @@ func (b *BatchIngester) flush(batch []*models.Segment) {
 	defer stmt.Close()
 
 	for _, seg := range batch {
-		if _, err := stmt.Exec(seg.CameraID, seg.StartTime, seg.EndTime, seg.FilePath, seg.SizeBytes); err != nil {
+		if _, err := stmt.Exec(seg.CameraID, seg.Profile, seg.StartTime, seg.EndTime, seg.FilePath, seg.SizeBytes); err != nil {
 			log.Printf("Failed to insert segment %s: %v", seg.FilePath, err)
 			// Decide whether to rollback entirely or continue. For NVRs, continue is usually better.
 		}

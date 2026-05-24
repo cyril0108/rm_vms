@@ -132,7 +132,7 @@ void VideoIngestion::findStreamIndices() {
     if (vIdx >= 0) {
         videoStreamIndex = vIdx;
         videoCodecID = fmtCtx->streams[vIdx]->codecpar->codec_id;
-        // Log::info(camName + " Found Video Stream at index: " + std::to_string(videoStreamIndex));
+        Log::info(camName + " Found Video Stream ("+std::to_string(videoCodecID) +") at index: " + std::to_string(videoStreamIndex));
     }
 
     // We pass 'vIdx' as the related stream so FFmpeg tries to find an audio track explicitly mapped to our video
@@ -140,7 +140,7 @@ void VideoIngestion::findStreamIndices() {
     if (aIdx >= 0) {
         audioStreamIndex = aIdx;
         audioCodecID = fmtCtx->streams[aIdx]->codecpar->codec_id;
-        // Log::info(camName + " Found Audio Stream at index: " + std::to_string(audioStreamIndex));
+        Log::info(camName + " Found Audio Stream ("+std::to_string(videoCodecID) +") at index: " + std::to_string(audioStreamIndex));
     }
 
     // for (unsigned int i = 0; i < fmtCtx->nb_streams; i++) {
@@ -354,10 +354,9 @@ int VideoIngestion::openInput() {
 
         std::cerr << camName << "[FFmpeg Error] Could not open source: " << url << std::endl;
         std::cerr << "Reason: " << errbuf << " (Code: " << ret << ")" << std::endl;
-        // Log::send("{\"status\":\"stopped\", \"cam\":" + std::to_string(camID) + "}");
 
         // Note: avformat_open_input automatically frees fmtCtx on failure, 
-                // so we must set it back to nullptr to prevent double-free in cleanup()
+        // so we must set it back to nullptr to prevent double-free in cleanup()
         fmtCtx = nullptr;
 
         return -1;

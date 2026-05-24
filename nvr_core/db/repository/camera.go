@@ -44,11 +44,12 @@ func NewCameraRepository(db *sql.DB) CameraRepository {
 func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) (int64, error){
 	query := `
 		INSERT INTO cameras (
-			name, manufacturer, model, serial_number, ip_address, http_port, type, 
+			uuid, name, manufacturer, model, serial_number, 
+			ip_address, mac_address, http_port, type, 
 			username, password_enc, stream_url, sub_stream_url, 
 			onvif_profile_token, sub_stream_profile_token, supports_ptz, 
 			retention_gb_limit, is_active, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	now := time.Now().Unix()
@@ -68,8 +69,9 @@ func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) (int64, err
 	if cam.IsActive { isActive = 1 }
 
 	result, err := r.db.ExecContext(ctx, query,
+		cam.UUID,
 		cam.Name, cam.Manufacturer, cam.Model, cam.SerialNumber,
-		cam.IPAddress, cam.HTTPPort, cam.Type, cam.Username, cam.PasswordEnc,
+		cam.IPAddress, cam.MACAddress, cam.HTTPPort, cam.Type, cam.Username, cam.PasswordEnc,
 		cam.StreamURL, cam.SubStreamURL, cam.OnvifProfileToken, cam.SubStreamProfileToken,
 		supportsPTZ, cam.RetentionGBLimit, isActive, cam.CreatedAt, cam.UpdatedAt,
 	)
