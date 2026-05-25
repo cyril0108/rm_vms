@@ -9,6 +9,16 @@ const Host = function(port) {
     return "//" + window.location.hostname + ":" + port + "";
 }
 
+const HTTPS = function(location) {
+    p = location.protocol
+    m = p.match(/^https/);
+    return m ? m.length : false
+}
+
+const WebSocket = function(tls) {
+    return tls ? "wss:" : "ws:"
+}
+
 const CONFIG = function() {
 
     if(window && window.____API_WEB_CONFIG____) {
@@ -22,6 +32,8 @@ const CONFIG = function() {
         DEFINE(C)
         .static("apiPort", port)
         .static("hostUrl", Host(port))
+        .static("https", HTTPS(window.location))
+        .static("wsProtocol", ()=>{ return WebSocket(C.https) })
 
         return C;
 

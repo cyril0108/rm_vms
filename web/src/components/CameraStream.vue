@@ -8,7 +8,7 @@
       playsinline
       class="video-player"
     ></video>
-    
+
     <div v-if="isConnecting" class="overlay">
       Connecting to Camera {{ camId }}...
     </div>
@@ -22,7 +22,7 @@ import JMuxer from 'jmuxer';
 
 import config from "@/config"
 
-const wshosturl = "wss:" + config.hostUrl;
+const wshosturl = config.wsProtocol + config.hostUrl;
 
 console.log("ws host:", wshosturl);
 
