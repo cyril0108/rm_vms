@@ -334,10 +334,10 @@ func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if(camID <= 3 && camID>0) {
-		http.Error(w, "[dev] testing camera id should not be deleted.", http.StatusBadRequest)
-		return
-	}
+	// if(camID <= 3 && camID>0) {
+	// 	http.Error(w, "[dev] testing camera id should not be deleted.", http.StatusBadRequest)
+	// 	return
+	// }
 
 	ctx := r.Context()
 	if err := s.Services.Camera.DeleteCamera(ctx, int64(camID)); err != nil {
