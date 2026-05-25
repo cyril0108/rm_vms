@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS cameras;
+DROP TABLE IF EXISTS segments;
+DROP TABLE IF EXISTS roles;
+DROP TABLE IF EXISTS permissions;
+DROP TABLE IF EXISTS role_permissions;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS user_camera_access;
+DROP TABLE IF EXISTS user_permissions;

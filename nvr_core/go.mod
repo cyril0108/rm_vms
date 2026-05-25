@@ -12,6 +12,7 @@ require (
 	github.com/elgs/gostrgen v0.0.0-20161222160715-9d61ae07eeae // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+	github.com/golang-migrate/migrate/v4 v4.19.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/juju/errors v0.0.0-20220331221717-b38fca44723b // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
