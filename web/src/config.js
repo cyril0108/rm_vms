@@ -10,8 +10,8 @@ const Host = function(port) {
 }
 
 const HTTPS = function(location) {
-    p = location.protocol
-    m = p.match(/^https/);
+    var p = location.protocol;
+    var m = p.match(/^https/);
     return m ? m.length : false
 }
 
@@ -33,7 +33,7 @@ const CONFIG = function() {
         .static("apiPort", port)
         .static("hostUrl", Host(port))
         .static("https", HTTPS(window.location))
-        .static("wsProtocol", ()=>{ return WebSocket(C.https) })
+        .static("wsProtocol", WebSocket(C.https))
 
         return C;
 
