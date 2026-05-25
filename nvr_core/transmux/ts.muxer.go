@@ -17,8 +17,10 @@ const (
 	VideoPID   uint16 = 256
 	AudioPID   uint16 = 257
 	VideoPESID uint8  = 224 // 0xE0
-	AudioPESID uint8  = 192 // 0xC0
+	AudioPESID uint8  = 192 // 0xC0 (For AAC/MP3)
+	PrivatePESID uint8  = 189 // 0xBD (For G.711/PCM)
 )
+
 
 // =====================================================================
 //  MUXER STATE MACHINE: Handles Dynamic PMT, PIDs, and Packetization
@@ -117,7 +119,14 @@ func (s *TSMuxSession) writePayload(packet stream.StreamPacket) error {
 		streamID = VideoPESID
 		targetPID = VideoPID
 	} else if packet.MediaType == stream.MediaTypeAudio {
-		streamID = AudioPESID
+		// FIX: Dynamically assign PES ID based on codec
+		// 65542 (µ-law) and 65543 (A-law) must use the Private Stream ID
+		if s.audioCodec == 65542 || s.audioCodec == 65543 {
+			streamID = PrivatePESID
+		} else {
+			streamID = AudioPESID // AAC uses standard 0xC0
+		}
+
 		targetPID = AudioPID
 	} else {
 		return nil // Ignore unknown media types
