@@ -62,6 +62,8 @@ private:
     void findStreamIndices();
     void initDiskWriter();
     int initVideoFilter();
+    bool isAVVC();
+    const char* annexbFilterName();
     FrameMetadata makeFrameMetadataV(AVPacket* packet, bool isKey);
     FrameMetadata makeFrameMetadataA(AVPacket* packet);
 

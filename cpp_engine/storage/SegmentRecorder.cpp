@@ -34,7 +34,7 @@ bool SegmentRecorder::StartSegment(const std::string& filename, AVStream* inVide
         AVStream* outVStream = avformat_new_stream(outFormatCtx, nullptr);
         avcodec_parameters_copy(outVStream->codecpar, inVideoStream->codecpar);
         outVStream->codecpar->codec_tag = 0;
-        
+
         outVideoStreamIndex = outVStream->index;
         inVideoStreamIndex = inVideoStream->index;
         videoInputTimeBase = inVideoStream->time_base;
@@ -52,27 +52,6 @@ bool SegmentRecorder::StartSegment(const std::string& filename, AVStream* inVide
         inAudioStreamIndex = inAudioStream->index;
         audioInputTimeBase = inAudioStream->time_base;
 
-        // if (avformat_query_codec(outFormatCtx->oformat, inAudioStream->codecpar->codec_id, FF_COMPLIANCE_NORMAL) == 1) {
-
-        //     AVStream* outAStream = avformat_new_stream(outFormatCtx, nullptr);
-        //     avcodec_parameters_copy(outAStream->codecpar, inAudioStream->codecpar);
-        //     outAStream->codecpar->codec_tag = 0;
-
-        //     outAudioStreamIndex = outAStream->index;
-        //     inAudioStreamIndex = inAudioStream->index;
-        //     audioInputTimeBase = inAudioStream->time_base;
-
-        // } else {
-
-        //     // The codec is illegal for MP4. Log it and gracefully ignore the audio stream.
-        //     inAudioStreamIndex = -1;
-
-        //     std::cerr << "[SegmentRecorder] Warning: Audio codec '" 
-        //               << avcodec_get_name(inAudioStream->codecpar->codec_id) 
-        //               << "' is not supported. Recording video only." << std::endl;
-
-        // }
-
     }
 
     // --- Open File & Write Header ---
@@ -84,7 +63,6 @@ bool SegmentRecorder::StartSegment(const std::string& filename, AVStream* inVide
     }
 
     AVDictionary* opts = nullptr;
-    // av_dict_set(&opts, "movflags", "faststart", 0); // Optional: Web-optimized MP4
     if (avformat_write_header(outFormatCtx, &opts) < 0) {
         return false;
     }
@@ -228,16 +206,6 @@ void SegmentRecorder::sanitizeTimestamps(AVPacket* packet, int64_t* lastDTS) {
     // Log::info("[SegmentRecorder][sanitizeTimestamps] lastDTS " + std::to_string(packet->dts) + " : " + std::to_string(packet->pts));
 
 }
-
-// double SegmentRecorder::GetVideoDurationSeconds() const {
-//     if (firstVideoPTS == AV_NOPTS_VALUE || lastVideoPTS == AV_NOPTS_VALUE || !outFormatCtx) {
-//         return 0.0;
-//     }
-//     AVStream* outStream = outFormatCtx->streams[outVideoStreamIndex];
-//     int64_t duration = lastVideoPTS - firstVideoPTS;
-//     // Convert FFmpeg timebase to real seconds
-//     return duration * av_q2d(outStream->time_base);
-// }
 
 double SegmentRecorder::GetVideoDurationMilliseconds() const {
     if (firstVideoPTS == AV_NOPTS_VALUE || lastVideoPTS == AV_NOPTS_VALUE || !outFormatCtx) {

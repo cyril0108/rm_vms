@@ -140,16 +140,13 @@ void VideoIngestion::findStreamIndices() {
     if (aIdx >= 0) {
         audioStreamIndex = aIdx;
         audioCodecID = fmtCtx->streams[aIdx]->codecpar->codec_id;
-        Log::info(camName + " Found Audio Stream ("+std::to_string(videoCodecID) +") at index: " + std::to_string(audioStreamIndex));
+        Log::info(camName + " Found Audio Stream ("+std::to_string(audioCodecID) +") at index: " + std::to_string(audioStreamIndex));
     }
 
-    // for (unsigned int i = 0; i < fmtCtx->nb_streams; i++) {
-    //     if (fmtCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-    //         videoStreamIndex = i;
-    //     } else if (fmtCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-    //         audioStreamIndex = i;
-    //     }
-    // }
+    // Fetch Extradata, like SPS/PPS data needed for H.264/HEVC
+    uint8_t* extradata = fmtCtx->streams[vIdx]->codecpar->extradata;
+    int extradata_size = fmtCtx->streams[vIdx]->codecpar->extradata_size;
+
 }
 
 void VideoIngestion::initDiskWriter() {
@@ -164,11 +161,46 @@ void VideoIngestion::initDiskWriter() {
 
 }
 
+const char* VideoIngestion::annexbFilterName() {
+    if (videoCodecID == AV_CODEC_ID_H264) {
+        return "h264_mp4toannexb";
+    } else if (videoCodecID == AV_CODEC_ID_HEVC) {
+        return "hevc_mp4toannexb";
+    }
+    return nullptr;
+}
+
+// If it's AVCC, it needs length-prefixes converted AND SPS/PPS injected.
+bool VideoIngestion::isAVVC() {
+    AVStream* vStream = fmtCtx->streams[videoStreamIndex];
+    uint8_t* extradata = vStream->codecpar->extradata;
+    int extradata_size = vStream->codecpar->extradata_size;
+
+    return extradata_size > 0 && extradata[0] == 1;
+}
+
 int VideoIngestion::initVideoFilter() {
-    const AVBitStreamFilter *bsf = av_bsf_get_by_name("dump_extra");
+
+    const char* filterName = nullptr;
+
+    if(isAVVC()) {
+        filterName = annexbFilterName();
+        if (!filterName) {
+            Log::error(camName + " Detected AVCC, but codec is not H264/HEVC. Cannot apply BSF.");
+            return -1;
+        }
+        Log::info(camName + " Detected AVCC stream. Applying " + std::string(filterName) + ".");
+    } else {
+        // Annex-B format detected (or no extradata). Start codes are present.
+        // We only need to ensure SPS/PPS is injected into the stream.
+        Log::info(camName + " Detected Annex-B stream. Applying dump_extra.");
+        filterName = "dump_extra";
+    }
+
+    const AVBitStreamFilter *bsf = av_bsf_get_by_name(filterName);
 
     if (av_bsf_alloc(bsf, &bsfCtx) < 0) {
-        Log::error(camName + " Failed to allocate dump_extra BSF.");
+        Log::error(camName + " Failed to allocate " + filterName + "BSF.");
         return -1;
     }
 
