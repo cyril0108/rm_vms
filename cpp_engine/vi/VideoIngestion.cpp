@@ -12,12 +12,15 @@ extern "C" {
 }
 
 // --- Constructor ---
-VideoIngestion::VideoIngestion(std::shared_ptr<ISharedMemory> mm, int id, const std::string u, const std::string rp)
-    : shm(mm), camID(id), url(u)
+VideoIngestion::VideoIngestion(const VideoIngestionConfig& config)
+    : shm(config.shm), 
+      camID(config.camID), 
+      url(config.url),
+      profile(config.profile)
 {
     camName = "[Cam" + std::to_string(camID) + "]";
     shmChannelID = shm->ChannelForCamID(camID);
-    recorderWorker = std::make_unique<RecorderWorker>(rp, "main");
+    recorderWorker = std::make_unique<RecorderWorker>(config.rootPath, profile);
 
     if(shmChannelID < 0) {
 
@@ -143,10 +146,6 @@ void VideoIngestion::findStreamIndices() {
         Log::info(camName + " Found Audio Stream ("+std::to_string(audioCodecID) +") at index: " + std::to_string(audioStreamIndex));
     }
 
-    // Fetch Extradata, like SPS/PPS data needed for H.264/HEVC
-    uint8_t* extradata = fmtCtx->streams[vIdx]->codecpar->extradata;
-    int extradata_size = fmtCtx->streams[vIdx]->codecpar->extradata_size;
-
 }
 
 void VideoIngestion::initDiskWriter() {
@@ -234,6 +233,9 @@ void VideoIngestion::routePacket(AVPacket* packet) {
  */
 
 void VideoIngestion::packetToDiskWriter(AVPacket* packet) {
+
+    // // Log::info("[packetToDiskWriter] currently not processing.");
+    // return;
 
     AVPacket* cloneForDisk = av_packet_alloc();
     if (av_packet_ref(cloneForDisk, packet) >= 0) {

@@ -17,10 +17,19 @@ struct AVDictionary;
 struct AVBSFContext;
 struct AVPacket;
 
+
+struct VideoIngestionConfig {
+    std::shared_ptr<ISharedMemory> shm;
+    int camID = -1;
+    std::string url;
+    std::string rootPath;
+    std::string profile;
+};
+
 class VideoIngestion
 {
 public:
-    VideoIngestion(std::shared_ptr<ISharedMemory> mm, int id, const std::string u, const std::string rp);
+    VideoIngestion(const VideoIngestionConfig& config);
     ~VideoIngestion();
     // stop
     void stopIngestion();
@@ -30,10 +39,12 @@ private:
     std::unique_ptr<RecorderWorker> recorderWorker;
     std::shared_ptr<ISharedMemory> shm;
 
+    VideoIngestionConfig cfg;
     int camID;
     int shmChannelID = -1;
     std::string camName;
     std::string url;
+    std::string profile;
 
     // --- FFmpeg Contexts & Options ---
     AVFormatContext* fmtCtx = nullptr;

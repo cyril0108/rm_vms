@@ -25,6 +25,12 @@ int main(int argc, char* argv[]) {
         Log::info("Worker started with root storage path: " + rootPath);
     }
 
+    std::string profile = "main";
+    if (argc > 2) {
+        profile = argv[2];
+    }
+    Log::info("Worker started with profile: " + profile);
+
     // 
     std::map<int, std::unique_ptr<VideoIngestion>> activeCameras;
 
@@ -72,7 +78,10 @@ int main(int argc, char* argv[]) {
 
                     // Run logic
                     int camID = std::stoi(idStr);
-                    activeCameras[camID] = std::make_unique<VideoIngestion>(SHM, camID, url, rootPath);
+                    // activeCameras[camID] = std::make_unique<VideoIngestion>(SHM, camID, url, rootPath);
+                    activeCameras[camID] = std::make_unique<VideoIngestion>(VideoIngestionConfig{
+                        SHM, camID, url, rootPath, profile
+                    });
 
                 } catch (...) {
                     Log::error("Error starting video ingestion.");
