@@ -46,6 +46,8 @@ private:
     std::string url;
     std::string profile;
 
+    std::string camJsonPartial;
+
     // --- FFmpeg Contexts & Options ---
     AVFormatContext* fmtCtx = nullptr;
     AVDictionary* options = nullptr;

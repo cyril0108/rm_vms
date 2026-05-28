@@ -25,11 +25,11 @@ int main(int argc, char* argv[]) {
         Log::info("Worker started with root storage path: " + rootPath);
     }
 
-    std::string profile = "main";
-    if (argc > 2) {
-        profile = argv[2];
-    }
-    Log::info("Worker started with profile: " + profile);
+    // std::string profile = "main";
+    // if (argc > 2) {
+    //     profile = argv[2];
+    // }
+    // Log::info("Worker started with profile: " + profile);
 
     // 
     std::map<int, std::unique_ptr<VideoIngestion>> activeCameras;
@@ -68,10 +68,12 @@ int main(int argc, char* argv[]) {
 
                     std::string idStr = cmd.Args.front();
                     cmd.Args.pop();
+                    std::string profile = cmd.Args.front();
+                    cmd.Args.pop();
                     std::string url = cmd.Args.front();
                     cmd.Args.pop();
 
-                    Log::info("id, url:" + idStr + " " + url );
+                    Log::info("id, profile, url:" + idStr + " " + profile + " " + url );
 
                     // Respond to Go
                     Log::send("{\"status\":\"starting\", \"cam\":" + idStr + "}");

@@ -7,33 +7,12 @@
           <IconCamera />
           {{ camera.name || `Camera ${camera.id}` }}
         </h5>
-        <span :class="['badge', camera.is_online ? 'bg-success' : 'bg-danger']">
-          {{ camera.status }}
+        <span :class="['badge', camera.active ? 'bg-success' : 'bg-danger']">
         </span>
       </div>
 
-      <div class="text-muted small mt-2">
-        <div class="d-flex justify-content-between">
-          <span><strong>Worker:</strong></span>
-          <span>{{ camera.worker_id }}</span>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span><strong>SHM Channel:</strong></span>
-          <span>{{ camera.channel }}</span>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span><strong>IP:</strong></span>
-          <span>{{ camera.ip || 'Unknown' }}</span>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span><strong>Resolution:</strong></span>
-          <span>{{ camera.resolution || 'Unknown' }}</span>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span><strong>Codec:</strong></span>
-          <span>{{ camera.codec || 'Unknown' }}</span>
-        </div>
-      </div>
+      <CameraProfile v-if="camera.main_stream" :camerasp="camera.main_stream"></CameraProfile>
+      <CameraProfile v-if="camera.sub_stream" :camerasp="camera.sub_stream"></CameraProfile>
 
       <div class="mt-auto pt-3">
         <button class="btn btn-outline-primary btn-sm w-100">
@@ -49,6 +28,7 @@
 <script setup>
 import { defineProps } from 'vue'
 import IconCamera from './icons/IconCamera.vue'
+import CameraProfile from './CameraProfile.vue'
 
 // Pure presentational component
 const props = defineProps({

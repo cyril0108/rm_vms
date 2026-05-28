@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
+	"nvr_core/db/models"
 	"nvr_core/logger"
 	"nvr_core/service"
 	"nvr_core/utils"
@@ -21,6 +23,7 @@ type Manager struct {
 	cams          map[int]*Camera
 	ingester      service.IngestService
 	log           *logger.Logger
+	mu            sync.Mutex
 }
 
 // NewManager initializes the pool (e.g., count=4)
@@ -32,6 +35,7 @@ func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath st
 		binaryPath: binaryPath,
 		camMainWorker: make(map[int]int),
 		camSubWorker: make(map[int]int),
+		cams: make(map[int]*Camera),
 		ingester:   ingester,
 		log: LOG.Lin("sub","[manager]"),
 	}
@@ -46,8 +50,12 @@ func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath st
 	return mgr
 }
 
+func (m *Manager) AllCameras() []*Camera {
+	return utils.CopyMapValues(m.cams, &m.mu)
+}
+
 // StartAll launches all worker processes
-func (m *Manager) StartAll() error {
+func (m *Manager) StartAllWorkers() error {
 	for _, w := range m.workers {
 		// fmt.Printf("[Process Manager] Starting Worker %d...\n", w.ID)
 		m.log.Info("Starting Worker", "worker", w.ID)
@@ -70,33 +78,41 @@ func (m *Manager) GetWorkers() []*Worker {
 	return m.workers
 }
 
+func (m *Manager) AssignNewCamera(newCam *models.Camera) (error, error) {
+	cam := NewCameraRuntime(newCam)
+	return m.AssignCamera(cam)
+}
+
 // AssignCamera routes a camera to the correct worker (Sharding Logic)
 func (m *Manager) AssignCamera(cam *Camera) (error, error) {
 	if len(m.workers) == 0 {
 		return fmt.Errorf("no workers available"), nil;
 	}
 
-	camID := cam.ID
+	LOG.Info("[AssignCamera]", "main", cam.MainStream, "sub", cam.SubStream)
 
-	// SHARDING ALGORITHM: Round Robin using Modulus
+	camID := cam.ID
+	m.cams[camID] = cam
+
 	wId, subId := workerAssignIDs(camID, len(m.workers));
 
 	mainWorker := m.workers[wId];
-	subWorker := m.workers[subId];
-
 	m.camMainWorker[camID] = wId;
+
+	subWorker := m.workers[subId];
 	m.camSubWorker[camID] = subId;
 
 	m.log.Info("[AssignCamera]", "cam", camID, "worker1", wId, "worker2", subId);
 
-	err1 := mainWorker.StartStreamProfile(camID, utils.SegmentMainProfile, &cam.MainStream)
-	err2 := subWorker.StartStreamProfile(camID, utils.SegmentSubProfile, &cam.SubStream)
+	err1 := mainWorker.AssignCam(cam, utils.SegmentMainProfile)
+	err2 := subWorker.AssignCam(cam, utils.SegmentSubProfile)
 
 	return err1, err2
 }
 
 // Assign given ID to two worker IDs.
 func workerAssignIDs(id int, len int) (int, int) {
+	// SHARDING ALGORITHM: Round Robin using Modulus
 	wId := id % len;
 	subId := (wId + 1) % len;
 	return wId, subId

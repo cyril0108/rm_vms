@@ -19,19 +19,19 @@ type Camera struct {
 }
 
 func (cam *Camera) GetProfile(profile string) *StreamProfile {
-    var pro StreamProfile;
+    var pro *StreamProfile;
 
     switch profile {
     case "main":
-        pro = cam.MainStream
+        pro = &cam.MainStream
 
     case "sub":
-        pro = cam.SubStream
+        pro = &cam.SubStream
 
     default:
         return nil
     }
-    return &pro
+    return pro
 }
 
 func NewCamera(camID int, url string, subUrl string) *Camera {
@@ -44,13 +44,19 @@ func NewCamera(camID int, url string, subUrl string) *Camera {
 }
 
 func NewCameraRuntime(c *models.Camera) *Camera {
-    cam := &Camera{
+    if c.SubStreamURL == "" {
+        return &Camera{
+            ID: int(c.ID),
+            Active: c.IsActive,
+            MainStream: *NewStreamProfile(c.StreamURL),
+        }
+    }
+    return &Camera{
         ID: int(c.ID),
         Active: c.IsActive,
         MainStream: *NewStreamProfile(c.StreamURL),
         SubStream: *NewStreamProfile(c.SubStreamURL),
     }
-    return cam
 }
 
 

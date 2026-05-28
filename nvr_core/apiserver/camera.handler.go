@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"nvr_core/apiserver/dto"
 
-	// "nvr_core/db/models"
 	"nvr_core/onvif"
-	"nvr_core/process"
 	"nvr_core/utils"
 )
 
@@ -23,22 +21,8 @@ import (
 // @Failure      500     {string}  string "Internal server error"
 // @Router       /api/cameras [get]
 func (s *APIServer) GetCameras(w http.ResponseWriter, r *http.Request) {
-	var camList []*process.Camera
 
-	workers := s.PM.GetWorkers()
-
-	log.Printf("[GetCameras] workers(%d)\n", len(workers))
-
-	for _, worker := range workers {
-
-		cams := worker.GetCameras()
-		log.Printf("[GetCameras] cams (%d)\n", len(cams))
-		for _, cam := range cams {
-			// cam.rtsp = ""
-			camList = append(camList, cam)
-		}
-
-	}
+	camList := s.PM.AllCameras()
 
 	log.Printf("[GetCameras] camList(%d)\n", len(camList))
 
@@ -177,10 +161,7 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// newCam.Status = "initializing"
-	// s.State.Cameras.Store(cam.ID, cam)
-
-	// TODO: Send camera start up command to the target C++ Worker Subprocess
+	s.PM.AssignNewCamera(cam)
 
 	theCamera := dto.MapCameraToDetail(*cam)
 

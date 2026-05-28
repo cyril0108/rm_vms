@@ -22,6 +22,8 @@ VideoIngestion::VideoIngestion(const VideoIngestionConfig& config)
     shmChannelID = shm->ChannelForCamID(camID);
     recorderWorker = std::make_unique<RecorderWorker>(config.rootPath, profile);
 
+    camJsonPartial = "\"cam\":" + std::to_string(camID) + ", \"profile\": \"" + profile + "\"";
+
     if(shmChannelID < 0) {
 
         Log::error(camName + "SHM reached max channel!");
@@ -86,7 +88,7 @@ int VideoIngestion::startIngestion() {
     initDiskWriter();
 
     Log::info(camName + " Connected! Starting Ingestion Loop...");
-    Log::send("{\"status\":\"streaming\", \"cam\":" + std::to_string(camID) + ", \"channel\":" + std::to_string(shmChannelID) + "}");
+    Log::send("{\"status\":\"streaming\", " + camJsonPartial + ", \"channel\":" + std::to_string(shmChannelID) + "}");
 
     // The Main Loop
     AVPacket* packet = av_packet_alloc();
@@ -470,7 +472,7 @@ int VideoIngestion::cleanup() {
     avformat_network_deinit();
 
     Log::info(camName + " Thread Exited cleanly.");
-    Log::send("{\"status\":\"stopped\", \"cam\":" + std::to_string(camID) + "}");
+    Log::send("{\"status\":\"stopped\", " + camJsonPartial + "}");
 
     return -1; // Or return 0 depending on how your worker thread monitors exits
 }

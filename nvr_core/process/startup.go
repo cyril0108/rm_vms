@@ -15,7 +15,7 @@ func Startup(ctx context.Context, cfg *utils.Config, ingester service.IngestServ
 	pm := NewManager(ctx, cfg, 4, CPP_WORKER_BIN, ingester)
 	ll := LOG.Lin("fn", "Startup")
 
-	if err := pm.StartAll(); err != nil {
+	if err := pm.StartAllWorkers(); err != nil {
 		// log.Fatalf("Failed to start workers: %v", err)
 		ll.Error("Failed to start workers", "err", err.Error())
 	}
