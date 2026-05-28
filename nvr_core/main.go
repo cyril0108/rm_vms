@@ -49,13 +49,19 @@ func main() {
 	}
 
 
-	fmt.Printf("[Go Manager] Config Loaded. Storage: %s, Cameras: %d\n", 
-			cfg.Server.StoragePath, len(cfg.Cameras))
+	fmt.Printf("[Go Manager] Config Loaded. Storage: %s, Port: %d \n", 
+			cfg.Server.StoragePath, cfg.Server.Port)
 
 	servs := service.NewServices(dbConn)
 	ingester := service.StartIngester(ctx, dbConn)
 
-	pm := process.Startup(ctx, cfg, ingester)
+	// Load cameras from db
+	cams, err := servs.Camera.GetAll(ctx)
+	if err != nil {
+		log.Fatalf("Error loading cameras: %v", err)
+	}
+
+	pm := process.Startup(ctx, cfg, ingester, cams)
 
 	go apiserver.Initiate(ctx, cfg, pm, servs)
 

@@ -3,13 +3,14 @@ package process
 import (
 	"context"
 
+    "nvr_core/db/models"
 	"nvr_core/service"
 	"nvr_core/utils"
 )
 
 const CPP_WORKER_BIN = "./nvr_worker"
 
-func Startup(ctx context.Context, cfg *utils.Config, ingester service.IngestService) (*Manager) {
+func Startup(ctx context.Context, cfg *utils.Config, ingester service.IngestService, cams []*models.Camera) (*Manager) {
 
 	pm := NewManager(ctx, cfg, 4, CPP_WORKER_BIN, ingester)
 	ll := LOG.Lin("fn", "Startup")
@@ -20,12 +21,10 @@ func Startup(ctx context.Context, cfg *utils.Config, ingester service.IngestServ
 	}
 
 	// Distribute Cameras
-	for _, cam := range cfg.Cameras {
-		if cam.Enabled {
-			if err := pm.AssignCamera(cam.ID, cam.URL); err != nil {
-				// log.Printf("Failed to assign cam %d: %v", cam.ID, err)
-				ll.Error("Failed to start workers", "cam", cam.ID, "err", err.Error())
-			}
+	for _, cam := range cams {
+		if err, err2 := pm.AssignCamera(NewCameraRuntime(cam)); err != nil || err2 != nil {
+			// log.Printf("Failed to assign cam %d: %v", cam.ID, err)
+			ll.Error("Failed to assign camera workers", "cam", cam.ID, "err", err, "err2", err2)
 		}
 	}
 

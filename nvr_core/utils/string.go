@@ -5,6 +5,32 @@ import (
 	"strconv"
 )
 
+const SegmentMainProfile = "main"
+const SegmentSubProfile = "sub"
+// Return 1 for main, 0 for sub, -1 for unknown
+func IsMainProfile(profile string) int {
+	switch profile {
+	case SegmentMainProfile:
+		return 1;
+	case SegmentSubProfile:
+		return 0;
+	default:
+		return -1
+	}
+}
+
+func SanitizeProfile(profile string) string {
+	switch profile {
+	case SegmentMainProfile:
+		fallthrough
+	case SegmentSubProfile:
+		return profile
+
+	default:
+		return SegmentMainProfile
+	}
+}
+
 func CamID2Str(camID int64) string {
 	return strconv.Itoa(int(camID))
 }

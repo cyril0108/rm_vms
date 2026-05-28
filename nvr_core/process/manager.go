@@ -12,13 +12,15 @@ import (
 
 // Manager handles the pool of workers
 type Manager struct {
-	cfg        *utils.Config
-	ctx        context.Context
-	workers    []*Worker
-	binaryPath string
-	camWorker  map[int]int
-	ingester   service.IngestService
-	log        *logger.Logger
+	cfg           *utils.Config
+	ctx           context.Context
+	workers       []*Worker
+	binaryPath    string
+	camMainWorker map[int]int
+	camSubWorker  map[int]int
+	cams          map[int]*Camera
+	ingester      service.IngestService
+	log           *logger.Logger
 }
 
 // NewManager initializes the pool (e.g., count=4)
@@ -28,7 +30,8 @@ func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath st
 		cfg: cfg,
 		workers:    make([]*Worker, count),
 		binaryPath: binaryPath,
-		camWorker: make(map[int]int),
+		camMainWorker: make(map[int]int),
+		camSubWorker: make(map[int]int),
 		ingester:   ingester,
 		log: LOG.Lin("sub","[manager]"),
 	}
@@ -68,39 +71,80 @@ func (m *Manager) GetWorkers() []*Worker {
 }
 
 // AssignCamera routes a camera to the correct worker (Sharding Logic)
-func (m *Manager) AssignCamera(camID int, url string) error {
+func (m *Manager) AssignCamera(cam *Camera) (error, error) {
 	if len(m.workers) == 0 {
-		return fmt.Errorf("no workers available");
+		return fmt.Errorf("no workers available"), nil;
 	}
 
+	camID := cam.ID
+
 	// SHARDING ALGORITHM: Round Robin using Modulus
-	workerIndex := camID % len(m.workers);
-	targetWorker := m.workers[workerIndex];
+	wId, subId := workerAssignIDs(camID, len(m.workers));
 
-	m.camWorker[camID] = workerIndex;
+	mainWorker := m.workers[wId];
+	subWorker := m.workers[subId];
 
-	m.log.Info("[AssignCamera]", "cam", camID, "worker", workerIndex);
+	m.camMainWorker[camID] = wId;
+	m.camSubWorker[camID] = subId;
 
-	return targetWorker.AssignCam(NewCamera(camID, url));
+	m.log.Info("[AssignCamera]", "cam", camID, "worker1", wId, "worker2", subId);
+
+	err1 := mainWorker.StartStreamProfile(camID, utils.SegmentMainProfile, &cam.MainStream)
+	err2 := subWorker.StartStreamProfile(camID, utils.SegmentSubProfile, &cam.SubStream)
+
+	return err1, err2
 }
 
-func (m *Manager) CameraWorker(camID int) *Worker {
+// Assign given ID to two worker IDs.
+func workerAssignIDs(id int, len int) (int, int) {
+	wId := id % len;
+	subId := (wId + 1) % len;
+	return wId, subId
+}
 
-	index := m.camWorker[camID];
-	return m.workers[index];
+func (m *Manager) camWorkerIDs(camID int) (int, int) {
+
+	wId, exists := m.camMainWorker[camID];
+	subId, subExists := m.camSubWorker[camID];
+
+	if !exists {
+		wId = -1
+	}
+
+	if !subExists {
+		subId = -1
+	}
+
+	return wId, subId
+}
+
+func (m *Manager) CameraWorker(camID int, profile string) (*Worker, error) {
+
+	var index int
+	switch profile {
+	case "main":
+		index = m.camMainWorker[camID];
+
+	case "sub":
+		index = m.camSubWorker[camID];
+
+	default:
+		return nil, fmt.Errorf("[Manager][CameraWorker] Unknown profile");
+	}
+
+	return m.workers[index], nil
 }
 
 func (m *Manager) StopCameraRecording(camID int) error {
 
-	if worker := m.CameraWorker(camID); worker == nil {
+	wId, subId := m.camWorkerIDs(camID)
 
-		return errors.New("No worker for given camera")
+	mainWorker := m.workers[wId];
+	subWorker := m.workers[subId];
 
-	} else {
+	err1 := mainWorker.StopCamRecording(camID, utils.SegmentMainProfile)
+	err2 := subWorker.StopCamRecording(camID, utils.SegmentSubProfile)
 
-		worker.StopCam(camID);
-
-	}
-
-	return nil
+	return errors.Join(err1, err2)
 }
+

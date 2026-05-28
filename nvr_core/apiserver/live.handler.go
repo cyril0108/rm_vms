@@ -9,8 +9,8 @@ import (
 
 	"nvr_core/stream"
 	"nvr_core/transmux"
+	"nvr_core/utils"
 )
-
 
 // =====================================================================
 //  HTTP HANDLER: Manages Request, Headers, and Hub Subscription
@@ -29,13 +29,15 @@ func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	worker := api.PM.CameraWorker(camID)
-	if worker == nil {
-		http.Error(w, "Camera not assigned to worker", http.StatusNotFound)
+	profile := utils.SanitizeProfile(r.PathValue("profile"))
+
+	worker, err := api.PM.CameraWorker(camID, profile)
+	if err != nil {
+		http.Error(w, "No worker for camera/profile", http.StatusNotFound)
 		return
 	}
 
-	hub := worker.StreamHubForCam(camID)
+	hub := worker.StreamHubForCam(camID, profile)
 	if hub == nil {
 		http.Error(w, "Stream not running", http.StatusNotFound)
 		return

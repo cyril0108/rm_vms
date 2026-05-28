@@ -13,7 +13,7 @@ import (
 
 type Config struct {
 	Server  ServerConfig   `json:"server"`
-	Cameras []CameraConfig `json:"cameras"`
+	// Cameras []CameraConfig `json:"cameras"`
 }
 
 type ServerConfig struct {
@@ -26,12 +26,12 @@ type ServerConfig struct {
 	masterKey     []byte `json:"-"`
 }
 
-type CameraConfig struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	URL     string `json:"url"`
-	Enabled bool   `json:"enabled"`
-}
+// type CameraConfig struct {
+// 	ID      int    `json:"id"`
+// 	Name    string `json:"name"`
+// 	URL     string `json:"url"`
+// 	Enabled bool   `json:"enabled"`
+// }
 
 // LoadConfig reads the file at the given path and returns a filled Config struct
 func LoadConfig(path string) (*Config, error) {

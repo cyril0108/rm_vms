@@ -73,9 +73,12 @@ func (w *Worker) handleStoppedStream(resp WorkerResponse) {
 
     w.mu.Lock()
     if cam, exists := w.cameras[resp.CamID]; exists {
-        cam.Status = "Stopped"
-        if cam.ChannelID > -1 {
-            w.shmReader.StopChannel(resp.CamID, cam.ChannelID)
+        pf := cam.GetProfile(resp.Profile)
+        if pf != nil {
+            pf.Status = "Stopped"
+            if pf.ChannelID > -1 {
+                w.shmReader.StopChannel(resp.CamID, pf.ChannelID)
+            }
         }
     }
     w.mu.Unlock()
@@ -84,9 +87,28 @@ func (w *Worker) handleStoppedStream(resp WorkerResponse) {
     time.Sleep(8 * time.Second)
 
     fmt.Println(LOGSEP + "[Go][Worker] restarting cam:", resp.CamID)
-    w.RestartCam(resp.CamID)
+    w.RestartCam(resp.CamID, resp.Profile)
 
 }
+
+// func (w *Worker) getCameraStreamProfile(resp WorkerResponse) {
+
+//     w.mu.Lock()
+//     defer w.mu.Unlock()
+
+//     cam := w.cameras[resp.CamID]
+
+//     isMain := utils.IsMainProfile(resp.Profile)
+//     if isMain > 0 {
+//         cam.MainStream.Status = resp.Status
+//         return
+//     }
+//     if isMain > 1 {
+//         cam.SubStream.Status = resp.Status
+//         return
+//     }
+
+// }
 
 func (w *Worker) updateCameraStatus(resp WorkerResponse) {
 
@@ -94,7 +116,11 @@ func (w *Worker) updateCameraStatus(resp WorkerResponse) {
     defer w.mu.Unlock()
 
     cam := w.cameras[resp.CamID]
-    cam.Status = resp.Status
+
+    pf := cam.GetProfile(resp.Profile)
+    if pf != nil {
+        pf.Status = resp.Status
+    }
 
 }
 
@@ -104,11 +130,7 @@ func (w *Worker) updateCameraSHMChannel(resp WorkerResponse) {
 
     w.mu.Lock()
     cam := w.cameras[resp.CamID]
-    cam.ChannelID = resp.ChannelID
-
-    // Set to recording for now, it could be streaming
-    // but not recording.
-    cam.Status = "recording"
+    w.updateCameraStatus(resp)
 
     existingHub := w.streamHubs[resp.ChannelID]
     w.mu.Unlock()
@@ -119,11 +141,17 @@ func (w *Worker) updateCameraSHMChannel(resp WorkerResponse) {
         return
     }
 
-    hub := w.shmReader.StartChannel(resp.CamID, cam.ChannelID, existingHub)
+    pf := cam.GetProfile(resp.Profile)
+    if pf != nil {
 
-    w.mu.Lock()
-    w.streamHubs[resp.ChannelID] = hub
-    w.mu.Unlock()
+        hub := w.shmReader.StartChannel(resp.CamID, pf.ChannelID, existingHub)
+
+        w.mu.Lock()
+        w.streamHubs[resp.ChannelID] = hub
+        w.mu.Unlock()
+
+    }
+
 
 }
 
@@ -155,10 +183,17 @@ func (w *Worker) handleSegmentDone(resp WorkerResponse) {
 
 // ==================================
 
-func (w *Worker) StreamHubForCam(camId int) *stream.Hub {
+func (w *Worker) StreamHubForCam(camId int, profile string) *stream.Hub {
     cam := w.cameras[camId]
-    fmt.Println("[Go][Worker][StreamHubForCam] ", w.ID, camId, cam, cam.ChannelID)
-    return w.streamHubs[cam.ChannelID]
+
+    pro := cam.GetProfile(profile)
+    if pro == nil {
+        fmt.Println("[Go][Worker][StreamHubForCam] incorrect profile ", profile)
+        return nil
+    }
+
+    fmt.Println("[Go][Worker][StreamHubForCam] ", w.ID, camId, cam, pro.ChannelID)
+    return w.streamHubs[pro.ChannelID]
 }
 
 
@@ -240,32 +275,47 @@ func (w *Worker) SendWorkerID() error {
 }
 
 
-func (w *Worker) AssignCam(cam *Camera) error {
+// func (w *Worker) AssignCam(cam *Camera) error {
 
-    w.mu.Lock()
-    cam.WorkerID = w.ID
-    w.cameras[cam.ID] = cam
-    w.mu.Unlock()
+//     w.mu.Lock()
+//     cam.WorkerID = w.ID
+//     w.cameras[cam.ID] = cam
+//     w.mu.Unlock()
 
-    return w.StartCam(cam)
+//     return w.StartCam(cam)
 
-}
+// }
 
-func (w *Worker) StartCam(cam *Camera) error {
+// func (w *Worker) StartCam(cam *Camera) error {
 
-    cam.Status = "starting"
-    command := fmt.Sprintf("START %d %s", cam.ID, cam.Url)
+//     cam.Status = "starting"
+//     command := fmt.Sprintf("START %d %s", cam.ID, cam.Main)
+//     return w.SendCommand(command)
+
+// }
+
+func (w *Worker) StartStreamProfile(camID int, profile string, sp *StreamProfile) error {
+
+    sp.Status = "starting"
+    command := fmt.Sprintf("START %d %s", camID, sp.URL, profile)
     return w.SendCommand(command)
 
 }
 
-func (w *Worker) StopCam(camID int) error {
+func (w *Worker) StopCamRecording(camID int, profile string) error {
 
     w.mu.Lock()
 
     cam := w.cameras[camID]
-    cam.Status = "stop recording"
-    command := fmt.Sprintf("STOP %d", cam.ID)
+
+    pro := cam.GetProfile(profile)
+    if pro == nil {
+        fmt.Println("[Go][Worker][StreamHubForCam] incorrect profile ", profile)
+        return nil
+    }
+
+    pro.Status = "streaming"
+    command := fmt.Sprintf("NORECORDING %d", cam.ID)
 
     w.mu.Unlock()
 
@@ -273,13 +323,14 @@ func (w *Worker) StopCam(camID int) error {
 
 }
 
-func (w *Worker) RestartCam(camID int) error {
+func (w *Worker) RestartCam(camID int, profile string) error {
 
     w.mu.Lock()
     cam := w.cameras[camID]
+    sp := cam.GetProfile(profile)
     w.mu.Unlock()
 
-    return w.StartCam(cam)
+    return w.StartStreamProfile(camID, profile, sp)
 
 }
 
@@ -335,6 +386,8 @@ func (w *Worker) handleCMDResponse(resp WorkerResponse) {
     case "stopped":
         w.handleStoppedStream(resp)
 
+    case "recording":
+        fallthrough
     case "starting":
         w.updateCameraStatus(resp)
 
@@ -473,14 +526,20 @@ func (w *Worker) recoverWorker(ctx context.Context) {
         return
     }
 
+    //=============================================
+    // This used to be the section to restart all
+    // cameras. Since we do not know the profile
+    // for those camera in this conext. It needs
+    // another way to recover the cameras.
+    //=============================================
     // Copy camera list, preventing infinite lock
-    camsToRestart := utils.CopyMapValues(w.cameras, &w.mu)
+    // camsToRestart := utils.CopyMapValues(w.cameras, &w.mu)
 
-    // Restore State: Re-assign all cameras that this worker was managing
-    w.mu.Lock()
-    defer w.mu.Unlock()
-    for _, cam := range camsToRestart {
-        fmt.Printf("[Go][Worker %d] Restoring stream for Cam %d...\n", w.ID, cam.ID)
-        w.StartCam(cam)
-    }
+    // // Restore State: Re-assign all cameras that this worker was managing
+    // w.mu.Lock()
+    // defer w.mu.Unlock()
+    // for _, cam := range camsToRestart {
+    //     fmt.Printf("[Go][Worker %d] Restoring stream for Cam %d...\n", w.ID, cam.ID)
+    //     w.StartCam(cam)
+    // }
 }

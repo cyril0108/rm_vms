@@ -21,13 +21,15 @@ func (s *APIServer) GetStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	worker := s.PM.CameraWorker(id)
-	if(worker == nil) {
+	profile := utils.SanitizeProfile(r.PathValue("profile"))
+
+	worker, err := s.PM.CameraWorker(id, profile)
+	if(err != nil) {
 		log.Println("[GetStream] failed to get worker")
 		return
 	}
 
-	hub := worker.StreamHubForCam(id)
+	hub := worker.StreamHubForCam(id, profile)
 	if(hub == nil) {
 		log.Println("[GetStream] failed to get stream hub")
 		return

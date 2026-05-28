@@ -274,6 +274,10 @@ func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Start camera recording
+	// if err := s.PM.StartCameraRecording(int(camID)); err != nil {
+	// 	log.Printf("Failed to activate camera runtime err: %v", err)
+	// 	http.Error(w, "Failed to start camera recording", http.StatusInternalServerError)
+	// }
 
 	if err := RespondJSON(w, "started (not really)"); err != nil {
 		log.Printf("Error encoding response: %v", err)
@@ -307,7 +311,10 @@ func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Stop camera recording
+	if err := s.PM.StopCameraRecording(int(camID)); err != nil {
+		log.Printf("Failed to deactivate camera runtime err: %v", err)
+		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
+	}
 
 	if err := RespondJSON(w, "stopped (not really)"); err != nil {
 		log.Printf("Error encoding response: %v", err)
