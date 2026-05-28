@@ -13,12 +13,12 @@ import (
 	"syscall"
 	"time"
 
-    "nvr_core/db/models"
-    "nvr_core/logger"
-    "nvr_core/service"
-    "nvr_core/shm"
-    "nvr_core/stream"
-    "nvr_core/utils"
+	"nvr_core/db/models"
+	"nvr_core/logger"
+	"nvr_core/service"
+	"nvr_core/shm"
+	"nvr_core/stream"
+	"nvr_core/utils"
 )
 
 const LOGSEP = "==============================================\n"
@@ -265,14 +265,15 @@ func (w *Worker) SendWorkerID() error {
 func (w *Worker) AssignCam(cam *Camera, profile string) error {
 
     w.mu.Lock()
+    defer w.mu.Unlock()
 
     sp := cam.GetProfile(profile)
-    if sp != nil {
-        sp.WorkerID = w.ID
+    if sp == nil {
+        return fmt.Errorf("No stream profile for cam %d %s", cam.ID, profile)
     }
-    w.cameras[cam.ID] = cam
 
-    w.mu.Unlock()
+    sp.WorkerID = w.ID
+    w.cameras[cam.ID] = cam
 
     return w.StartStreamProfile(cam.ID, profile, sp)
 

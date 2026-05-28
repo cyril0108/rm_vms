@@ -14,8 +14,8 @@ type StreamProfile struct {
 type Camera struct {
     ID         int           `json:"id"`
     Active     bool          `json:"active"`
-    MainStream StreamProfile `json:"main_stream"`
-    SubStream  StreamProfile `json:"sub_stream"`
+    MainStream *StreamProfile `json:"main_stream"`
+    SubStream  *StreamProfile `json:"sub_stream"`
 }
 
 func (cam *Camera) GetProfile(profile string) *StreamProfile {
@@ -23,10 +23,10 @@ func (cam *Camera) GetProfile(profile string) *StreamProfile {
 
     switch profile {
     case "main":
-        pro = &cam.MainStream
+        pro = cam.MainStream
 
     case "sub":
-        pro = &cam.SubStream
+        pro = cam.SubStream
 
     default:
         return nil
@@ -34,29 +34,28 @@ func (cam *Camera) GetProfile(profile string) *StreamProfile {
     return pro
 }
 
-func NewCamera(camID int, url string, subUrl string) *Camera {
-    cam := &Camera{
-        ID: camID,
-        MainStream: *NewStreamProfile(url),
-        SubStream: *NewStreamProfile(subUrl),
-    }
-    return cam
-}
+// func NewCamera(camID int, url string, subUrl string) *Camera {
+//     cam := &Camera{
+//         ID: camID,
+//         MainStream: *NewStreamProfile(url),
+//         SubStream: *NewStreamProfile(subUrl),
+//     }
+//     return cam
+// }
 
 func NewCameraRuntime(c *models.Camera) *Camera {
-    if c.SubStreamURL == "" {
-        return &Camera{
-            ID: int(c.ID),
-            Active: c.IsActive,
-            MainStream: *NewStreamProfile(c.StreamURL),
-        }
-    }
-    return &Camera{
+
+    cam := &Camera{
         ID: int(c.ID),
         Active: c.IsActive,
-        MainStream: *NewStreamProfile(c.StreamURL),
-        SubStream: *NewStreamProfile(c.SubStreamURL),
+        MainStream: NewStreamProfile(c.StreamURL),
     }
+
+    if c.SubStreamURL != "" {
+        cam.SubStream = NewStreamProfile(c.SubStreamURL)
+    }
+
+    return cam
 }
 
 

@@ -94,24 +94,32 @@ func (m *Manager) AssignCamera(cam *Camera) (error, error) {
 	camID := cam.ID
 	m.cams[camID] = cam
 
-	wId, subId := workerAssignIDs(camID, len(m.workers));
+	wId, subId := decideWorkerAssignIDs(camID, len(m.workers));
 
+	var err1, err2 error
 	mainWorker := m.workers[wId];
-	m.camMainWorker[camID] = wId;
+	err1 = mainWorker.AssignCam(cam, utils.SegmentMainProfile)
+	if err1 == nil {
+		m.camMainWorker[camID] = wId;
+	} else {
+		wId = -1
+	}
 
 	subWorker := m.workers[subId];
-	m.camSubWorker[camID] = subId;
+	err2 = subWorker.AssignCam(cam, utils.SegmentSubProfile)
+	if err2 == nil {
+		m.camSubWorker[camID] = subId;
+	} else {
+		subId = -1
+	}
 
 	m.log.Info("[AssignCamera]", "cam", camID, "worker1", wId, "worker2", subId);
-
-	err1 := mainWorker.AssignCam(cam, utils.SegmentMainProfile)
-	err2 := subWorker.AssignCam(cam, utils.SegmentSubProfile)
 
 	return err1, err2
 }
 
 // Assign given ID to two worker IDs.
-func workerAssignIDs(id int, len int) (int, int) {
+func decideWorkerAssignIDs(id int, len int) (int, int) {
 	// SHARDING ALGORITHM: Round Robin using Modulus
 	wId := id % len;
 	subId := (wId + 1) % len;
@@ -151,15 +159,41 @@ func (m *Manager) CameraWorker(camID int, profile string) (*Worker, error) {
 	return m.workers[index], nil
 }
 
+func (m *Manager) StartCameraRecording(camID int) error {
+
+	return nil
+	// wId, subId := m.camWorkerIDs(camID)
+	// var err1, err2 error
+
+	// if wId >= 0 {
+	// 	mainWorker := m.workers[wId];
+	// 	// err1 = mainWorker.StartStreamProfile()
+	// }
+
+	// if subId >= 0 {
+	// 	subWorker := m.workers[subId];
+	// 	err2 = subWorker.StopCamRecording(camID, utils.SegmentSubProfile)
+	// }
+
+	// return errors.Join(err1, err2)
+}
+
+
+
 func (m *Manager) StopCameraRecording(camID int) error {
 
 	wId, subId := m.camWorkerIDs(camID)
+	var err1, err2 error
 
-	mainWorker := m.workers[wId];
-	subWorker := m.workers[subId];
+	if wId >= 0 {
+		mainWorker := m.workers[wId];
+		err1 = mainWorker.StopCamRecording(camID, utils.SegmentMainProfile)
+	}
 
-	err1 := mainWorker.StopCamRecording(camID, utils.SegmentMainProfile)
-	err2 := subWorker.StopCamRecording(camID, utils.SegmentSubProfile)
+	if subId >= 0 {
+		subWorker := m.workers[subId];
+		err2 = subWorker.StopCamRecording(camID, utils.SegmentSubProfile)
+	}
 
 	return errors.Join(err1, err2)
 }

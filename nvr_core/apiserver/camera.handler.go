@@ -24,8 +24,6 @@ func (s *APIServer) GetCameras(w http.ResponseWriter, r *http.Request) {
 
 	camList := s.PM.AllCameras()
 
-	log.Printf("[GetCameras] camList(%d)\n", len(camList))
-
 	if err := RespondJSON(w, camList); err != nil {
 		log.Printf("Error encoding camera list: %v", err)
 		// Connection likely dropped; no need to write http.Error
@@ -217,10 +215,7 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// newCam.Status = "initializing"
-	// s.State.Cameras.Store(newCam.ID, newCam)
-
-	// TODO: Send camera start up command to the target C++ Worker Subprocess
+	s.PM.AssignNewCamera(newCam)
 
 	w.WriteHeader(http.StatusCreated)
 	if err := RespondJSON(w, dto.MapCameraToDetail(*newCam)); err != nil {
@@ -255,10 +250,10 @@ func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Start camera recording
-	// if err := s.PM.StartCameraRecording(int(camID)); err != nil {
-	// 	log.Printf("Failed to activate camera runtime err: %v", err)
-	// 	http.Error(w, "Failed to start camera recording", http.StatusInternalServerError)
-	// }
+	if err := s.PM.StartCameraRecording(int(camID)); err != nil {
+		log.Printf("Failed to activate camera runtime err: %v", err)
+		http.Error(w, "Failed to start camera recording", http.StatusInternalServerError)
+	}
 
 	if err := RespondJSON(w, "started (not really)"); err != nil {
 		log.Printf("Error encoding response: %v", err)
