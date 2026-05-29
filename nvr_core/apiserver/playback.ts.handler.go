@@ -62,11 +62,11 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 			"-hide_banner", "-loglevel", "error", 
 			"-i", filePath,                       
 			"-c:v", "copy",                       
-			"-bsf:v", "h264_mp4toannexb",         // <-- NEW: Forces Annex B format for Safari
+			"-bsf:v", "h264_mp4toannexb",         
 			"-c:a", "aac", // Replace -an with this if Safari stays black
 			"-b:a", "64k",
 			"-f", "mpegts",                       
-			"-muxdelay", "0",                     // <-- NEW: Removes pipe buffering latency
+			"-muxdelay", "0",                     // Removes pipe buffering latency
 			"pipe:1",                             
 		)
 

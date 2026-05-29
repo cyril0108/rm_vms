@@ -120,10 +120,6 @@ void VideoIngestion::stopIngestion() {
 
 void VideoIngestion::stopRecording() {
 
-    // Log::info(camName + " Stop recording...");
-    // recording = false;
-    // diskWriterQueue.push(nullptr)
-
     Log::info(camName + " Stop recording requested...");
 
     recording.store(false, std::memory_order_relaxed);

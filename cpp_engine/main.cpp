@@ -12,6 +12,9 @@
 
 const std::shared_ptr<ISharedMemory> SHM = ISharedMemory::CreateInstance();
 
+std::string cameraKey(std::string camID, std::string profile) {
+    return camID + profile;
+}
 
 int main(int argc, char* argv[]) {
     // Optimize I/O
@@ -25,14 +28,7 @@ int main(int argc, char* argv[]) {
         Log::info("Worker started with root storage path: " + rootPath);
     }
 
-    // std::string profile = "main";
-    // if (argc > 2) {
-    //     profile = argv[2];
-    // }
-    // Log::info("Worker started with profile: " + profile);
-
-    // 
-    std::map<int, std::unique_ptr<VideoIngestion>> activeCameras;
+    std::map<std::string, std::unique_ptr<VideoIngestion>> activeCameras;
 
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -56,7 +52,7 @@ int main(int argc, char* argv[]) {
                         Log::error("Failed to create RingBuffer for:" + name);
                         Log::send("{\"status\":\"shmerr\", \"worker\":\"" + name + "}\"");
                     } else {
-                        Log::send("{\"status\":\"shm\", \"channumber\":" + std::to_string(chnNum) + ", \"size\":" + std::to_string(bufferSize) + "}");
+                        Log::send("{\"status\":\"shm_ready\", \"channumber\":" + std::to_string(chnNum) + ", \"size\":" + std::to_string(bufferSize) + "}");
                     }
                 } catch (...) {
                     Log::error("Error initializing SharedMemory.");
@@ -73,6 +69,8 @@ int main(int argc, char* argv[]) {
                     std::string url = cmd.Args.front();
                     cmd.Args.pop();
 
+                    std::string key = cameraKey(idStr, profile);
+
                     Log::info("id, profile, url:" + idStr + " " + profile + " " + url );
 
                     // Respond to Go
@@ -80,8 +78,7 @@ int main(int argc, char* argv[]) {
 
                     // Run logic
                     int camID = std::stoi(idStr);
-                    // activeCameras[camID] = std::make_unique<VideoIngestion>(SHM, camID, url, rootPath);
-                    activeCameras[camID] = std::make_unique<VideoIngestion>(VideoIngestionConfig{
+                    activeCameras[key] = std::make_unique<VideoIngestion>(VideoIngestionConfig{
                         SHM, camID, url, rootPath, profile
                     });
 
@@ -95,12 +92,15 @@ int main(int argc, char* argv[]) {
 
                     std::string idStr = cmd.Args.front();
                     cmd.Args.pop();
+                    std::string profile = cmd.Args.front();
+                    cmd.Args.pop();
 
-                    Log::info("stop cam id:" + idStr);
+                    Log::info("stop cam id:" + idStr + " " + profile );
+
+                    std::string key = cameraKey(idStr, profile);
 
                     // Remove VI
-                    int camID = std::stoi(idStr);
-                    auto it = activeCameras.find(camID);
+                    auto it = activeCameras.find(key);
                     if (it != activeCameras.end()) {
 
                         // Extract the unique_ptr from the map
@@ -123,6 +123,61 @@ int main(int argc, char* argv[]) {
                     Log::error("Error stopping video ingestion.");
                 }
             }
+
+            // ===========================================
+            // Recording Control
+            // ===========================================
+            if(cmd.Name == "RECORDING") {
+                try {
+                    std::string idStr = cmd.Args.front();
+                    cmd.Args.pop();
+                    std::string profile = cmd.Args.front();
+                    cmd.Args.pop();
+
+                    Log::info("stop cam recording id:" + idStr);
+
+                    std::string key = cameraKey(idStr, profile);
+
+                    // Remove VI
+                    auto it = activeCameras.find(key);
+                    if (it != activeCameras.end()) {
+
+                        it->second->startRecording();
+
+                    }
+
+                } catch (...) {
+                    Log::error("Error stopping recording.");
+                }
+
+            }
+
+            if(cmd.Name == "NORECORDING") {
+                try {
+                    std::string idStr = cmd.Args.front();
+                    cmd.Args.pop();
+                    std::string profile = cmd.Args.front();
+                    cmd.Args.pop();
+
+                    Log::info("stop cam recording id:" + idStr);
+
+                    std::string key = cameraKey(idStr, profile);
+
+                    // Remove VI
+                    auto it = activeCameras.find(key);
+                    if (it != activeCameras.end()) {
+
+                        it->second->stopRecording();
+
+                    }
+
+
+                } catch (...) {
+                    Log::error("Error stopping recording.");
+                }
+
+            }
+
 
         }
 

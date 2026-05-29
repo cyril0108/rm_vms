@@ -279,20 +279,41 @@ func (w *Worker) AssignCam(cam *Camera, profile string) error {
 
 }
 
-// func (w *Worker) StartCam(cam *Camera) error {
-
-//     cam.Status = "starting"
-//     command := fmt.Sprintf("START %d %s", cam.ID, cam.Main)
-//     return w.SendCommand(command)
-
-// }
-
 func (w *Worker) StartStreamProfile(camID int, profile string, sp *StreamProfile) error {
 
     sp.Status = "starting"
     command := fmt.Sprintf("START %d %s %s", camID, profile, sp.URL)
     return w.SendCommand(command)
 
+}
+
+func (w *Worker) StopStreamProfile(camID int, profile string) error {
+
+    command := fmt.Sprintf("STOP %d %s", camID, profile)
+    return w.SendCommand(command)
+
+}
+
+
+func (w *Worker) StartCamRecording(camID int, profile string) error {
+    w.mu.Lock()
+    defer w.mu.Unlock()
+
+    cam, exists := w.cameras[camID]
+    if !exists {
+        return fmt.Errorf("camera %d not found", camID)
+    }
+
+    pro := cam.GetProfile(profile)
+    if pro == nil {
+        fmt.Println("[Go][Worker][StreamHubForCam] incorrect profile ", profile)
+        return nil
+    }
+
+    // pro.Status = "recording"
+    command := fmt.Sprintf("RECORDING %d %s", cam.ID, profile)
+
+    return w.SendCommand(command)
 }
 
 func (w *Worker) StopCamRecording(camID int, profile string) error {
@@ -311,14 +332,14 @@ func (w *Worker) StopCamRecording(camID int, profile string) error {
         return nil
     }
 
-    pro.Status = "streaming"
-    command := fmt.Sprintf("NORECORDING %d", cam.ID)
-
+    // pro.Status = "streaming"
+    command := fmt.Sprintf("NORECORDING %d %s", cam.ID, profile)
 
     return w.SendCommand(command)
 
 }
 
+// Restart a cam that's already assigned to worker
 func (w *Worker) RestartCam(camID int, profile string) error {
 
     w.mu.Lock()
@@ -330,9 +351,33 @@ func (w *Worker) RestartCam(camID int, profile string) error {
         return fmt.Errorf("worker %d: no profile to restart", w.ID)
     }
 
+    if sp.Status != "stopped" {
+        return nil
+    }
+
     return w.StartStreamProfile(camID, profile, sp)
 
 }
+
+// Stop should remove the camera from
+// func (w *Worker) StopCam(camID int, profile string) error {
+
+//     w.mu.Lock()
+//     defer w.mu.Unlock()
+
+//     cam := w.cameras[camID]
+//     sp := cam.GetProfile(profile)
+//     if sp == nil {
+//         return fmt.Errorf("worker %d: no profile to restart", w.ID)
+//     }
+
+//     if sp.Status != "stopped" {
+//         return nil
+//     }
+
+//     return w.StopStreamProfile(camID, profile)
+
+// }
 
 
 // Stop cleanly closes the pipe and waits
@@ -357,6 +402,9 @@ func (w *Worker) Stop() {
  * ======================================================
  */
 
+// Get cameras assigned to worker.
+// Note that we do not know which profile or profiles
+// the working is handling. Only Manager knows it.
 func (w *Worker) GetCameras() []*Camera {
     w.mu.Lock()         // Lock before reading the map
     defer w.mu.Unlock() // Ensure it unlocks when the function finishes
@@ -394,13 +442,14 @@ func (w *Worker) handleCMDResponse(resp WorkerResponse) {
     case "streaming":
         w.updateCameraSHMChannel(resp)
 
-    case "shm":
+    case "shm_ready":
         w.startSHMReader(resp)
 
     case "segment_done":
         w.handleSegmentDone(resp)
 
-
+    case "shmerr":
+        fallthrough
     default:
         // Catch-all for unexpected IPC messages
         fmt.Printf("\033[33m[Go][Worker %d] Received unknown status from C++: '%s'\033[0m\n", w.ID, resp.Status)
@@ -531,6 +580,11 @@ func (w *Worker) recoverWorker(ctx context.Context) {
     // cameras. Since we do not know the profile
     // for those camera in this conext. It needs
     // another way to recover the cameras.
+    //=============================================
+    // The other way is to check the profiles in
+    // every cameras, and check for the worker id
+    // in profile. If the worker id is identical
+    // to this woker, then spin it up.
     //=============================================
     // Copy camera list, preventing infinite lock
     // camsToRestart := utils.CopyMapValues(w.cameras, &w.mu)
