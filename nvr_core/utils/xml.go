@@ -63,5 +63,5 @@ func PrintSimplifiedXML(xmlData []byte) {
 			}
 		}
 	}
-	fmt.Println("==========================================\n")
+	fmt.Print("==========================================\n\n")
 }

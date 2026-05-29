@@ -3,6 +3,7 @@ package onvif
 import (
 	"bytes"
 	"fmt"
+	"html"
 	"io"
 	"log"
 	"net/http"
@@ -148,7 +149,7 @@ func fetchStreamUri(dev *goonvif.Device, token string) string {
 	if err == nil && resp != nil {
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return extractTag(body, "Uri")
+		return html.UnescapeString(extractTag(body, "Uri"))
 	}
 	return ""
 }
