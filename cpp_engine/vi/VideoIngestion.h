@@ -24,6 +24,7 @@ struct VideoIngestionConfig {
     std::string url;
     std::string rootPath;
     std::string profile;
+    bool recording = false;
 };
 
 class VideoIngestion
@@ -33,6 +34,8 @@ public:
     ~VideoIngestion();
     // stop
     void stopIngestion();
+    void startRecording();
+    void stopRecording();
 
 private:
 
@@ -47,6 +50,8 @@ private:
     std::string profile;
 
     std::string camJsonPartial;
+
+    std::atomic<bool> recording{false};
 
     // --- FFmpeg Contexts & Options ---
     AVFormatContext* fmtCtx = nullptr;

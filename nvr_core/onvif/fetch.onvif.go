@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 
-	// "net/http/httputil"
 	"regexp"
 
 	goonvif "github.com/use-go/onvif"

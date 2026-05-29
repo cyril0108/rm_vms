@@ -21,13 +21,10 @@ private:
     std::string currentFilePath;
     long currentStartTimeMs = 0;
 
-    // Update the method signatures
     void sendSegmentDoneIPC(int camID, long startTimeMs, long endTimeMs, const std::string& filePath);
     long getEndTimeMs(SegmentRecorder& recorder);
 
-    // long currentStartTimeUnix = 0;
-    // void sendSegmentDoneIPC(int camID, long startTimeUnix, long endTimeUnix, const std::string& filePath);
-    // long getEndTimeUnix(SegmentRecorder& recorder);
+    void finalizeCurrentSegment(int camID);
 
 public:
     RecorderWorker(std::string rp = "", std::string prof = "");

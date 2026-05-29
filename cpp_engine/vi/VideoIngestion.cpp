@@ -16,7 +16,8 @@ VideoIngestion::VideoIngestion(const VideoIngestionConfig& config)
     : shm(config.shm), 
       camID(config.camID), 
       url(config.url),
-      profile(config.profile)
+      profile(config.profile),
+      recording(config.recording)
 {
     camName = "[Cam" + std::to_string(camID) + "]";
     shmChannelID = shm->ChannelForCamID(camID);
@@ -41,11 +42,6 @@ VideoIngestion::VideoIngestion(const VideoIngestionConfig& config)
 VideoIngestion::~VideoIngestion() {
 
     stopIngestion();
-
-    // Signal the thread to stop
-    // stopSignal = true;
-
-    // stopAndJoinDiskWriterThread();
 
     // Wait for the thread to finish (Join)
     // If we don't join, the thread might try to access 'this' after the object is destroyed -> Crash.
@@ -110,7 +106,7 @@ int VideoIngestion::startIngestion() {
 
 /**
  * =========================================================
- * --- Method: stopIngestion ---
+ * --- Method: Process Control ---
  * =========================================================
  */
 
@@ -119,6 +115,30 @@ void VideoIngestion::stopIngestion() {
     Log::info(camName + " Stop requested by orchestrator...");
 
     stopSignal = true;
+
+}
+
+void VideoIngestion::stopRecording() {
+
+    // Log::info(camName + " Stop recording...");
+    // recording = false;
+    // diskWriterQueue.push(nullptr)
+
+    Log::info(camName + " Stop recording requested...");
+
+    recording.store(false, std::memory_order_relaxed);
+
+    // Send a "Flush" packet instead of a kill pill
+    AVPacket* flushPacket = av_packet_alloc();
+    flushPacket->size = 0; 
+    diskWriterQueue.push(flushPacket);
+
+}
+
+void VideoIngestion::startRecording() {
+
+    Log::info(camName + " Start recording...");
+    recording = true;
 
 }
 
@@ -236,8 +256,9 @@ void VideoIngestion::routePacket(AVPacket* packet) {
 
 void VideoIngestion::packetToDiskWriter(AVPacket* packet) {
 
-    // // Log::info("[packetToDiskWriter] currently not processing.");
-    // return;
+    if (!recording) {
+        return;
+    }
 
     AVPacket* cloneForDisk = av_packet_alloc();
     if (av_packet_ref(cloneForDisk, packet) >= 0) {

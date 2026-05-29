@@ -66,6 +66,15 @@ void RecorderWorker::writerWorker(SafeQueue<AVPacket*>& queue, AVStream* inVideo
             break; 
         }
 
+        if (packet->size == 0) {
+            finalizeCurrentSegment(camID);
+            
+            isFirstSegment = true; 
+            av_packet_unref(packet);
+            av_packet_free(&packet);
+            continue;
+        }
+
         auto now = std::chrono::steady_clock::now();
         bool timeToRotate = std::chrono::duration_cast<std::chrono::minutes>(now - lastSwitchTime).count() >= RECORDING_ROTATE_TIME;
         // bool timeToRotate = std::chrono::duration_cast<std::chrono::seconds>(now - lastSwitchTime).count() >= 30;
@@ -78,11 +87,7 @@ void RecorderWorker::writerWorker(SafeQueue<AVPacket*>& queue, AVStream* inVideo
         // Start the first file or rotate with Video Keyframe boundary
         if (isFirstSegment || (timeToRotate && isVideoKeyframe)) {
 
-            endTimeMs = getEndTimeMs(recorder);
-            recorder.StopSegment();
-
-            // Fire the IPC event for the completed file (Safely ignores the first run)
-            sendSegmentDoneIPC(camID, currentStartTimeMs, endTimeMs, currentFilePath);
+            finalizeCurrentSegment(camID);
 
             // Generate the precise directory tree and filename (e.g., /recordings/cam01/2026/03/12/15-30-00.mp4)
             currentFilePath = pathGenerator.For(camID, packet); 
@@ -93,6 +98,7 @@ void RecorderWorker::writerWorker(SafeQueue<AVPacket*>& queue, AVStream* inVideo
 
             lastSwitchTime = now;
             isFirstSegment = false;
+
         }
 
         // Delegate A/V routing, rescaling, and interleaving to the recorder
@@ -103,10 +109,23 @@ void RecorderWorker::writerWorker(SafeQueue<AVPacket*>& queue, AVStream* inVideo
         av_packet_free(&packet);
     }
 
-    endTimeMs = getEndTimeMs(recorder);
+    finalizeCurrentSegment(camID);
+
+}
+
+void RecorderWorker::finalizeCurrentSegment(int camID) {
+    // Guard clause: Do nothing if we aren't actively recording
+    if (!recorder.IsRecording()) {
+        return;
+    }
+
+    long endTimeMs = getEndTimeMs(recorder);
     recorder.StopSegment();
 
-    // Fire the IPC event for latest file
+    // Fire the IPC event for the completed file
     sendSegmentDoneIPC(camID, currentStartTimeMs, endTimeMs, currentFilePath);
 
+    // CRITICAL: Clear the path so the next segment initialization 
+    // or duplicate flush commands do not trigger an empty IPC message
+    currentFilePath = ""; 
 }
