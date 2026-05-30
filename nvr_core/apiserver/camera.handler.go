@@ -249,13 +249,12 @@ func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Start camera recording
 	if err := s.PM.StartCameraRecording(int(camID)); err != nil {
 		log.Printf("Failed to activate camera runtime err: %v", err)
 		http.Error(w, "Failed to start camera recording", http.StatusInternalServerError)
 	}
 
-	if err := RespondJSON(w, "started (not really)"); err != nil {
+	if err := RespondJSON(w, "started"); err != nil {
 		log.Printf("Error encoding response: %v", err)
 	}
 
@@ -281,7 +280,7 @@ func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	if err := s.Services.Camera.DeactivateCamera(ctx, int64(camID)); err != nil {
+	if err := s.Services.Camera.DeactivateCamera(ctx, camID); err != nil {
 		log.Printf("Failed to deactivate camera: %v", err)
 		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
 		return
@@ -323,7 +322,7 @@ func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	ctx := r.Context()
-	if err := s.Services.Camera.DeleteCamera(ctx, int64(camID)); err != nil {
+	if err := s.Services.Camera.DeleteCamera(ctx, camID); err != nil {
 		log.Printf("Failed to delete camera: %v", err)
 		http.Error(w, "Failed to delete camera", http.StatusInternalServerError)
 		return

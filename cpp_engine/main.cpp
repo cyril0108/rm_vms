@@ -36,6 +36,8 @@ int main(int argc, char* argv[]) {
 
         Command cmd = parseCommand(line);
 
+        Log::info("Got command " + line);
+
         if(cmd.Name != "") {
 
             if(cmd.Name == "WORKER") {
@@ -134,7 +136,7 @@ int main(int argc, char* argv[]) {
                     std::string profile = cmd.Args.front();
                     cmd.Args.pop();
 
-                    Log::info("stop cam recording id:" + idStr);
+                    Log::info("start cam recording id:" + idStr);
 
                     std::string key = cameraKey(idStr, profile);
 
@@ -147,7 +149,7 @@ int main(int argc, char* argv[]) {
                     }
 
                 } catch (...) {
-                    Log::error("Error stopping recording.");
+                    Log::error("Error starting recording.");
                 }
 
             }

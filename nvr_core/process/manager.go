@@ -126,6 +126,7 @@ func decideWorkerAssignIDs(id int, len int) (int, int) {
 	return wId, subId
 }
 
+// Get main/sub workers for given camera
 func (m *Manager) camWorkerIDs(camID int) (int, int) {
 
 	wId, exists := m.camMainWorker[camID];
@@ -161,23 +162,25 @@ func (m *Manager) CameraWorker(camID int, profile string) (*Worker, error) {
 
 func (m *Manager) StartCameraRecording(camID int) error {
 
-	return nil
-	// wId, subId := m.camWorkerIDs(camID)
-	// var err1, err2 error
+    LOG.Info("[m][StartCameraRecording]")
 
-	// if wId >= 0 {
-	// 	mainWorker := m.workers[wId];
-	// 	// err1 = mainWorker.StartStreamProfile()
-	// }
+	wId, subId := m.camWorkerIDs(camID)
+	var err1, err2 error
 
-	// if subId >= 0 {
-	// 	subWorker := m.workers[subId];
-	// 	err2 = subWorker.StopCamRecording(camID, utils.SegmentSubProfile)
-	// }
+    LOG.Info("[m][StartCameraRecording]", "w1", wId, "w2", subId)
 
-	// return errors.Join(err1, err2)
+	if wId >= 0 {
+		mainWorker := m.workers[wId];
+		err1 = mainWorker.StartCamRecording(camID, utils.SegmentMainProfile)
+	}
+
+	if subId >= 0 {
+		subWorker := m.workers[subId];
+		err2 = subWorker.StartCamRecording(camID, utils.SegmentSubProfile)
+	}
+
+	return errors.Join(err1, err2)
 }
-
 
 
 func (m *Manager) StopCameraRecording(camID int) error {

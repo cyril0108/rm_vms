@@ -1,4 +1,5 @@
 #include "Command.h"
+#include "Log.h"
 
 #include <vector>
 #include <sstream>
@@ -6,7 +7,7 @@
 
 
 const std::vector<std::string> ValidCommands = {
-    "EXIT", "START", "STOP", "WORKER"
+    "EXIT", "START", "STOP", "WORKER", "RECORDING", "NORECORDING"
 };
 
 std::queue<std::string> strsplit(const std::string& str, char delimiter) {
@@ -39,6 +40,8 @@ Command parseCommand(std::string line) {
             }
         }
     }
+
+    Log::info("No valid command");
 
     // Return empty command if not valid
     return {{}, std::queue<std::string>()}; 

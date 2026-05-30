@@ -129,12 +129,17 @@ void VideoIngestion::stopRecording() {
     flushPacket->size = 0; 
     diskWriterQueue.push(flushPacket);
 
+    // Log::send("{\"status\":\"streaming\", " + camJsonPartial + "}");
+
 }
 
 void VideoIngestion::startRecording() {
 
     Log::info(camName + " Start recording...");
     recording = true;
+
+    Log::send("{\"status\":\"recording\", " + camJsonPartial + "}");
+
 
 }
 

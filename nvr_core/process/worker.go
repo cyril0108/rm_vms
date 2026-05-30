@@ -75,7 +75,7 @@ func (w *Worker) handleStoppedStream(resp WorkerResponse) {
     if cam, exists := w.cameras[resp.CamID]; exists {
         pf := cam.GetProfile(resp.Profile)
         if pf != nil {
-            pf.Status = "Stopped"
+            pf.Status = "stopped"
             if pf.ChannelID > -1 {
                 w.shmReader.StopChannel(resp.CamID, pf.ChannelID)
             }
@@ -112,7 +112,8 @@ func (w *Worker) updateCameraSHMChannel(resp WorkerResponse) {
 
     fmt.Println(LOGSEP + "[Go][Worker] update SHM Channel cam:", resp.CamID, resp.ChannelID)
 
-    w.updateCameraStatus(resp)
+    // Do not update here
+    // w.updateCameraStatus(resp)
 
     w.mu.Lock()
     cam := w.cameras[resp.CamID]
@@ -134,6 +135,11 @@ func (w *Worker) updateCameraSHMChannel(resp WorkerResponse) {
         pf.ChannelID = resp.ChannelID
         hub := w.shmReader.StartChannel(resp.CamID, resp.ChannelID, existingHub)
         w.streamHubs[resp.ChannelID] = hub
+
+        // Prevent stopped status being overwritten by SHM update.
+        if pf.Status != "stopped" {
+            pf.Status = resp.Status
+        }
 
         w.mu.Unlock()
 
@@ -249,6 +255,8 @@ func (w *Worker) SendCommand(cmd string) error {
         return fmt.Errorf("worker %d is not running", w.ID)
     }
 
+    LOG.Info("[SendCommand] sending command", "cmd", cmd)
+
     // Add newline because C++ uses std::getline
     _, err := io.WriteString(w.Stdin, cmd+"\n")
     return err
@@ -281,6 +289,8 @@ func (w *Worker) AssignCam(cam *Camera, profile string) error {
 
 func (w *Worker) StartStreamProfile(camID int, profile string, sp *StreamProfile) error {
 
+    LOG.Info("[StartStreamProfile]", "cam", camID, "profile", profile)
+
     sp.Status = "starting"
     command := fmt.Sprintf("START %d %s %s", camID, profile, sp.URL)
     return w.SendCommand(command)
@@ -296,6 +306,9 @@ func (w *Worker) StopStreamProfile(camID int, profile string) error {
 
 
 func (w *Worker) StartCamRecording(camID int, profile string) error {
+
+    LOG.Info("[StartCamRecording]")
+
     w.mu.Lock()
     defer w.mu.Unlock()
 
@@ -313,10 +326,14 @@ func (w *Worker) StartCamRecording(camID int, profile string) error {
     // pro.Status = "recording"
     command := fmt.Sprintf("RECORDING %d %s", cam.ID, profile)
 
+    LOG.Info("[StartCamRecording] sending", "command", command)
+
     return w.SendCommand(command)
 }
 
 func (w *Worker) StopCamRecording(camID int, profile string) error {
+
+    LOG.Info("[StopCamRecording]")
 
     w.mu.Lock()
     defer w.mu.Unlock()
@@ -332,7 +349,7 @@ func (w *Worker) StopCamRecording(camID int, profile string) error {
         return nil
     }
 
-    // pro.Status = "streaming"
+    pro.Status = "streaming"
     command := fmt.Sprintf("NORECORDING %d %s", cam.ID, profile)
 
     return w.SendCommand(command)
@@ -342,18 +359,26 @@ func (w *Worker) StopCamRecording(camID int, profile string) error {
 // Restart a cam that's already assigned to worker
 func (w *Worker) RestartCam(camID int, profile string) error {
 
+    LOG.Info("[RestartCam]", "cam", camID, "profile", profile)
+
     w.mu.Lock()
     defer w.mu.Unlock()
 
     cam := w.cameras[camID]
     sp := cam.GetProfile(profile)
     if sp == nil {
+
+        LOG.Info("[RestartCam] no profile")
+
         return fmt.Errorf("worker %d: no profile to restart", w.ID)
     }
 
     if sp.Status != "stopped" {
+        LOG.Info("[RestartCam] not stopped")
         return nil
     }
+
+    LOG.Info("[RestartCam] restarting profile")
 
     return w.StartStreamProfile(camID, profile, sp)
 
