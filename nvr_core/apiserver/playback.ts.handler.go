@@ -12,7 +12,7 @@ import (
 	"nvr_core/utils"
 )
 
-// HandlePlayVideo expects: GET /api/cameras/{id}/play/ts?time=1711000050
+// HandlePlayVideo expects: GET /api/cameras/{id}/play/ts?profile=sub&time=1711000050
 func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))

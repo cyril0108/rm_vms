@@ -50,6 +50,7 @@ private:
     std::string profile;
 
     std::string camJsonPartial;
+    std::string recStatus;
 
     std::atomic<bool> recording{false};
 
@@ -75,6 +76,8 @@ private:
     int openInput();            // Connects to the RTSP source
     int cleanup();              // Safely frees all FFmpeg resources
     void stopAndJoinDiskWriterThread();
+
+    void updateRECStatus();
 
     // --- Setup Helpers ---
     void findStreamIndices();

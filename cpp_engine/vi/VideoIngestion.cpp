@@ -24,6 +24,7 @@ VideoIngestion::VideoIngestion(const VideoIngestionConfig& config)
     recorderWorker = std::make_unique<RecorderWorker>(config.rootPath, profile);
 
     camJsonPartial = "\"cam\":" + std::to_string(camID) + ", \"profile\": \"" + profile + "\"";
+    updateRECStatus();
 
     if(shmChannelID < 0) {
 
@@ -32,10 +33,15 @@ VideoIngestion::VideoIngestion(const VideoIngestionConfig& config)
 
     } else {
 
+        Log::send("{\"status\":\"shm_id\", " + camJsonPartial + ", \"channel\":" + std::to_string(shmChannelID) + "}");
         workerThread = std::thread(&VideoIngestion::startIngestion, this);
 
     }
 
+}
+
+void VideoIngestion::updateRECStatus() {
+    recStatus = recording ? "recording" : "streaming";
 }
 
 // --- Destructor ---
@@ -84,7 +90,7 @@ int VideoIngestion::startIngestion() {
     initDiskWriter();
 
     Log::info(camName + " Connected! Starting Ingestion Loop...");
-    Log::send("{\"status\":\"streaming\", " + camJsonPartial + ", \"channel\":" + std::to_string(shmChannelID) + "}");
+    Log::send("{\"status\":\"" + recStatus +"\", " + camJsonPartial + "}");
 
     // The Main Loop
     AVPacket* packet = av_packet_alloc();
@@ -123,6 +129,7 @@ void VideoIngestion::stopRecording() {
     Log::info(camName + " Stop recording requested...");
 
     recording.store(false, std::memory_order_relaxed);
+    updateRECStatus();
 
     // Send a "Flush" packet instead of a kill pill
     AVPacket* flushPacket = av_packet_alloc();
@@ -136,10 +143,10 @@ void VideoIngestion::stopRecording() {
 void VideoIngestion::startRecording() {
 
     Log::info(camName + " Start recording...");
-    recording = true;
+    recording.store(true, std::memory_order_relaxed);
+    updateRECStatus();
 
-    Log::send("{\"status\":\"recording\", " + camJsonPartial + "}");
-
+    Log::send("{\"status\":\"" + recStatus + "\", " + camJsonPartial + "}");
 
 }
 

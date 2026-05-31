@@ -194,11 +194,10 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// We need to restart camera worker
+	if cam.StreamURL != *updateCam.StreamURL || cam.SubStreamURL != *updateCam.SubStreamURL {
 
-	// newCam.Status = "initializing"
-	// s.State.Cameras.Store(newCam.ID, newCam)
-
-	// TODO: Send camera start up command to the target C++ Worker Subprocess
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	if err := RespondJSON(w, updateCam); err != nil {

@@ -463,10 +463,12 @@ func (w *Worker) handleCMDResponse(resp WorkerResponse) {
 
     case "recording":
         fallthrough
+    case "streaming":
+        fallthrough
     case "starting":
         w.updateCameraStatus(resp)
 
-    case "streaming":
+    case "shm_id":
         w.updateCameraSHMChannel(resp)
 
     case "shm_ready":
