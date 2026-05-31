@@ -66,5 +66,5 @@ func (c *Camera) EncryptPassword(plaintext string, masterKey []byte) {
 }
 
 func (c *Camera) DecryptPassword(masterKey []byte) (string, error) {
-	return security.Encrypt(c.PasswordEnc, masterKey)
+	return security.Decrypt(c.PasswordEnc, masterKey)
 }

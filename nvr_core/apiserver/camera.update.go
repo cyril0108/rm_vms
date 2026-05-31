@@ -176,6 +176,8 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ll := LOG.Lin("fn","[UpdateCameraONVIF]")
+
 	user := cam.Username
 	pwd, err := cam.DecryptPassword(s.CFG.Server.MasterKey())
 
