@@ -137,7 +137,7 @@ void SegmentRecorder::StopSegment() {
         }
         avformat_free_context(outFormatCtx);
         outFormatCtx = nullptr;
-        Log::info("[SegmentRecorder] stopped \n " + currentFilename);
+        Log::info("[SegmentRecorder] closing segment \n " + currentFilename);
     }
     isRecording = false;
 }
