@@ -70,6 +70,10 @@ func (api *APIServer) HandleSegmentSnapshot(w http.ResponseWriter, r *http.Reque
 
 	// profile := GetQueryProfile(r)
 
+	// Shift one second so it should be within star/end time range
+	// of sql search condition.
+	timestamp = (timestamp+1)*1000
+
 	// Get the validated physical path from the Service
 	filePath, err := api.Services.Playback.GetVideoSnapshotFilePath(r.Context(), camID, timestamp)
 	if err != nil {
