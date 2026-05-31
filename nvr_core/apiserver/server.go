@@ -117,6 +117,8 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/cameras/{cam_id}/play", api.HandlePlayVideo)
 	mux.HandleFunc("GET /api/cameras/{cam_id}/play/ts", api.HandleTransmuxTS)
 
+	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot", api.HandleSegmentSnapshot)
+
 	// =============================================
 	// Calendar
 	// =============================================
