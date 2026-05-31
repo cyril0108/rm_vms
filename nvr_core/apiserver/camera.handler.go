@@ -291,7 +291,7 @@ func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
 	}
 
-	if err := RespondJSON(w, "stopped (not really)"); err != nil {
+	if err := RespondJSON(w, "stopped"); err != nil {
 		log.Printf("Error encoding response: %v", err)
 	}
 
