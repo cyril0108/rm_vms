@@ -21,7 +21,7 @@ func NewSegmentItemFrom(segment *models.Segment) (SegmentItem) {
 		StartTime: segment.StartTime,
 		EndTime: segment.EndTime,
 		DurationMs: (segment.EndTime - segment.StartTime),
-		StreamURL: utils.PathForCameraPlayURL(segment.CameraID, segment.StartTime),
+		StreamURL: utils.PathForCameraPlayMSURL(segment.CameraID, segment.StartTime),
 	}
 
 }

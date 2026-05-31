@@ -6,13 +6,13 @@ import (
 	"log"
 	"net/http"
 	"nvr_core/apiserver/dto"
+	"nvr_core/db/models"
 
 	// "nvr_core/db/models"
 	"nvr_core/onvif"
 	// "nvr_core/process"
 	"nvr_core/utils"
 )
-
 
 // UpdateCamera godoc
 // @Summary      Add a new manual camera
@@ -76,14 +76,20 @@ func (s *APIServer) UpdateCamera(w http.ResponseWriter, r *http.Request) {
 // @Router       /api/cameras/{cam_id}/auth [put]
 func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 
+	ll := LOG.Lin("fn","[UpdateCameraAuth]")
+
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
 		http.Error(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
-	var newCamera dto.UpdateCameraRequest
+	ll = ll.Lin("cam", camID)
+	ll.Info("got cam id")
+
+	var newCamera *dto.UpdateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&newCamera); err != nil {
+		ll.Info("incorrect form?", "data", r.Body)
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
@@ -92,7 +98,8 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 
 	// Check authenticity of user/pwd combination
 	// before save
-	if cam, err := s.Services.Camera.GetByID(ctx, camID); err != nil {
+	cam, err := s.Services.Camera.GetByID(ctx, camID)
+	if  err != nil {
 		http.Error(w, "Failed to get camera data or it does not exist.", http.StatusBadRequest)
 		return
 	} else {
@@ -111,8 +118,8 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Cast only user/password for update
-	cam := newCamera.ToUserPWDMapInterface(s.CFG.Server.MasterKey())
-	if err := s.Services.Camera.UpdateCamera(ctx, camID, cam); err != nil {
+	camMap := newCamera.ToUserPWDMapInterface(s.CFG.Server.MasterKey())
+	if err := s.Services.Camera.UpdateCamera(ctx, camID, camMap); err != nil {
 		errstr := fmt.Sprintf("Failed to update camera: %v", err)
 		log.Print(errstr)
 		http.Error(w, errstr, http.StatusBadRequest)
@@ -123,6 +130,9 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 	// TODO: Send camera start up command to the target C++ Worker Subprocess
 
 	// theCamera := dto.MapCameraToDetail(*cam)
+	if cameraNeedRestart(cam, newCamera) {
+		log.Printf("New camera data needs reboot. We do not have means for that now: %v", camID)
+	}
 
 
 	w.WriteHeader(http.StatusCreated)
@@ -195,13 +205,22 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// We need to restart camera worker
-	if cam.StreamURL != *updateCam.StreamURL || cam.SubStreamURL != *updateCam.SubStreamURL {
-
+	if cameraNeedRestart(cam, updateCam) {
+		log.Printf("New camera data needs reboot. We do not have means for that now: %v", camID)
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	if err := RespondJSON(w, updateCam); err != nil {
+	if err := RespondJSON(w, *dto.Onvif2UpdateCameraDetail(camOnvif)); err != nil {
 		log.Printf("Error encoding new camera response: %v", err)
 	}
 }
 
+func cameraNeedRestart(cam *models.Camera, newOne *dto.UpdateCameraRequest) bool {
+	if newOne.StreamURL != nil && cam.StreamURL != *newOne.StreamURL {
+		return true
+	}
+	if newOne.SubStreamURL != nil && cam.SubStreamURL != *newOne.SubStreamURL {
+		return true
+	}
+	return false
+}

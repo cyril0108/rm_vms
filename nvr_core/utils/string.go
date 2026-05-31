@@ -54,12 +54,20 @@ func Str2Int(str string) (int, error) {
 	return strconv.Atoi(str)
 }
 
-func PathForCameraPlayURL(camID int64, time int64) string {
-	return fmt.Sprintf("/api/cameras/%d/play?time=%d", camID, time)
+// func PathForCameraPlayURL(camID int64, time int64) string {
+// 	return fmt.Sprintf("/api/cameras/%d/play?time=%d", camID, time)
+// }
+
+// func PathForCameraTSPlayURL(camID int64, time int64) string {
+// 	return fmt.Sprintf("/api/cameras/%d/play/ts?time=%d", camID, time)
+// }
+
+func PathForCameraPlayMSURL(camID int64, time int64) string {
+	return fmt.Sprintf("/api/cameras/%d/play?mstime=%d", camID, time)
 }
 
-func PathForCameraTSPlayURL(camID int64, time int64) string {
-	return fmt.Sprintf("/api/cameras/%d/play/ts?time=%d", camID, time)
+func PathForCameraTSPlayMSURL(camID int64, time int64) string {
+	return fmt.Sprintf("/api/cameras/%d/play/ts?mstime=%d", camID, time)
 }
 
 // HandleGetPlaylist expects: GET /api/cameras/{cam_id}/playlist.m3u8?start=1711000000&end=1711003600

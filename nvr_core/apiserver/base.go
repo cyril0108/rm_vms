@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -27,6 +28,45 @@ func GetQueryProfile(r *http.Request) string {
 		profile = "main"
 	}
 	return profile
+}
+
+// Get search time from url query.
+// The returned int64 will be millisecond-base that is
+// proper for database search.
+func GetSearchAtTime(r *http.Request) (int64, error) {
+	if mstimeStr := r.URL.Query().Get("mstime"); mstimeStr != "" {
+		mstime, err := strconv.ParseInt(mstimeStr, 10, 64)
+		if err != nil {
+			return 0, errors.New("invalid mstime format")
+		}
+		return mstime, nil
+	}
+
+	if timeStr := r.URL.Query().Get("time"); timeStr != "" {
+		timeSec, err := strconv.ParseInt(timeStr, 10, 64)
+		if err != nil {
+			return 0, errors.New("invalid time format")
+		}
+		// Shift one second so it should be within star/end time range
+		// of sql search condition.
+		return (timeSec+1) * 1000, nil
+
+		// Explaine:
+		// Assume start time 123456(ms) to end time 183779(ms)
+		// We normally send 123(s) search.
+		// * = 123*1000 = 123000
+		// X = (123+1)*1000 = 124000
+		// ---------*--|123456--X-----------|183779-----------
+		// This shows that X is what we want.
+		// 
+		// The only risk is that when the recorded range is
+		// within 1 or 2 seconds, then this method could fail.
+		// On those extreme scenario, one should really
+		// use mstime.
+
+	}
+
+	return 0, errors.New("missing time parameter")
 }
 
 func GetMSTimeRange(r *http.Request) (int64, int64, error) {

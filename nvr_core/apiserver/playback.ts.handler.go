@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 
 	"nvr_core/service"
 	"nvr_core/utils"
@@ -21,10 +20,15 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timeStr := r.URL.Query().Get("time")
-	timestamp, err := strconv.ParseInt(timeStr, 10, 64)
+	// timeStr := r.URL.Query().Get("time")
+	// timestamp, err := strconv.ParseInt(timeStr, 10, 64)
+	// if err != nil {
+	// 	http.Error(w, "Invalid timestamp", http.StatusBadRequest)
+	// 	return
+	// }
+	timestamp, err := GetSearchAtTime(r)
 	if err != nil {
-		http.Error(w, "Invalid timestamp", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

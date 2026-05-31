@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"regexp"
 
@@ -218,10 +219,35 @@ func VerifyCredentials(ip, username, password string) (bool, error) {
 		// Credentials failed!
 		return false, fmt.Errorf("authentication rejected by camera: %w", err)
 	}
+	if resp == nil {
+		return false, fmt.Errorf("received empty response from camera")
+	}
 
-	// Clean up the HTTP response
-	if resp != nil {
-		resp.Body.Close()
+	defer resp.Body.Close()
+
+	// Standard web servers will return 401 or 403.
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return false, nil // Valid network request, but credentials failed
+	}
+
+	// Read the body to check for SOAP Faults. 
+	// Many ONVIF cameras return HTTP 200 or 500, but embed the failure in the XML.
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	bodyStr := string(body)
+
+	// Look for the classic ONVIF authorization error string or a generic SOAP Fault
+	if strings.Contains(bodyStr, "NotAuthorized") || strings.Contains(bodyStr, "Fault>") {
+		return false, nil 
+	}
+
+	// Final verification (matches your FetchCameraONVIFData logic)
+	// If it doesn't contain "Profiles", it failed to authenticate the media endpoint.
+	if !strings.Contains(bodyStr, "Profiles") {
+		return false, nil
 	}
 
 	// Success! The credentials are valid.

@@ -14,8 +14,13 @@ StorePath::StorePath(const std::string& root, const std::string& prof) : rootPat
 
 std::string StorePath::For(int camID, AVPacket* packet) {
 
-    //  Capture the exact wall-clock time the segment starts
+    // Capture the exact wall-clock time the segment starts
     auto now = std::chrono::system_clock::now();
+    
+    // NEW: Extract 13-digit millisecond epoch for the filename
+    auto ms_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+    // Convert to time_t (seconds) strictly for local calendar math (folder structure)
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
     std::tm bt{};
@@ -23,7 +28,7 @@ std::string StorePath::For(int camID, AVPacket* packet) {
     // POSIX thread-safe localtime. Perfect for macOS and Linux.
     localtime_r(&in_time_t, &bt);
 
-    //  Construct the directory path: ROOT/camID/YYYY/MM/DD
+    // Construct the directory path: ROOT/camID/profile/YYYY/MM/DD
     std::ostringstream folderStream;
     folderStream << rootPath
                  << "/cam" << std::setfill('0') << std::setw(2) << camID
@@ -32,18 +37,17 @@ std::string StorePath::For(int camID, AVPacket* packet) {
 
     std::string folderPath = folderStream.str();
 
-    //  Ensure the directory structure exists (equivalent to `mkdir -p`)
+    // Ensure the directory structure exists (equivalent to `mkdir -p`)
     std::error_code ec;
     std::filesystem::create_directories(folderPath, ec);
     if (ec) {
-        // In a production system, you might want to log this via your Log class
         std::cerr << "[StorePath] Critical IO Error: Failed to create directories: " 
                   << ec.message() << std::endl;
     }
 
-    //  Construct the final filename: HH-MM-SS.mp4
+    // Construct the final filename using the millisecond epoch: 1716301234000.mkv
     std::ostringstream fileStream;
-    fileStream << folderPath << "/" << std::to_string(in_time_t) << ".mkv";
+    fileStream << folderPath << "/" << ms_epoch << ".mkv";
 
     return fileStream.str();
 }

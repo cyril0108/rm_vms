@@ -3,7 +3,6 @@ package apiserver
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"nvr_core/service"
 	"nvr_core/utils"
@@ -18,15 +17,19 @@ func (api *APIServer) HandlePlayVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timeStr := r.URL.Query().Get("time")
-	timestamp, err := strconv.ParseInt(timeStr, 10, 64)
+	// timeStr := r.URL.Query().Get("time")
+	// timestamp, err := strconv.ParseInt(timeStr, 10, 64)
+	// if err != nil {
+	// 	http.Error(w, "Invalid timestamp", http.StatusBadRequest)
+	// 	return
+	// }
+	timestamp, err := GetSearchAtTime(r)
 	if err != nil {
-		http.Error(w, "Invalid timestamp", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	profile := GetQueryProfile(r)
-	// timestamp = timestamp
 
 	// Get the validated physical path from the Service
 	filePath, err := api.Services.Playback.GetVideoFilePath(r.Context(), camID, profile, timestamp)
@@ -61,26 +64,18 @@ func (api *APIServer) HandleSegmentSnapshot(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	timeStr := r.URL.Query().Get("time")
-	timestamp, err := strconv.ParseInt(timeStr, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid timestamp", http.StatusBadRequest)
-		return
-	}
-
-	// profile := GetQueryProfile(r)
-
 	// Shift one second so it should be within star/end time range
 	// of sql search condition.
-	timestamp = (timestamp+1)*1000
+	timestamp, err := GetSearchAtTime(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	// Get the validated physical path from the Service
 	filePath, err := api.Services.Playback.GetVideoSnapshotFilePath(r.Context(), camID, timestamp)
 	if err != nil {
 		if errors.Is(err, service.ErrVideoSegmentNotFound) || errors.Is(err, service.ErrFileMissing) {
-
-LOG.Info("[HandleSegmentSnapshot] NOT FOUND", "camID", camID, "timestamp", timestamp, "filepath", filePath);
-
 			http.Error(w, "Snapshot not found", http.StatusNotFound)
 			return
 		}

@@ -45,6 +45,20 @@ func Onvif2UpdateCameraRequest(cam *onvif.OnvifRecord) *UpdateCameraRequest {
 	}
 }
 
+func Onvif2UpdateCameraDetail(cam *onvif.OnvifRecord) *CameraDetailResponse {
+	return &CameraDetailResponse{
+		Manufacturer: cam.Manufacturer,
+		Model: cam.Model,
+		SerialNumber: cam.SerialNumber,
+		IPAddress: cam.IP,
+		MACAddress: cam.MACAddress,
+		Username: cam.Username,
+		MainStreamURL: cam.MainStream,
+		SubStreamURL: cam.SubStream,
+		SupportsPTZ: cam.SupportsPTZ,
+	}
+}
+
 func (u *UpdateCameraRequest) ToMapInterface(masterKey []byte) map[string]interface{} {
 
 	updates := make(map[string]interface{})

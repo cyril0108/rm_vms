@@ -34,6 +34,7 @@ type CameraDetailResponse struct {
 	SerialNumber     string  `json:"serial_number"`
 
 	IPAddress        string  `json:"ip_address"`
+	MACAddress        string `json:"mac_address"`
 	HTTPPort         int     `json:"http_port"`
 	Type             string  `json:"type"`
 
@@ -77,6 +78,7 @@ func MapCameraToDetail(cam models.Camera) CameraDetailResponse {
 		Manufacturer:     cam.Manufacturer,
 		Model:            cam.Model,
 		SerialNumber:     cam.SerialNumber,
+		MACAddress:       cam.MACAddress,
 		IPAddress:        cam.IPAddress,
 		HTTPPort:         cam.HTTPPort,
 		Type:             cam.Type,
@@ -88,5 +90,23 @@ func MapCameraToDetail(cam models.Camera) CameraDetailResponse {
 		IsActive:         cam.IsActive,
 		CreatedAt:        cam.CreatedAt,
 		UpdatedAt:        cam.UpdatedAt,
+	}
+}
+
+func MapCameraRequestToDetail(cam *UpdateCameraRequest) CameraDetailResponse {
+	return CameraDetailResponse{
+		Name:             *cam.Name,
+		Manufacturer:     *cam.Manufacturer,
+		Model:            *cam.Model,
+		SerialNumber:     *cam.SerialNumber,
+		IPAddress:        *cam.IPAddress,
+		HTTPPort:         *cam.HTTPPort,
+		Type:             *cam.Type,
+		Username:         *cam.Username,
+		MainStreamURL:    *cam.StreamURL,
+		SubStreamURL:     *cam.SubStreamURL,
+		SupportsPTZ:      *cam.SupportsPTZ,
+		RetentionGBLimit: *cam.RetentionGBLimit,
+		IsActive:         *cam.IsActive,
 	}
 }
