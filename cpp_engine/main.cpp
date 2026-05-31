@@ -71,9 +71,16 @@ int main(int argc, char* argv[]) {
                     std::string url = cmd.Args.front();
                     cmd.Args.pop();
 
+                    // Recording status
+                    std::string recordStr = cmd.Args.front();
+                    cmd.Args.pop();
+                    bool isRecording = (recordStr == "true" || recordStr == "1");
+
+
                     std::string key = cameraKey(idStr, profile);
 
                     Log::info("id, profile, url:" + idStr + " " + profile + " " + url );
+                    Log::info("id, recording:" + idStr + " " + recordStr + "->" + (isRecording ? "true" : "false") );
 
                     // Respond to Go
                     Log::send("{\"status\":\"starting\", \"cam\":" + idStr + "}");
@@ -81,7 +88,7 @@ int main(int argc, char* argv[]) {
                     // Run logic
                     int camID = std::stoi(idStr);
                     activeCameras[key] = std::make_unique<VideoIngestion>(VideoIngestionConfig{
-                        SHM, camID, url, rootPath, profile
+                        SHM, camID, url, rootPath, profile, isRecording
                     });
 
                 } catch (...) {

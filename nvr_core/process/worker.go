@@ -283,16 +283,18 @@ func (w *Worker) AssignCam(cam *Camera, profile string) error {
     sp.WorkerID = w.ID
     w.cameras[cam.ID] = cam
 
-    return w.StartStreamProfile(cam.ID, profile, sp)
+    return w.StartStreamProfile(cam.ID, profile, sp, cam.Active)
 
 }
 
-func (w *Worker) StartStreamProfile(camID int, profile string, sp *StreamProfile) error {
+func (w *Worker) StartStreamProfile(camID int, profile string, sp *StreamProfile, recording bool) error {
 
-    LOG.Info("[StartStreamProfile]", "cam", camID, "profile", profile)
+    LOG.Info("[StartStreamProfile]", "cam", camID, "profile", profile, "recording", recording)
+
+    rStr := strconv.FormatBool(recording)
 
     sp.Status = "starting"
-    command := fmt.Sprintf("START %d %s %s", camID, profile, sp.URL)
+    command := fmt.Sprintf("START %d %s %s %s", camID, profile, sp.URL, rStr)
     return w.SendCommand(command)
 
 }
@@ -380,7 +382,7 @@ func (w *Worker) RestartCam(camID int, profile string) error {
 
     LOG.Info("[RestartCam] restarting profile")
 
-    return w.StartStreamProfile(camID, profile, sp)
+    return w.StartStreamProfile(camID, profile, sp, cam.Active)
 
 }
 
