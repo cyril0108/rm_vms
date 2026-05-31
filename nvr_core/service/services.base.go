@@ -14,6 +14,7 @@ type authServiceBase struct {
 	permRepo   repository.PermissionRepository
 	jwtSecret  []byte
 	tokenExpir time.Duration
+	denylist   *InMemoryDenylist
 }
 
 type userServiceBase struct {

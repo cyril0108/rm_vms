@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 
 	"nvr_core/db/repository"
 	"nvr_core/security"
@@ -22,6 +23,7 @@ type AuthService interface {
 	Login(ctx context.Context, username string, password string) (string, []string, error)
 	// ValidateToken parses a JWT and returns its claims if valid
 	ValidateToken(tokenString string) (jwt.MapClaims, error)
+	RevokeToken(tokenString string) error
 }
 
 // Notice we align this with the struct in your services.base.go
@@ -31,6 +33,7 @@ func NewAuthService(userRepo repository.UserRepository, permRepo repository.Perm
 		permRepo:   permRepo,
 		jwtSecret:  []byte(secretKey),
 		tokenExpir: 24 * time.Hour, // Standard session length for NVRs
+		denylist:   NewInMemoryDenylist(1 * time.Hour),
 	}
 }
 
@@ -71,8 +74,11 @@ func (s *authServiceBase) Login(ctx context.Context, username string, password s
 		return "", nil, err
 	}
 
+	tokenID := uuid.New().String()
+
 	// Construct the JWT Claims
 	claims := jwt.MapClaims{
+		"jti":   tokenID,
 		"sub":   user.ID,
 		"name":  user.Username,
 		"role":  user.RoleID,
@@ -109,5 +115,31 @@ func (s *authServiceBase) ValidateToken(tokenString string) (jwt.MapClaims, erro
 		return nil, ErrUnauthorized
 	}
 
+	// Check if the token's JTI is on the denylist
+	if jti, ok := claims["jti"].(string); ok {
+		if s.denylist.IsRevoked(jti) {
+			return nil, ErrUnauthorized // Instantly reject disabled users
+		}
+	}
+
 	return claims, nil
+}
+
+func (s *authServiceBase) RevokeToken(tokenString string) error {
+	// We parse and validate it first to ensure malicious users can't fill our memory cache with garbage data
+	claims, err := s.ValidateToken(tokenString)
+	if err != nil {
+		// If it's already invalid or naturally expired, we don't need to do anything
+		return nil 
+	}
+
+	jti, jtiOk := claims["jti"].(string)
+	expFloat, expOk := claims["exp"].(float64) // jwt-go parses JSON numbers as float64
+
+	if jtiOk && expOk {
+		expTime := time.Unix(int64(expFloat), 0)
+		s.denylist.Revoke(jti, expTime)
+	}
+
+	return nil
 }
