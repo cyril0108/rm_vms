@@ -8,8 +8,7 @@ import (
 	"nvr_core/logger"
 )
 
-var LOG = logger.NewLogger("[nvr_core]","[apiserver]")
-
+var LOG = logger.NewLogger("[nvr_core]","apiserver")
 
 type APIResponse struct {
 	Data     any

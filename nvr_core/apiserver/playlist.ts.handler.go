@@ -36,7 +36,7 @@ func (api *APIServer) HandleGetTSPlaylist(w http.ResponseWriter, r *http.Request
 	playlist, err := api.Services.Playlist.GenerateVODPlaylist(r.Context(), camID, profile, start, end, baseURL)
 
 	if err != nil {
-		if errors.Is(err, service.ErrVideoNotFound) {
+		if errors.Is(err, service.ErrVideoSegmentNotFound) {
 			http.Error(w, "No video found for this time range", http.StatusNotFound)
 			return
 		}

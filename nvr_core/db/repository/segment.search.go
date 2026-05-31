@@ -15,7 +15,7 @@ func (r *segmentRepo) GetProfileSegmentsByRange(ctx context.Context, camID int64
 	log.Info("[GetProfileSegmentsByRange]")
 
 	query := `
-		SELECT id, camera_id, profile, start_time, end_time, file_path, size_bytes 
+		SELECT id, camera_id, profile, start_time, end_time, file_path, snapshot_path, size_bytes 
 		FROM segments 
 		WHERE camera_id = ? AND profile = ? AND start_time >= ? AND start_time <= ?
 		ORDER BY start_time ASC
@@ -30,7 +30,7 @@ func (r *segmentRepo) GetProfileSegmentsByRange(ctx context.Context, camID int64
 	var segments []*models.Segment
 	for rows.Next() {
 		var seg models.Segment
-		if err := rows.Scan(&seg.ID, &seg.CameraID, &seg.Profile, &seg.StartTime, &seg.EndTime, &seg.FilePath, &seg.SizeBytes); err != nil {
+		if err := rows.Scan(&seg.ID, &seg.CameraID, &seg.Profile, &seg.StartTime, &seg.EndTime, &seg.FilePath, &seg.SnapshotPath, &seg.SizeBytes); err != nil {
 			return nil, err
 		}
 		segments = append(segments, &seg)

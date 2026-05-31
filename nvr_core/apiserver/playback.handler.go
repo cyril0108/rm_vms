@@ -26,12 +26,12 @@ func (api *APIServer) HandlePlayVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	profile := GetQueryProfile(r)
-	timestamp = timestamp
+	// timestamp = timestamp
 
 	// Get the validated physical path from the Service
 	filePath, err := api.Services.Playback.GetVideoFilePath(r.Context(), camID, profile, timestamp)
 	if err != nil {
-		if errors.Is(err, service.ErrVideoNotFound) || errors.Is(err, service.ErrFileMissing) {
+		if errors.Is(err, service.ErrVideoSegmentNotFound) || errors.Is(err, service.ErrFileMissing) {
 			http.Error(w, "Video not found", http.StatusNotFound)
 			return
 		}
@@ -77,7 +77,10 @@ func (api *APIServer) HandleSegmentSnapshot(w http.ResponseWriter, r *http.Reque
 	// Get the validated physical path from the Service
 	filePath, err := api.Services.Playback.GetVideoSnapshotFilePath(r.Context(), camID, timestamp)
 	if err != nil {
-		if errors.Is(err, service.ErrVideoNotFound) || errors.Is(err, service.ErrFileMissing) {
+		if errors.Is(err, service.ErrVideoSegmentNotFound) || errors.Is(err, service.ErrFileMissing) {
+
+LOG.Info("[HandleSegmentSnapshot] NOT FOUND", "camID", camID, "timestamp", timestamp, "filepath", filePath);
+
 			http.Error(w, "Snapshot not found", http.StatusNotFound)
 			return
 		}

@@ -9,13 +9,11 @@ import (
 	"os/exec"
 )
 
-const SnapshotProfile = "snapshot"
-
 func GenerateSnapshot(storagePath string, seg *models.Segment) (string, error) {
 
 	sPath := storage.NewStorePath(storagePath)
 
-	snap, err := sPath.ForSnapshot(seg, SnapshotProfile)
+	snap, err := sPath.ForSnapshot(seg, SegmentSnapshotProfile)
 	if err != nil {
 		return "", err
 	}
@@ -37,7 +35,7 @@ func ExtractSnapshot(videoPath string, snapshotPath string) (string, error) {
 	// ext := filepath.Ext(videoPath)
 	// snapshotPath := strings.TrimSuffix(videoPath, ext) + ".jpg"
 
-	log.Printf("[Snapshot] Extracting thumbnail for: %s\n", videoPath)
+	// log.Printf("[Snapshot] Extracting thumbnail for: %s\n", videoPath)
 
 	// -y : Overwrite if exists
 	// -i : Input file
@@ -54,7 +52,7 @@ func ExtractSnapshot(videoPath string, snapshotPath string) (string, error) {
 		return "", errors.New(errStr)
 	}
 
-	log.Printf("[Snapshot] Successfully created: %s\n", snapshotPath)
+	// log.Printf("[Snapshot] Successfully created: %s\n", snapshotPath)
 	return snapshotPath, nil;
 
 }

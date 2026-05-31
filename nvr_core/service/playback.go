@@ -9,7 +9,7 @@ import (
 	"nvr_core/utils"
 )
 
-var ErrVideoNotFound = errors.New("video not found at requested time")
+var ErrVideoSegmentNotFound = errors.New("video not found at requested time")
 var ErrFileMissing = errors.New("video file is missing from disk")
 
 type PlaybackService interface {
@@ -29,7 +29,7 @@ func (s *segmentServiceBase) GetVideoFilePath(ctx context.Context, camID int64, 
 		return "", err
 	}
 	if seg == nil {
-		return "", ErrVideoNotFound
+		return "", ErrVideoSegmentNotFound
 	}
 
 	// Verify the file actually exists on the Linux filesystem (preventing 500 crashes)
@@ -45,12 +45,12 @@ func (s *segmentServiceBase) GetVideoFilePath(ctx context.Context, camID int64, 
 func (s *segmentServiceBase) GetVideoSnapshotFilePath(ctx context.Context, camID int64, timestamp int64) (string, error) {
 
 	// Ask the database which file contains this timestamp
-	seg, err := s.repo.GetSegmentAtTime(ctx, camID, utils.SegmentSubProfile, timestamp)
+	seg, err := s.repo.GetSegmentAtTime(ctx, camID, utils.SegmentSnapshotProfile, timestamp)
 	if err != nil {
 		return "", err
 	}
 	if seg == nil {
-		return "", ErrVideoNotFound
+		return "", ErrVideoSegmentNotFound
 	}
 
 	// Verify the file actually exists on the Linux filesystem (preventing 500 crashes)

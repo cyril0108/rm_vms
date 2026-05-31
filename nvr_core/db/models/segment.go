@@ -2,8 +2,10 @@ package models
 
 import "time"
 
+// Should be identical with utils/string.go
 const SegmentMainProfile = "main"
 const SegmentSubProfile = "sub"
+const SegmentSnapshotProfile = "snapshot"
 
 // Segment represents a recorded 1-minute video file.
 type Segment struct {
@@ -28,3 +30,16 @@ func (seg *Segment) EndTimeTime() time.Time {
 func (seg *Segment) IsSubProfile() bool {
 	return seg.Profile == SegmentSubProfile
 }
+
+func (seg *Segment) MakeSnapshotProfile(snap string) *Segment {
+	return &Segment{
+		CameraID:  seg.CameraID,
+		Profile:   SegmentSnapshotProfile,
+		StartTime: seg.StartTime,
+		EndTime:   seg.EndTime,
+		FilePath:  "",
+		SnapshotPath: snap,
+		SizeBytes: 0,
+	}
+}
+

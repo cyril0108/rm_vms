@@ -5,15 +5,22 @@ import (
 	"strconv"
 )
 
+// Should be identical with db/models/segment.go
 const SegmentMainProfile = "main"
 const SegmentSubProfile = "sub"
+const SegmentSnapshotProfile = "snapshot"
+
 // Return 1 for main, 0 for sub, -1 for unknown
 func IsMainProfile(profile string) int {
 	switch profile {
 	case SegmentMainProfile:
 		return 1;
+
 	case SegmentSubProfile:
+		fallthrough
+	case SegmentSnapshotProfile:
 		return 0;
+
 	default:
 		return -1
 	}

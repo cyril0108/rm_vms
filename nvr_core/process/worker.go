@@ -160,11 +160,20 @@ func (w *Worker) handleSegmentDone(resp WorkerResponse) {
     }
 
     if seg.IsSubProfile() {
-        if snap, err := utils.GenerateSnapshot(w.storagePath, seg); err != nil {
-            seg.SnapshotPath = snap
+        if snap, err := utils.GenerateSnapshot(w.storagePath, seg); err == nil {
+
+            ss := seg.MakeSnapshotProfile(snap)
+            w.submitSegmentEnqueue(ss)
+
+            // LOG.Info("[handleSegmentDone]", "snapshot", snap, "seg", ss)
+
         }
     }
 
+    w.submitSegmentEnqueue(seg)
+}
+
+func (w *Worker) submitSegmentEnqueue(seg *models.Segment) {
     // Push it to the non-blocking Go channel
     // (Assuming you added `ingester *ingest.BatchIngester` to your Worker struct)
     if w.ingester != nil {

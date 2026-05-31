@@ -34,7 +34,7 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 	// Get the validated physical path from the Service
 	filePath, err := api.Services.Playback.GetVideoFilePath(r.Context(), camID, profile, timestamp)
 	if err != nil {
-		if errors.Is(err, service.ErrVideoNotFound) || errors.Is(err, service.ErrFileMissing) {
+		if errors.Is(err, service.ErrVideoSegmentNotFound) || errors.Is(err, service.ErrFileMissing) {
 			http.Error(w, "Video not found", http.StatusNotFound)
 			return
 		}

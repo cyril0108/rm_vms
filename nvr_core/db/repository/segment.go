@@ -53,7 +53,7 @@ func NewSegmentRepository(db *sql.DB) SegmentRepository {
 func (r *segmentRepo) Insert(ctx context.Context, seg *models.Segment) error {
 	query := `INSERT INTO segments (camera_id, profile, start_time, end_time, file_path, snapshot_path, size_bytes) 
 	          VALUES (?, ?, ?, ?, ?, ?, ?)`
-	
+
 	result, err := r.db.ExecContext(ctx, query, seg.CameraID, seg.Profile, seg.StartTime, seg.EndTime, seg.FilePath, seg.SnapshotPath, seg.SizeBytes)
 	if err != nil {
 		return err

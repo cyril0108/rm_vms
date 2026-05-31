@@ -28,7 +28,7 @@ func (s *segmentServiceBase) GeneratePlaylist(ctx context.Context, camID int64, 
 	}
 
 	if len(segments) == 0 {
-		return "", ErrVideoNotFound // Reusing the error we defined in playback.go
+		return "", ErrVideoSegmentNotFound // Reusing the error we defined in playback.go
 	}
 
 	// Build the M3U8 Header
@@ -51,7 +51,7 @@ func (s *segmentServiceBase) GenerateVODPlaylist(ctx context.Context, camID int6
 	}
 
 	if len(segments) == 0 {
-		return "", ErrVideoNotFound // Reusing the error we defined in playback.go
+		return "", ErrVideoSegmentNotFound // Reusing the error we defined in playback.go
 	}
 
 	// Build the M3U8 Header

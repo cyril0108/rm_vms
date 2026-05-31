@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var LOG = logger.NewLogger("[nvr_core]","[service]")
+var LOG = logger.NewLogger("[nvr_core]","service")
 
 type authServiceBase struct {
 	userRepo   repository.UserRepository
@@ -34,9 +34,3 @@ type systemServiceBase struct {
 	db *sql.DB
 	repo repository.UserRepository
 }
-
-
-// type debugServiceBase struct {
-// 	db *sql.DB
-// 	repo repository.SegmentRepository
-// }
