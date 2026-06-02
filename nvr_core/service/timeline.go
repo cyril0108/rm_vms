@@ -68,6 +68,7 @@ func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error)
 			}
 		} else {
 			// The gap is too large. Finalize the current block and start a new one.
+			currentBlock.ConvertToSeconds()
 			blocks = append(blocks, currentBlock)
 			currentBlock = dto.TimelineBlock{
 				StartTime: seg.StartTime,

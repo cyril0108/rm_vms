@@ -49,21 +49,7 @@ func GetSearchAtTime(r *http.Request) (int64, error) {
 		}
 		// Shift one second so it should be within star/end time range
 		// of sql search condition.
-		return (timeSec+1) * 1000, nil
-
-		// Explaine:
-		// Assume start time 123456(ms) to end time 183779(ms)
-		// We normally send 123(s) search.
-		// * = 123*1000 = 123000
-		// X = (123+1)*1000 = 124000
-		// ---------*--|123456--X-----------|183779-----------
-		// This shows that X is what we want.
-		// 
-		// The only risk is that when the recorded range is
-		// within 1 or 2 seconds, then this method could fail.
-		// On those extreme scenario, one should really
-		// use mstime.
-
+		return timeSec * 1000, nil
 	}
 
 	return 0, errors.New("missing time parameter")
