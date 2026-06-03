@@ -20,10 +20,15 @@ func NewUserManagementService(uRepo repository.UserRepository, pRepo repository.
 	return &userServiceBase{userRepo: uRepo, permRepo: pRepo}
 }
 
-func (s *userServiceBase) UpdateUserPassword(ctx context.Context, adminID, userID int64, encrypt string) error {
+func (s *userServiceBase) UpdateUserPassword(ctx context.Context, adminID, userID int64, password string) error {
+
+	hashed, err := security.HashPassword(password)
+	if err != nil {
+		return fmt.Errorf("hashing password failed: %w", err)
+	}
 
 	// Business Rule: Ensure target user actually exists before modifying
-	if err := s.userRepo.UpdatePassword(ctx, userID, encrypt); err != nil {
+	if err := s.userRepo.UpdatePassword(ctx, userID, hashed); err != nil {
 		return fmt.Errorf("update user password failed: %w", err)
 	}
 	return nil
