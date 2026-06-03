@@ -59,6 +59,9 @@ build-go: ## Build Go NVR Service
 	cd $(GO_DIR) && $(GO) build $(GO_LDFLAGS) -o $(SERVICE_BIN_NAME)
 	@echo "✔ Go Manager built successfully: ./$(SERVICE_BIN_NAME)"
 
+swag: ## Build Vue
+	cd $(GO_DIR) && swag init
+
 # Clean Build Artifacts
 clean: ## Clean Build Artifacts
 	@echo "--- Cleaning ---"
