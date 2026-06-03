@@ -4,25 +4,5 @@
     "db_path": "./db",
     "storage_path": "/recordings",
     "retention_days": 7
-  },
-  "cameras": [
-    {
-      "id": 1,
-      "name": "Front Gate",
-      "url": "rtsp://host.docker.internal:8554/micro1",
-      "enabled": true
-    },
-    {
-      "id": 2,
-      "name": "Backyard",
-      "url": "rtsp://host.docker.internal:8554/micro2",
-      "enabled": false
-    },
-    {
-      "id": 3,
-      "name": "pi-cam",
-      "url": "rtsp://192.168.10.2:8554/cam",
-      "enabled": false
-    }
-  ]
+  }
 }

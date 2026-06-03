@@ -23,17 +23,17 @@ type AuthService interface {
 	Login(ctx context.Context, username string, password string) (string, []string, error)
 	// ValidateToken parses a JWT and returns its claims if valid
 	ValidateToken(tokenString string) (jwt.MapClaims, error)
-	RevokeToken(tokenString string) error
 }
 
 // Notice we align this with the struct in your services.base.go
-func NewAuthService(userRepo repository.UserRepository, permRepo repository.PermissionRepository, secretKey string) AuthService {
+func NewAuthService(userRepo repository.UserRepository, permRepo repository.PermissionRepository, tknRepo repository.RefreshTokenRepository, secretKey string) AuthService {
 	return &authServiceBase{
 		userRepo:   userRepo,
+		reTokenRepo: tknRepo,
 		permRepo:   permRepo,
 		jwtSecret:  []byte(secretKey),
-		tokenExpir: 24 * time.Hour, // Standard session length for NVRs
-		denylist:   NewInMemoryDenylist(1 * time.Hour),
+		tokenExpir: 1 * time.Hour, // Standard session length for NVRs
+		userStatus:   NewUserStatusMap(),
 	}
 }
 
@@ -115,31 +115,21 @@ func (s *authServiceBase) ValidateToken(tokenString string) (jwt.MapClaims, erro
 		return nil, ErrUnauthorized
 	}
 
-	// Check if the token's JTI is on the denylist
-	if jti, ok := claims["jti"].(string); ok {
-		if s.denylist.IsRevoked(jti) {
-			return nil, ErrUnauthorized // Instantly reject disabled users
-		}
+	// Extract the sub (UserID) and iat (Issued At) from the claims
+	userIDFloat, subOk := claims["sub"].(float64)
+	iatFloat, iatOk := claims["iat"].(float64)
+
+	if !subOk || !iatOk {
+	    return nil, ErrUnauthorized
+	}
+
+	userID := int64(userIDFloat)
+	tokenIssuedAt := int64(iatFloat)
+
+	// Check the in-memory allowlist
+	if !s.userStatus.IsValid(userID, tokenIssuedAt) {
+	    return nil, ErrUnauthorized // Instantly reject stale or logged-out users
 	}
 
 	return claims, nil
-}
-
-func (s *authServiceBase) RevokeToken(tokenString string) error {
-	// We parse and validate it first to ensure malicious users can't fill our memory cache with garbage data
-	claims, err := s.ValidateToken(tokenString)
-	if err != nil {
-		// If it's already invalid or naturally expired, we don't need to do anything
-		return nil 
-	}
-
-	jti, jtiOk := claims["jti"].(string)
-	expFloat, expOk := claims["exp"].(float64) // jwt-go parses JSON numbers as float64
-
-	if jtiOk && expOk {
-		expTime := time.Unix(int64(expFloat), 0)
-		s.denylist.Revoke(jti, expTime)
-	}
-
-	return nil
 }
