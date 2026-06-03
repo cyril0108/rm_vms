@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"nvr_core/db/repository"
+	"nvr_core/security"
 )
 
 type UserManagementService interface {
@@ -12,11 +13,22 @@ type UserManagementService interface {
 	GrantPermission(ctx context.Context, adminID, targetUserID, permID int64) error
 	RevokePermission(ctx context.Context, adminID, targetUserID, permID int64) error
 	UpdateUserPermissions(ctx context.Context, adminID, targetUserID int64, permIDs []int64) error
+	UpdateUserPassword(ctx context.Context, adminID, userID int64, encrypt string) error
 }
 
 func NewUserManagementService(uRepo repository.UserRepository, pRepo repository.PermissionRepository) UserManagementService {
 	return &userServiceBase{userRepo: uRepo, permRepo: pRepo}
 }
+
+func (s *userServiceBase) UpdateUserPassword(ctx context.Context, adminID, userID int64, encrypt string) error {
+
+	// Business Rule: Ensure target user actually exists before modifying
+	if err := s.userRepo.UpdatePassword(ctx, userID, encrypt); err != nil {
+		return fmt.Errorf("update user password failed: %w", err)
+	}
+	return nil
+}
+
 
 func (s *userServiceBase) UpdateUserRole(ctx context.Context, adminID, targetUserID, newRoleID int64) error {
 	// Business Rule: Ensure target user actually exists before modifying
