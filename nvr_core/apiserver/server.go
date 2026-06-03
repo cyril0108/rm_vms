@@ -58,7 +58,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	if health, err := svcs.System.GetHealthData(ctx);
 	  err == nil && !health.Configured {
 	  LOG.Info("NVR account not configured. Init with configure API.")
-	  mux.HandleFunc("GET /api/configure", api.HandleAdminInitConfigure)
+	  mux.HandleFunc("POST /api/configure", api.HandleAdminInitConfigure)
 	}
 
 	// Debug Info
