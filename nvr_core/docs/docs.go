@@ -15,6 +15,36 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/camera/{id}/onvif": {
+            "get": {
+                "description": "Fetch ONVIF camera detail data that is already in our system",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cameras",
+                    "Fetch"
+                ],
+                "summary": "Fetch ONVIF data",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/onvif.OnvifRecord"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get ONVIF data or internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/cameras": {
             "get": {
                 "description": "Retrieves a list of cameras currently loaded in memory by the C++ workers, including their live runtime status.",
@@ -93,39 +123,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/cameras/db": {
-            "get": {
-                "description": "Retrieves the complete list of saved cameras directly from the database configuration.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Cameras"
-                ],
-                "summary": "Get database camera list",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Camera"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to get db cameras",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/cameras/onvif": {
+        "/api/cameras/add/onvif": {
             "post": {
                 "description": "Creates a camera by dynamically fetching ONVIF profile tokens and streams using the provided IP and credentials.",
                 "consumes": [
@@ -171,6 +169,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/cameras/db": {
+            "get": {
+                "description": "Retrieves the complete list of saved cameras directly from the database configuration.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cameras"
+                ],
+                "summary": "Get database camera list",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Camera"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get db cameras",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/cameras/{cam_id}": {
             "delete": {
                 "description": "Delete a camera by its ID. Note that a camera with existing recording data will be rejected.",
@@ -208,6 +238,98 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cameras/{cam_id}/auth": {
+            "put": {
+                "description": "Check given credentials, and update if there is no issue.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cameras"
+                ],
+                "summary": "Update camera credentials",
+                "parameters": [
+                    {
+                        "description": "Camera creation payload",
+                        "name": "camera",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCameraRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CameraDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON or missing fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cameras/{cam_id}/onvif": {
+            "put": {
+                "description": "Creates a camera by dynamically fetching ONVIF profile tokens and streams using the provided IP and credentials.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cameras"
+                ],
+                "summary": "Add a new ONVIF camera",
+                "parameters": [
+                    {
+                        "description": "ONVIF credentials and payload",
+                        "name": "camera",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateCameraRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CameraDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get ONVIF data or internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -302,6 +424,151 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/cameras/{cam_id}/update": {
+            "put": {
+                "description": "Creates a new IP camera in the NVR database using the provided manual data.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cameras"
+                ],
+                "summary": "Add a new manual camera",
+                "parameters": [
+                    {
+                        "description": "Camera creation payload",
+                        "name": "camera",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCameraRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CameraDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON or missing fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "description": "Authenticates a user by username and password. Returns a short-lived JWT access token, a long-lived refresh token, and a list of user permissions.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User login",
+                "parameters": [
+                    {
+                        "description": "User Login Credentials",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials or account disabled",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/scan/{ip}/onvif": {
+            "post": {
+                "description": "Fetch ONVIF camera detail data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cameras",
+                    "Scan"
+                ],
+                "summary": "Fetch ONVIF data",
+                "parameters": [
+                    {
+                        "description": "ONVIF credentials and payload",
+                        "name": "camera",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateCameraRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/onvif.OnvifRecord"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get ONVIF data or internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -323,6 +590,12 @@ const docTemplate = `{
                 "is_active": {
                     "type": "boolean"
                 },
+                "mac_address": {
+                    "type": "string"
+                },
+                "mainstream": {
+                    "type": "string"
+                },
                 "manufacturer": {
                     "type": "string"
                 },
@@ -338,10 +611,7 @@ const docTemplate = `{
                 "serial_number": {
                     "type": "string"
                 },
-                "stream_url": {
-                    "type": "string"
-                },
-                "sub_stream_url": {
+                "substream": {
                     "type": "string"
                 },
                 "supports_ptz": {
@@ -375,6 +645,9 @@ const docTemplate = `{
                 "is_active": {
                     "type": "boolean"
                 },
+                "mainstream": {
+                    "type": "string"
+                },
                 "manufacturer": {
                     "description": "Pointers allow JSON \"null\"",
                     "type": "string"
@@ -395,10 +668,7 @@ const docTemplate = `{
                 "serial_number": {
                     "type": "string"
                 },
-                "stream_url": {
-                    "type": "string"
-                },
-                "sub_stream_url": {
+                "substream": {
                     "type": "string"
                 },
                 "supports_ptz": {
@@ -412,6 +682,93 @@ const docTemplate = `{
                     ]
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateCameraRequest": {
+            "type": "object",
+            "properties": {
+                "http_port": {
+                    "type": "integer"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "mac_address": {
+                    "type": "string"
+                },
+                "manufacturer": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "onvif_profile_token": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "retention_gb_limit": {
+                    "type": "integer"
+                },
+                "serial_number": {
+                    "type": "string"
+                },
+                "stream_url": {
+                    "type": "string"
+                },
+                "sub_stream_profile_token": {
+                    "type": "string"
+                },
+                "sub_stream_url": {
+                    "type": "string"
+                },
+                "supports_ptz": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }
@@ -433,6 +790,9 @@ const docTemplate = `{
                 },
                 "is_active": {
                     "type": "boolean"
+                },
+                "mac_address": {
+                    "type": "string"
                 },
                 "manufacturer": {
                     "type": "string"
@@ -472,25 +832,93 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "onvif.OnvifRecord": {
+            "type": "object",
+            "properties": {
+                "error_msg": {
+                    "type": "string"
+                },
+                "firmware": {
+                    "type": "string"
+                },
+                "in_system": {
+                    "type": "boolean"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "mac_address": {
+                    "type": "string"
+                },
+                "mainstream": {
+                    "description": "Streams",
+                    "type": "string"
+                },
+                "mainstream_token": {
+                    "type": "string"
+                },
+                "manufacturer": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "serial_number": {
+                    "type": "string"
+                },
+                "substream": {
+                    "type": "string"
+                },
+                "substream_token": {
+                    "type": "string"
+                },
+                "supports_ptz": {
+                    "type": "boolean"
+                },
+                "username": {
+                    "description": "Camera user/pwd",
+                    "type": "string"
                 }
             }
         },
         "process.Camera": {
             "type": "object",
             "properties": {
-                "channel": {
-                    "type": "integer"
+                "active": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "integer"
                 },
+                "main_stream": {
+                    "$ref": "#/definitions/process.StreamProfile"
+                },
+                "sub_stream": {
+                    "$ref": "#/definitions/process.StreamProfile"
+                }
+            }
+        },
+        "process.StreamProfile": {
+            "type": "object",
+            "properties": {
+                "channel_id": {
+                    "type": "integer"
+                },
                 "status": {
+                    "description": "e.g., \"offline\", \"streaming\", \"failed\"",
                     "type": "string"
                 },
                 "url": {
                     "type": "string"
                 },
                 "worker_id": {
+                    "description": "Moved here! Can be different for main/sub",
                     "type": "integer"
                 }
             }

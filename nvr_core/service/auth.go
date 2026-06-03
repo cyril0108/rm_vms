@@ -19,8 +19,8 @@ var (
 )
 
 type AuthService interface {
-	// Login validates credentials and returns a signed JWT and the permission list
-	Login(ctx context.Context, username string, password string) (string, []string, error)
+	// Login validates credentials and returns (accessToken, refreshToken, permissions, error)
+	Login(ctx context.Context, username string, password string) (string, string, []string, error)
 	// ValidateToken parses a JWT and returns its claims if valid
 	ValidateToken(tokenString string) (jwt.MapClaims, error)
 }
@@ -37,25 +37,25 @@ func NewAuthService(userRepo repository.UserRepository, permRepo repository.Perm
 	}
 }
 
-func (s *authServiceBase) Login(ctx context.Context, username string, password string) (string, []string, error) {
+func (s *authServiceBase) Login(ctx context.Context, username string, password string) (string, string, []string, error) {
 	// Fetch user by username
 	user, err := s.userRepo.GetByUsername(ctx, username)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
-			return "", nil, ErrInvalidCredentials // Generic error to prevent username enumeration
+			return "", "", nil, ErrInvalidCredentials // Generic error to prevent username enumeration
 		}
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	// Check active status
 	if !user.IsActive {
-		return "", nil, ErrAccountDisabled
+		return "", "", nil, ErrAccountDisabled
 	}
 
 	// Verify bcrypt password hash
 	match, err := security.CheckPasswordHash(password, user.Password)
 	if err != nil || !match {
-		return "", nil, ErrInvalidCredentials
+		return "", "", nil, ErrInvalidCredentials
 	}
 
 	// Try to migrate to new hash algorithm automatically
@@ -71,30 +71,44 @@ func (s *authServiceBase) Login(ctx context.Context, username string, password s
 	// Fetch the aggregated permissions (Role + Direct Grants)
 	permissions, err := s.permRepo.GetUserPermissionCodes(ctx, user.ID)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
+	// ==========================================
+	// GENERATE ACCESS TOKEN (JWT)
+	// ==========================================
 	tokenID := uuid.New().String()
-
-	// Construct the JWT Claims
 	claims := jwt.MapClaims{
 		"jti":   tokenID,
 		"sub":   user.ID,
 		"name":  user.Username,
 		"role":  user.RoleID,
-		"perms": permissions, // Embed permissions directly in the token
+		"perms": permissions, 
 		"iat":   time.Now().Unix(),
 		"exp":   time.Now().Add(s.tokenExpir).Unix(),
 	}
 
-	// Sign the token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString(s.jwtSecret)
+	accessToken, err := token.SignedString(s.jwtSecret)
 	if err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 
-	return signedToken, permissions, nil
+	// ==========================================
+	// GENERATE & SAVE REFRESH TOKEN
+	// ==========================================
+	rawRefreshToken, err := security.GenerateSecureToken(32) // Generates a 64-character hex string
+	if err != nil {
+		return "", "", nil, err
+	}
+
+	// ==========================================
+	// UPDATE IN-MEMORY STATUS
+	// ==========================================
+	// Register the user in the allowlist so their new JWT is instantly valid
+	s.userStatus.Login(user.ID)
+
+	return accessToken, rawRefreshToken, permissions, nil
 }
 
 func (s *authServiceBase) ValidateToken(tokenString string) (jwt.MapClaims, error) {

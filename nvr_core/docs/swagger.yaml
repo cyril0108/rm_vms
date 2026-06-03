@@ -12,6 +12,10 @@ definitions:
         type: string
       is_active:
         type: boolean
+      mac_address:
+        type: string
+      mainstream:
+        type: string
       manufacturer:
         type: string
       model:
@@ -22,9 +26,7 @@ definitions:
         type: integer
       serial_number:
         type: string
-      stream_url:
-        type: string
-      sub_stream_url:
+      substream:
         type: string
       supports_ptz:
         type: boolean
@@ -43,6 +45,8 @@ definitions:
         type: string
       is_active:
         type: boolean
+      mainstream:
+        type: string
       manufacturer:
         description: Pointers allow JSON "null"
         type: string
@@ -57,9 +61,7 @@ definitions:
         type: integer
       serial_number:
         type: string
-      stream_url:
-        type: string
-      sub_stream_url:
+      substream:
         type: string
       supports_ptz:
         type: boolean
@@ -75,6 +77,63 @@ definitions:
     - name
     - type
     type: object
+  dto.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  dto.LoginResponse:
+    properties:
+      permissions:
+        items:
+          type: string
+        type: array
+      refresh_token:
+        type: string
+      token:
+        type: string
+    type: object
+  dto.UpdateCameraRequest:
+    properties:
+      http_port:
+        type: integer
+      ip_address:
+        type: string
+      is_active:
+        type: boolean
+      mac_address:
+        type: string
+      manufacturer:
+        type: string
+      model:
+        type: string
+      name:
+        type: string
+      onvif_profile_token:
+        type: string
+      password:
+        type: string
+      retention_gb_limit:
+        type: integer
+      serial_number:
+        type: string
+      stream_url:
+        type: string
+      sub_stream_profile_token:
+        type: string
+      sub_stream_url:
+        type: string
+      supports_ptz:
+        type: boolean
+      type:
+        type: string
+      username:
+        type: string
+      uuid:
+        type: string
+    type: object
   models.Camera:
     properties:
       created_at:
@@ -87,6 +146,8 @@ definitions:
         type: string
       is_active:
         type: boolean
+      mac_address:
+        type: string
       manufacturer:
         type: string
       model:
@@ -113,18 +174,64 @@ definitions:
         type: integer
       username:
         type: string
+      uuid:
+        type: string
+    type: object
+  onvif.OnvifRecord:
+    properties:
+      error_msg:
+        type: string
+      firmware:
+        type: string
+      in_system:
+        type: boolean
+      ip:
+        type: string
+      mac_address:
+        type: string
+      mainstream:
+        description: Streams
+        type: string
+      mainstream_token:
+        type: string
+      manufacturer:
+        type: string
+      model:
+        type: string
+      serial_number:
+        type: string
+      substream:
+        type: string
+      substream_token:
+        type: string
+      supports_ptz:
+        type: boolean
+      username:
+        description: Camera user/pwd
+        type: string
     type: object
   process.Camera:
     properties:
-      channel:
-        type: integer
+      active:
+        type: boolean
       id:
         type: integer
+      main_stream:
+        $ref: '#/definitions/process.StreamProfile'
+      sub_stream:
+        $ref: '#/definitions/process.StreamProfile'
+    type: object
+  process.StreamProfile:
+    properties:
+      channel_id:
+        type: integer
       status:
+        description: e.g., "offline", "streaming", "failed"
         type: string
       url:
         type: string
       worker_id:
+        description: Moved here! Can be different for main/sub
         type: integer
     type: object
 host: localhost:9080
@@ -134,6 +241,26 @@ info:
   title: NVR Core API
   version: "0.1"
 paths:
+  /api/camera/{id}/onvif:
+    get:
+      consumes:
+      - application/json
+      description: Fetch ONVIF camera detail data that is already in our system
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/onvif.OnvifRecord'
+        "500":
+          description: Failed to get ONVIF data or internal server error
+          schema:
+            type: string
+      summary: Fetch ONVIF data
+      tags:
+      - Cameras
+      - Fetch
   /api/cameras:
     get:
       consumes:
@@ -184,6 +311,67 @@ paths:
           schema:
             type: string
       summary: Delete camera
+      tags:
+      - Cameras
+  /api/cameras/{cam_id}/auth:
+    put:
+      consumes:
+      - application/json
+      description: Check given credentials, and update if there is no issue.
+      parameters:
+      - description: Camera creation payload
+        in: body
+        name: camera
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCameraRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CameraDetailResponse'
+        "400":
+          description: Invalid JSON or missing fields
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update camera credentials
+      tags:
+      - Cameras
+  /api/cameras/{cam_id}/onvif:
+    put:
+      consumes:
+      - application/json
+      description: Creates a camera by dynamically fetching ONVIF profile tokens and
+        streams using the provided IP and credentials.
+      parameters:
+      - description: ONVIF credentials and payload
+        in: body
+        name: camera
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCameraRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CameraDetailResponse'
+        "400":
+          description: Invalid JSON payload
+          schema:
+            type: string
+        "500":
+          description: Failed to get ONVIF data or internal server error
+          schema:
+            type: string
+      summary: Add a new ONVIF camera
       tags:
       - Cameras
   /api/cameras/{cam_id}/start:
@@ -244,6 +432,37 @@ paths:
       summary: Deactivate camera
       tags:
       - Cameras
+  /api/cameras/{cam_id}/update:
+    put:
+      consumes:
+      - application/json
+      description: Creates a new IP camera in the NVR database using the provided
+        manual data.
+      parameters:
+      - description: Camera creation payload
+        in: body
+        name: camera
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCameraRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CameraDetailResponse'
+        "400":
+          description: Invalid JSON or missing fields
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Add a new manual camera
+      tags:
+      - Cameras
   /api/cameras/add:
     post:
       consumes:
@@ -275,29 +494,7 @@ paths:
       summary: Add a new manual camera
       tags:
       - Cameras
-  /api/cameras/db:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves the complete list of saved cameras directly from the
-        database configuration.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/models.Camera'
-            type: array
-        "500":
-          description: Failed to get db cameras
-          schema:
-            type: string
-      summary: Get database camera list
-      tags:
-      - Cameras
-  /api/cameras/onvif:
+  /api/cameras/add/onvif:
     post:
       consumes:
       - application/json
@@ -328,4 +525,92 @@ paths:
       summary: Add a new ONVIF camera
       tags:
       - Cameras
+  /api/cameras/db:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the complete list of saved cameras directly from the
+        database configuration.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Camera'
+            type: array
+        "500":
+          description: Failed to get db cameras
+          schema:
+            type: string
+      summary: Get database camera list
+      tags:
+      - Cameras
+  /api/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user by username and password. Returns a short-lived
+        JWT access token, a long-lived refresh token, and a list of user permissions.
+      parameters:
+      - description: User Login Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully authenticated
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Invalid JSON payload
+          schema:
+            type: string
+        "401":
+          description: Invalid credentials or account disabled
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: User login
+      tags:
+      - auth
+  /api/scan/{ip}/onvif:
+    post:
+      consumes:
+      - application/json
+      description: Fetch ONVIF camera detail data
+      parameters:
+      - description: ONVIF credentials and payload
+        in: body
+        name: camera
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCameraRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/onvif.OnvifRecord'
+        "400":
+          description: Invalid JSON payload
+          schema:
+            type: string
+        "500":
+          description: Failed to get ONVIF data or internal server error
+          schema:
+            type: string
+      summary: Fetch ONVIF data
+      tags:
+      - Cameras
+      - Scan
 swagger: "2.0"
