@@ -15,6 +15,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	GetByID(ctx context.Context, id int64) (*models.User, error)
 	GetByUsername(ctx context.Context, username string) (*models.User, error)
+	GetAdmin(ctx context.Context) (*models.User, error)
 	UpdateRole(ctx context.Context, id int64, roleID int64) error
 	UpdatePassword(ctx context.Context, id int64, newHash string) error
 	Deactivate(ctx context.Context, id int64) error
@@ -46,6 +47,23 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 
 	user.ID, err = result.LastInsertId()
 	return err
+}
+
+func (r *userRepo) 	GetAdmin(ctx context.Context) (*models.User, error) {
+	query := `SELECT id, username, password, role_id, is_active, created_at FROM users WHERE role_id = 1 ORDER BY id ASC LIMIT 1`
+
+	var u models.User
+	err := r.db.QueryRowContext(ctx, query).Scan(
+		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.IsActive, &u.CreatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return &u, nil
 }
 
 // GetByID fetches a user by their primary key.
