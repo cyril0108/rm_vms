@@ -29,7 +29,7 @@ func (s *systemServiceBase) GetHealthData(ctx context.Context) (dto.SystemHealth
 		Configured: true,
 	}
 
-	user, err := s.repo.GetByUsername(ctx, SystemAdminUser)
+	user, err := s.repo.GetAdmin(ctx)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			health.Configured = false
@@ -40,6 +40,8 @@ func (s *systemServiceBase) GetHealthData(ctx context.Context) (dto.SystemHealth
 	if user.Password == "" {
 		health.Configured = false
 	}
+
+	LOG.Info("[GetHealthData] ", "p", user.Password, "configured", health.Configured)
 
 	return health, nil
 

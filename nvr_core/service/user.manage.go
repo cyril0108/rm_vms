@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"nvr_core/db/models"
 	"nvr_core/db/repository"
 	"nvr_core/security"
 )
 
 type UserManagementService interface {
+	CreateUser(ctx context.Context, adminID int64, user *models.User) error
 	UpdateUserRole(ctx context.Context, adminID, targetUserID, newRoleID int64) error
 	GrantPermission(ctx context.Context, adminID, targetUserID, permID int64) error
 	RevokePermission(ctx context.Context, adminID, targetUserID, permID int64) error
@@ -18,6 +20,10 @@ type UserManagementService interface {
 
 func NewUserManagementService(uRepo repository.UserRepository, pRepo repository.PermissionRepository) UserManagementService {
 	return &userServiceBase{userRepo: uRepo, permRepo: pRepo}
+}
+
+func (s *userServiceBase) CreateUser(ctx context.Context, adminID int64, user *models.User) error {
+	return s.userRepo.Create(ctx, user)
 }
 
 func (s *userServiceBase) UpdateUserPassword(ctx context.Context, adminID, userID int64, password string) error {
