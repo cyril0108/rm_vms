@@ -188,13 +188,19 @@ func (w *Worker) submitSegmentEnqueue(seg *models.Segment) {
 func (w *Worker) StreamHubForCam(camId int, profile string) *stream.Hub {
     cam := w.cameras[camId]
 
+    ll := LOG.Prefix("[Go][Worker][StreamHubForCam]")
+
     pro := cam.GetProfile(profile)
     if pro == nil {
-        fmt.Println("[Go][Worker][StreamHubForCam] incorrect profile ", profile)
+        ll.Error("incorrect profile", "profile", profile)
         return nil
     }
 
-    fmt.Println("[Go][Worker][StreamHubForCam] ", w.ID, camId, cam, pro.ChannelID)
+    ll.Info("Getting hub",
+        "worker", w.ID,
+        "cam", camId,
+        "profile", profile,
+        "channel", pro.ChannelID)
     return w.streamHubs[pro.ChannelID]
 }
 
@@ -202,7 +208,7 @@ func (w *Worker) StreamHubForCam(camId int, profile string) *stream.Hub {
 // Start up SHM reader when we receive SHM data from cpp worker
 func (w *Worker) startSHMReader(resp WorkerResponse) {
 
-    fmt.Println("[Go][Worker] start shm reader", w.ID)
+    LOG.Info("[Go][Worker] start shm reader", "worker", w.ID)
 
     // Launch the reader in the background so it doesn't block the command loop
     w.shmReader = shm.StartStreamReader(strconv.Itoa(w.ID), 10, resp.Size)
@@ -298,7 +304,10 @@ func (w *Worker) AssignCam(cam *Camera, profile string) error {
 
 func (w *Worker) StartStreamProfile(camID int, profile string, sp *StreamProfile, recording bool) error {
 
-    LOG.Info("[StartStreamProfile]", "cam", camID, "profile", profile, "recording", recording)
+    LOG.Info("[StartStreamProfile]",
+        "cam", camID,
+        "profile", profile,
+        "recording", recording)
 
     rStr := strconv.FormatBool(recording)
 
@@ -318,7 +327,8 @@ func (w *Worker) StopStreamProfile(camID int, profile string) error {
 
 func (w *Worker) StartCamRecording(camID int, profile string) error {
 
-    LOG.Info("[StartCamRecording]")
+    ll := LOG.Prefix("[StartCamRecording]")
+    ll.Info("")
 
     w.mu.Lock()
     defer w.mu.Unlock()
@@ -337,7 +347,7 @@ func (w *Worker) StartCamRecording(camID int, profile string) error {
     // pro.Status = "recording"
     command := fmt.Sprintf("RECORDING %d %s", cam.ID, profile)
 
-    LOG.Info("[StartCamRecording] sending", "command", command)
+    ll.Info(" sending", "command", command)
 
     return w.SendCommand(command)
 }
@@ -356,7 +366,7 @@ func (w *Worker) StopCamRecording(camID int, profile string) error {
 
     pro := cam.GetProfile(profile)
     if pro == nil {
-        fmt.Println("[Go][Worker][StreamHubForCam] incorrect profile ", profile)
+        fmt.Println("[Go][Worker][StopCamRecording] incorrect profile ", profile)
         return nil
     }
 
@@ -389,7 +399,7 @@ func (w *Worker) RestartCam(camID int, profile string) error {
         return nil
     }
 
-    LOG.Info("[RestartCam] restarting profile")
+    LOG.Info("[RestartCam] restarting profile", "profile", profile)
 
     return w.StartStreamProfile(camID, profile, sp, cam.Active)
 
