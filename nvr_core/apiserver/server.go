@@ -146,30 +146,10 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// =============================================
 	// =============================================
-	addr := fmt.Sprintf(":%d", cfg.Server.Port);
 
-	handlerWithCORS := middleware.CORSMiddleware(mux)
+	srv := api.initServer(mux, cfg.Server.Port)
+	srvTLS := api.initServerTLS(mux, cfg.Server.Port+1)
 
-	// Server configuration
-	srv := &http.Server{
-		Addr:         addr,
-		Handler:      handlerWithCORS,
-		ReadTimeout:  5 * time.Second,  // Max time to read request headers/body
-		WriteTimeout: 10 * time.Second, // Max time to write response
-		IdleTimeout:  120 * time.Second, // Max time for keep-alive connections
-	}
-
-	// certfile, keyfile := api.InitCert()
-
-	// Start the server in a background goroutine
-	go func() {
-		log.Printf("[API] Server listening on %s", addr)
-		// ErrServerClosed is expected when we call srv.Shutdown()
-		// if err := srv.ListenAndServeTLS(certfile, keyfile); err != nil && err != http.ErrServerClosed {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("[API] Server critically failed: %v", err)
-		}
-	}()
 
 	// =============================================
 	// Shutting Down
@@ -191,6 +171,70 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	} else {
 		log.Println("[API] Server gracefully stopped.")
 	}
+
+	if err := srvTLS.Shutdown(shutdownCtx); err != nil {
+		log.Printf("[API] Server HTTPS forced to shutdown due to timeout: %v", err)
+	} else {
+		log.Println("[API] Server HTTPS gracefully stopped.")
+	}
+
+}
+
+func (s *APIServer) initServer(mux *http.ServeMux, port int) *http.Server {
+
+	addr := fmt.Sprintf(":%d", port);
+
+	handlerWithCORS := middleware.CORSMiddleware(mux)
+
+	// Server configuration
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      handlerWithCORS,
+		ReadTimeout:  5 * time.Second,  // Max time to read request headers/body
+		WriteTimeout: 10 * time.Second, // Max time to write response
+		IdleTimeout:  120 * time.Second, // Max time for keep-alive connections
+	}
+
+	// Start the server in a background goroutine
+	go func() {
+		log.Printf("[API] Server listening on %s", addr)
+		// ErrServerClosed is expected when we call srv.Shutdown()
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("[API] Server critically failed: %v", err)
+		}
+	}()
+
+	return srv
+
+}
+
+func (s *APIServer) initServerTLS(mux *http.ServeMux, port int) *http.Server {
+
+	addr := fmt.Sprintf(":%d", port);
+
+	handlerWithCORS := middleware.CORSMiddleware(mux)
+
+	// Server configuration
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      handlerWithCORS,
+		ReadTimeout:  5 * time.Second,  // Max time to read request headers/body
+		WriteTimeout: 10 * time.Second, // Max time to write response
+		IdleTimeout:  120 * time.Second, // Max time for keep-alive connections
+	}
+
+	certfile, keyfile := s.InitCert()
+
+	// Start the server in a background goroutine
+	go func() {
+		log.Printf("[API] Server HTTPS listening on %s", addr)
+		// ErrServerClosed is expected when we call srv.Shutdown()
+		if err := srv.ListenAndServeTLS(certfile, keyfile); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("[API] Server HTTPS critically failed: %v", err)
+		}
+	}()
+
+	return srv
 
 }
 

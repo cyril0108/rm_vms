@@ -43,6 +43,8 @@ func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// worker.GetCameras()
+
 	// Setup Endless HTTP Streaming Headers
 	w.Header().Set("Content-Type", "video/mp2t")
 	w.Header().Set("Connection", "keep-alive")
