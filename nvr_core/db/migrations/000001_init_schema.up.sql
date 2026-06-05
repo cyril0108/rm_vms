@@ -142,12 +142,6 @@ CREATE TABLE users (
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE RESTRICT
 );
 
--- INSERT INTO users (username, password, role_id)
--- VALUES ("admin", "", 1);
-
--- UPDATE sqlite_sequence SET seq = (SELECT MAX(id) FROM users) WHERE name = 'users';
-
-
 -- USER_CAMERA_ACCESS (Resource-Level Mapping)
 -- NVR Specific: Binds a user to specific cameras. 
 -- If an admin role implicitly sees all cameras, you handle that in Go logic.

@@ -41,7 +41,7 @@ func (s *systemServiceBase) GetHealthData(ctx context.Context) (dto.SystemHealth
 		health.Configured = false
 	}
 
-	LOG.Info("[GetHealthData] ", "p", user.Password, "configured", health.Configured)
+	LOG.Info("[GetHealthData] ", "configured", health.Configured)
 
 	return health, nil
 
