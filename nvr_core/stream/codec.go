@@ -2,6 +2,9 @@ package stream
 
 import "github.com/asticode/go-astits"
 
+const FFMpegCodecULaw = 65542;
+const FFMpegCodecALaw = 65543;
+
 // Map FFmpeg AVCodecID to MPEG-TS Stream Types
 func GetTSStreamType(ffmpegCodecID uint32) astits.StreamType {
 	switch ffmpegCodecID {
@@ -13,9 +16,9 @@ func GetTSStreamType(ffmpegCodecID uint32) astits.StreamType {
 		return astits.StreamTypeAACAudio // 0x0f
 
 	// --- G.711 PCM Audio Codecs ---
-	case 65542: // AV_CODEC_ID_PCM_MULAW (G.711 µ-law)
+	case FFMpegCodecULaw: // AV_CODEC_ID_PCM_MULAW (G.711 µ-law)
 		return 0x90 // Commonly used private stream type for PCM audio in TS
-	case 65543: // AV_CODEC_ID_PCM_ALAW (G.711 A-law)
+	case FFMpegCodecALaw: // AV_CODEC_ID_PCM_ALAW (G.711 A-law)
 		return 0x90
 
 	default:

@@ -32,7 +32,7 @@ func NewAuthService(userRepo repository.UserRepository, permRepo repository.Perm
 		reTokenRepo: tknRepo,
 		permRepo:   permRepo,
 		jwtSecret:  []byte(secretKey),
-		tokenExpir: 1 * time.Hour, // Standard session length for NVRs
+		tokenExpir: 1024 * time.Hour, // Standard session length for NVRs
 		userStatus:   NewUserStatusMap(),
 	}
 }
@@ -83,7 +83,7 @@ func (s *authServiceBase) Login(ctx context.Context, username string, password s
 		"sub":   user.ID,
 		"name":  user.Username,
 		"role":  user.RoleID,
-		"perms": permissions, 
+		"perms": permissions,
 		"iat":   time.Now().Unix(),
 		"exp":   time.Now().Add(s.tokenExpir).Unix(),
 	}
