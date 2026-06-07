@@ -555,7 +555,7 @@ void VideoIngestion::ingestAudio(AVPacket* packet) {
                 tsMuxer->muxAudioPacket(packet);
             }
         }
-        
+
         // Original raw packet still goes to the disk writer
         packetToDiskWriter(packet);
 

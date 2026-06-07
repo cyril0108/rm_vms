@@ -15,7 +15,7 @@ bool AudioTranscoder::init(AVStream* inStream) {
     // Setup Decoder
     const AVCodec* dec = avcodec_find_decoder(inStream->codecpar->codec_id);
     if (!dec) return false;
-    
+
     decCtx = avcodec_alloc_context3(dec);
     avcodec_parameters_to_context(decCtx, inStream->codecpar);
 
@@ -65,7 +65,7 @@ bool AudioTranscoder::init(AVStream* inStream) {
             0, nullptr);
     #endif
     
-    // --- THE CRITICAL FIX 2: PREVENT SEGFAULT BY CHECKING SWR_INIT ---
+    // --- CRITICAL FIX: PREVENT SEGFAULT BY CHECKING SWR_INIT ---
     if (swr_init(swrCtx) < 0) {
         // If the resampler STILL fails to initialize, gracefully abort 
         // the transcoder so it passes raw audio instead of crashing.
@@ -86,7 +86,7 @@ void AudioTranscoder::process(AVPacket* inPkt, std::function<void(AVPacket*)> on
     
     AVFrame* decFrame = av_frame_alloc();
     while (avcodec_receive_frame(decCtx, decFrame) == 0) {
-        
+
         // Allocate Resampled Frame
         AVFrame* resampledFrame = av_frame_alloc();
         resampledFrame->format = encCtx->sample_fmt;
@@ -103,7 +103,7 @@ void AudioTranscoder::process(AVPacket* inPkt, std::function<void(AVPacket*)> on
         // Resample Audio
         int outSamples = swr_convert(swrCtx, resampledFrame->data, resampledFrame->nb_samples, 
                                      (const uint8_t**)decFrame->data, decFrame->nb_samples);
-        
+
         // Push to FIFO
         av_audio_fifo_write(fifo, (void**)resampledFrame->data, outSamples);
         av_frame_free(&resampledFrame);
