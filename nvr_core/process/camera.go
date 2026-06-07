@@ -7,6 +7,8 @@ type StreamProfile struct {
     URL       string `json:"url"`
     WorkerID  int    `json:"worker_id"` // Moved here! Can be different for main/sub
     ChannelID int    `json:"channel_id"`
+    VCodec    uint32 `json:"vcodec"`
+    ACodec    uint32 `json:"acodec"`
     Status    string `json:"status"`    // e.g., "offline", "streaming", "failed"
 }
 

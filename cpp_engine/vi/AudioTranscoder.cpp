@@ -12,14 +12,14 @@ AudioTranscoder::~AudioTranscoder() {
 }
 
 bool AudioTranscoder::init(AVStream* inStream) {
-    // 1. Setup Decoder
+    // Setup Decoder
     const AVCodec* dec = avcodec_find_decoder(inStream->codecpar->codec_id);
     if (!dec) return false;
     
     decCtx = avcodec_alloc_context3(dec);
     avcodec_parameters_to_context(decCtx, inStream->codecpar);
 
-    // --- THE CRITICAL FIX 1: FORCE CHANNEL LAYOUT IF CAMERA OMITTED IT ---
+    // --- CRITICAL FIX: FORCE CHANNEL LAYOUT IF CAMERA OMITTED IT ---
     #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
         if (decCtx->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC || decCtx->ch_layout.nb_channels == 0) {
             int channels = decCtx->ch_layout.nb_channels > 0 ? decCtx->ch_layout.nb_channels : 1;
@@ -35,7 +35,7 @@ bool AudioTranscoder::init(AVStream* inStream) {
 
     if (avcodec_open2(decCtx, dec, nullptr) < 0) return false;
 
-    // 2. Setup 48kHz AAC Encoder
+    // Setup 48kHz AAC Encoder
     const AVCodec* enc = avcodec_find_encoder(AV_CODEC_ID_AAC);
     encCtx = avcodec_alloc_context3(enc);
     encCtx->sample_rate = 48000;          // Standard Broadcast Frequency
@@ -51,7 +51,7 @@ bool AudioTranscoder::init(AVStream* inStream) {
 
     if (avcodec_open2(encCtx, enc, nullptr) < 0) return false;
 
-    // 3. Setup Resampler (Camera Layout -> 48kHz Stereo)
+    // Setup Resampler (Camera Layout -> 48kHz Stereo)
     swrCtx = swr_alloc();
     #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
         swr_alloc_set_opts2(&swrCtx, 
@@ -72,7 +72,7 @@ bool AudioTranscoder::init(AVStream* inStream) {
         return false;
     }
 
-    // 4. Setup FIFO buffer (AAC requires strictly 1024 samples per frame)
+    // Setup FIFO buffer (AAC requires strictly 1024 samples per frame)
     fifo = av_audio_fifo_alloc(encCtx->sample_fmt, encCtx->channels, 1);
     isInitialized = true;
     return true;

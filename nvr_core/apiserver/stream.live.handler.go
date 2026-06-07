@@ -1,14 +1,13 @@
 package apiserver
 
 import (
-	"context"
+	// "context"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"nvr_core/stream"
-	"nvr_core/transmux"
 	"nvr_core/utils"
 )
 
@@ -43,8 +42,6 @@ func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// worker.GetCameras()
-
 	// Setup Endless HTTP Streaming Headers
 	w.Header().Set("Content-Type", "video/mp2t")
 	w.Header().Set("Connection", "keep-alive")
@@ -62,7 +59,6 @@ func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Reques
 
 	// --- Stream Processing ---
 	ctx := r.Context()
-	muxSession := transmux.NewTSMuxSession(context.Background(), w)
 
 	for {
 		select {
@@ -74,12 +70,8 @@ func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Reques
 			if !ok {
 				return // Hub channel closed
 			}
+			w.Write(packet.Payload)
 
-			// Delegate the complex muxing logic to our dedicated state machine
-			if err := muxSession.ProcessPacket(packet); err != nil {
-				log.Printf("[TS Handler] Muxer error for Cam %d: %v", camID, err)
-				return
-			}
 		}
 	}
 }

@@ -17,21 +17,21 @@ TSMuxer::~TSMuxer() {
 
 bool TSMuxer::init(AVCodecParameters* vPar, AVRational vTb, 
                    AVCodecParameters* aPar, AVRational aTb) {
-    
+
     inVideoTimeBase = vTb;
     inAudioTimeBase = aTb;
 
-    // 1. Allocate the output context for MPEG-TS
+    // Allocate the output context for MPEG-TS
     avformat_alloc_output_context2(&outCtx, nullptr, "mpegts", nullptr);
     if (!outCtx) return false;
 
-    // 2. Setup the Custom AVIO Interceptor
+    // Setup the Custom AVIO Interceptor
     avioBuffer = (uint8_t*)av_malloc(avioBufferSize);
     avioCtx = avio_alloc_context(avioBuffer, avioBufferSize, 1, this, nullptr, shmWriteCallback, nullptr);
     outCtx->pb = avioCtx;
     outCtx->flags |= AVFMT_FLAG_CUSTOM_IO;
 
-    // 3. Create the Output Video Stream
+    // Create the Output Video Stream
     if (vPar) {
         AVStream* outStream = avformat_new_stream(outCtx, nullptr);
         avcodec_parameters_copy(outStream->codecpar, vPar);
@@ -39,7 +39,7 @@ bool TSMuxer::init(AVCodecParameters* vPar, AVRational vTb,
         outVideoStreamIndex = outStream->index;
     }
 
-    // 4. Create the Output Audio Stream
+    // Create the Output Audio Stream
     if (aPar) {
         AVStream* outStream = avformat_new_stream(outCtx, nullptr);
         avcodec_parameters_copy(outStream->codecpar, aPar);
@@ -47,7 +47,7 @@ bool TSMuxer::init(AVCodecParameters* vPar, AVRational vTb,
         outAudioStreamIndex = outStream->index;
     }
 
-    // 5. Write the MPEG-TS Header (Generates PAT and PMT automatically!)
+    // Write the MPEG-TS Header (Generates PAT and PMT automatically!)
     if (avformat_write_header(outCtx, nullptr) < 0) {
         Log::error("[TSMuxer] Failed to write TS header.");
         return false;

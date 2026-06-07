@@ -88,9 +88,9 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// Camera stream
 	// =============================================
-	mux.HandleFunc("GET /ws/stream/{id}", api.GetStream)
+	// mux.HandleFunc("GET /ws/stream/{id}", api.GetStream)
 	mux.HandleFunc("GET /live/camera/{id}", api.HandleLiveTransmuxTS)
-	mux.HandleFunc("GET /ws/stream/{id}/{profile}", api.GetStream)
+	// mux.HandleFunc("GET /ws/stream/{id}/{profile}", api.GetStream)
 	mux.HandleFunc("GET /live/camera/{id}/{profile}", api.HandleLiveTransmuxTS)
 
 	mux.HandleFunc("GET /health", api.GetHealth)
