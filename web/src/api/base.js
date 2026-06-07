@@ -2,6 +2,9 @@
 import config from '@/config'
 import axios from 'axios'
 
+console.log("[API] config", config)
+console.log("[API] https", config.https)
+
 const HostBase = config.hostUrl;
 const APIBase = "api";
 

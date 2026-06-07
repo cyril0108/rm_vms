@@ -26,13 +26,17 @@ const CONFIG = function() {
         const C = {}
 
         const host = Host()
+        const tls = HTTPS(window.location)
 
         let port = ____API_WEB_CONFIG____.apiPort
+        if( tls ) {
+            port = port+1
+        }
 
         DEFINE(C)
         .static("apiPort", port)
         .static("hostUrl", Host(port))
-        .static("https", HTTPS(window.location))
+        .static("https", tls)
         .static("wsProtocol", WebSocket(C.https))
 
         return C;
