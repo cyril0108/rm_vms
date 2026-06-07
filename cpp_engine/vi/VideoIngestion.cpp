@@ -1,4 +1,5 @@
 #include "VideoIngestion.h"
+#include "TSMuxer.h"
 
 #include <iostream>
 // #include <string>
@@ -62,12 +63,16 @@ VideoIngestion::~VideoIngestion() {
  * --- Private Method: startIngestion ---
  * =========================================================
  */
+
+
 int VideoIngestion::startIngestion() {
     avformat_network_init();
     options = configureAVDictionary(nullptr);
 
     // Connect to Camera
     if (openInput() < 0) return cleanup();
+
+    // Extract exact Video parameters
     if (avformat_find_stream_info(fmtCtx, nullptr) < 0) {
         Log::error(camName + " Could not retrieve stream info.");
         return cleanup();
@@ -82,6 +87,51 @@ int VideoIngestion::startIngestion() {
 
     // Setup Filters
     if (initVideoFilter() < 0) return cleanup();
+
+    // ---------------------------------------------
+    // --- Initialize Universal Audio Transcoder ---
+    // ---------------------------------------------
+    // If the stream is AAC, OR any PCM telecom codec, we intercept it!
+    bool needsTranscoding = (audioStreamIndex >= 0 && 
+                            (audioCodecID == AV_CODEC_ID_AAC || 
+                             audioCodecID == AV_CODEC_ID_PCM_MULAW || 
+                             audioCodecID == AV_CODEC_ID_PCM_ALAW));
+
+    if (needsTranscoding) {
+        transcoder.init(fmtCtx->streams[audioStreamIndex]);
+    }
+    // ---------------------------------------------
+
+    // ---------------------------------------------
+    // --- Initialize the MPEG-TS Muxer ------------
+    // ---------------------------------------------
+    tsMuxer = new TSMuxer(shm, shmChannelID);
+
+    // Extract exact Video parameters
+    AVCodecParameters* vPar = (videoStreamIndex >= 0) ? fmtCtx->streams[videoStreamIndex]->codecpar : nullptr;
+    AVRational vTb = (videoStreamIndex >= 0) ? fmtCtx->streams[videoStreamIndex]->time_base : AVRational{1, 90000};
+
+    // Extract exact Audio parameters (Prioritize Transcoder output if active)
+    AVCodecParameters* aPar = nullptr;
+    AVRational aTb = {1, 90000};
+
+    if (transcoder.isInitialized) {
+        aPar = avcodec_parameters_alloc();
+        avcodec_parameters_from_context(aPar, transcoder.encCtx);
+        aTb = {1, transcoder.encCtx->sample_rate};
+    } else if (audioStreamIndex >= 0) {
+        aPar = fmtCtx->streams[audioStreamIndex]->codecpar;
+        aTb = fmtCtx->streams[audioStreamIndex]->time_base;
+    }
+
+    // Bind parameters to the Muxer
+    tsMuxer->init(vPar, vTb, aPar, aTb);
+
+    if (transcoder.isInitialized && aPar) {
+        avcodec_parameters_free(&aPar); // Free temp alloc
+    }
+    // ---------------------------------------------
+
 
     // ---------------------------------------------------------
     // SPAWN WRITER THREAD HERE
@@ -175,6 +225,16 @@ void VideoIngestion::findStreamIndices() {
         audioCodecID = fmtCtx->streams[aIdx]->codecpar->codec_id;
         Log::info(camName + " Found Audio Stream ("+std::to_string(audioCodecID) +") at index: " + std::to_string(audioStreamIndex));
     }
+
+    sendStreamCodecs();
+
+}
+
+void VideoIngestion::sendStreamCodecs() {
+
+    Log::send("{\"status\":\"codecs\", " + camJsonPartial +
+       ", \"vcodec\":" + std::to_string(videoCodecID) +
+       ", \"acodec\":" + std::to_string(audioCodecID) + "}");
 
 }
 
@@ -286,52 +346,166 @@ void VideoIngestion::packetToDiskWriter(AVPacket* packet) {
 
 /**
  * =========================================================
+ * Timestamp Normalization (SRP Extracted)
+ * =========================================================
+ */
+// void VideoIngestion::normalizeTimestamps(int64_t& pts, int64_t& dts, int streamIndex) {
+
+//     // // --- ACCURATE DYNAMIC TIMEBASE CONVERSION ---
+//     // AVRational target_tb = {1, 90000};
+//     // AVRational stream_tb = fmtCtx->streams[audioStreamIndex]->time_base;
+
+//     // pts = av_rescale_q(pts, stream_tb, target_tb);
+//     // dts = av_rescale_q(dts, stream_tb, target_tb);
+
+//     // ---------------------------------------------
+//     // If FFmpeg strips the timestamp, NEVER use the Unix Epoch.
+//     // Simply increment safely from the last known good frame.
+//     // if (pts == AV_NOPTS_VALUE && dts == AV_NOPTS_VALUE) {
+//     //     pts = lastValidPTS + 3000;
+//     //     dts = pts;
+//     //     return;
+//     // }
+
+//     if (pts == AV_NOPTS_VALUE) pts = dts;
+//     if (dts == AV_NOPTS_VALUE) dts = pts;
+
+//     // Exact mathematical rescale to 90kHz
+//     AVRational target_tb = {1, 90000}; 
+//     AVRational stream_tb = fmtCtx->streams[streamIndex]->time_base;
+
+//     pts = av_rescale_q(pts, stream_tb, target_tb);
+//     dts = av_rescale_q(dts, stream_tb, target_tb);
+
+//     // Keep track of the highest valid PTS to prevent backward jumping on missing packets
+//     lastValidPTS = std::max(lastValidPTS, pts);
+// }
+
+/**
+ * =========================================================
+ * ADTS Audio Helpers (SRP Extracted)
+ * =========================================================
+ */
+// int VideoIngestion::get_adts_sr_index(int sample_rate) {
+//     switch(sample_rate) {
+//         case 96000: return 0; case 88200: return 1; case 64000: return 2;
+//         case 48000: return 3; case 44100: return 4; case 32000: return 5;
+//         case 24000: return 6; case 22050: return 7; case 16000: return 8;
+//         case 12000: return 9; case 11025: return 10; case 8000: return 11;
+//         case 7350: return 12; default: return 4; // default 44100
+//     }
+// }
+
+// bool VideoIngestion::injectADTS(AVPacket* packet, std::vector<uint8_t>& adtsPayload) {
+//     if (audioCodecID != AV_CODEC_ID_AAC) return false;
+
+//     // Check if camera already provided ADTS
+//     if (packet->size >= 2 && packet->data[0] == 0xFF && (packet->data[1] & 0xF0) == 0xF0) {
+//         return false; 
+//     }
+
+//     AVCodecParameters* par = fmtCtx->streams[audioStreamIndex]->codecpar;
+    
+//     int profile = 1; // Fallback AAC-LC
+//     int sr_index = 4; // Fallback 44100Hz
+//     int channels = 1;
+
+//     // --- THE FIX: Extract exact parameters from the Camera's AudioSpecificConfig ---
+//     if (par->extradata != nullptr && par->extradata_size >= 2) {
+//         uint16_t asc = (par->extradata[0] << 8) | par->extradata[1];
+//         profile = ((asc >> 11) & 0x1F) - 1; // AOT - 1
+//         sr_index = (asc >> 7) & 0x0F;
+//         channels = (asc >> 3) & 0x0F;
+//     } else {
+//         // Fallbacks if ASC is missing
+//         sr_index = get_adts_sr_index(par->sample_rate);
+//         #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
+//             channels = par->ch_layout.nb_channels;
+//         #else
+//             channels = par->channels;
+//         #endif
+//     }
+
+//     if (channels == 0) channels = 1;
+
+//     int frame_length = packet->size + 7;
+
+//     uint8_t adts[7];
+//     adts[0] = 0xFF;
+//     adts[1] = 0xF1; 
+//     adts[2] = ((profile & 0x03) << 6) | ((sr_index & 0x0F) << 2) | ((channels & 0x04) >> 2);
+//     adts[3] = ((channels & 0x03) << 6) | ((frame_length & 0x1800) >> 11);
+//     adts[4] = ((frame_length & 0x07F8) >> 3);
+//     adts[5] = ((frame_length & 0x0007) << 5) | 0x1F;
+//     adts[6] = 0xFC;
+
+//     adtsPayload.resize(frame_length);
+//     memcpy(adtsPayload.data(), adts, 7);
+//     memcpy(adtsPayload.data() + 7, packet->data, packet->size);
+
+//     return true; 
+// }
+
+/**
+ * =========================================================
  * Ingestion
  * =========================================================
  */
-FrameMetadata VideoIngestion::makeFrameMetadataV(AVPacket* packet, bool isKey) {
-    FrameMetadata meta;
 
-    // Grab the absolute Wall-Clock time in milliseconds
-    meta.epochMs = utils::getCurrentEpochMSTime();
+// FrameMetadata VideoIngestion::makeFrameMetadataV(AVPacket* packet, bool isKey) {
+//     FrameMetadata meta;
 
-    meta.magic = WrapMagicNumber;
-    meta.frameSize = packet->size;
-    meta.pts = packet->pts;
-    meta.dts = packet->dts;
-    meta.isKeyFrame = isKey ? 1 : 0;
-    meta.codecID = videoCodecID;
-    meta.mediaType = static_cast<uint8_t>(MediaType::VIDEO);
+//     // Grab the absolute Wall-Clock time in milliseconds
+//     meta.epochMs = utils::getCurrentEpochMSTime();
 
-    return meta;
+//     meta.magic = WrapMagicNumber;
+//     meta.frameSize = packet->size;
 
-}
+//     int64_t pts = packet->pts;
+//     int64_t dts = packet->dts;
 
-FrameMetadata VideoIngestion::makeFrameMetadataA(AVPacket* packet) {
-    // Construct the metadata cleanly
-    FrameMetadata meta;
-    meta.epochMs = utils::getCurrentEpochMSTime();
+//     // Delegate math to the synchronizer
+//     normalizeTimestamps(pts, dts, videoStreamIndex);
 
-    meta.magic = WrapMagicNumber;
-    meta.frameSize = packet->size;
-    meta.pts = packet->pts;
-    meta.dts = packet->dts;
-    meta.isKeyFrame = 0;
-    meta.codecID = audioCodecID;
-    meta.mediaType = static_cast<uint8_t>(MediaType::AUDIO);
-    return meta;
-}
+//     meta.pts = pts;
+//     meta.dts = dts;
+
+//     meta.isKeyFrame = isKey ? 1 : 0;
+//     meta.codecID = videoCodecID;
+//     meta.mediaType = static_cast<uint8_t>(MediaType::VIDEO);
+
+//     return meta;
+
+// }
+
+// FrameMetadata VideoIngestion::makeFrameMetadataA(AVPacket* packet) {
+//     // Construct the metadata cleanly
+//     FrameMetadata meta;
+//     meta.epochMs = utils::getCurrentEpochMSTime();
+
+//     meta.magic = WrapMagicNumber;
+//     meta.frameSize = packet->size;
+
+//     int64_t pts = packet->pts;
+//     int64_t dts = packet->dts;
+
+//     // Delegate math to the synchronizer
+//     normalizeTimestamps(pts, dts, audioStreamIndex);
+
+//     meta.pts = pts;
+//     meta.dts = dts;
+
+//     meta.isKeyFrame = 0;
+//     meta.codecID = audioCodecID;
+//     meta.mediaType = static_cast<uint8_t>(MediaType::AUDIO);
+//     return meta;
+// }
 
 void VideoIngestion::ingestVideo(AVPacket* packet) {
-    // Send raw packet to the filter
     if (av_bsf_send_packet(bsfCtx, packet) == 0) {
-
-        // Allocate a temporary packet for the output
         AVPacket* bsfPacket = av_packet_alloc();
 
-        // Receive the modified packet(s) into the NEW packet
         while (av_bsf_receive_packet(bsfCtx, bsfPacket) == 0) {
-
             bool isKey = (bsfPacket->flags & AV_PKT_FLAG_KEY);
 
             if (waitForKeyFrame) {
@@ -345,51 +519,50 @@ void VideoIngestion::ingestVideo(AVPacket* packet) {
             }
 
             try {
-
-                FrameMetadata meta = makeFrameMetadataV(bsfPacket, isKey);
-
-                // Use bsfPacket here!
-                if (shm->WriteFrame(shmChannelID, meta, bsfPacket->data) < 0) {
-                    Log::error(camName + " [ingestVideo] Failed to write frame data.");
+                // Let the new TS Muxer handle the byte alignment and metadata
+                if (tsMuxer) {
+                    tsMuxer->muxVideoPacket(bsfPacket);
                 }
+
+                // Original raw packet still goes to the disk writer
                 packetToDiskWriter(bsfPacket);
 
             } catch(...) {
-                Log::error(camName + " [ingestVideo] Caught exception writing frame data.");
+                Log::error(camName + " [ingestVideo] Caught exception.");
             }
 
-            // Clean up the temporary packet for the next iteration of the while loop
             av_packet_unref(bsfPacket);
         }
-
-        // Free the temporary packet when the while loop is done
         av_packet_free(&bsfPacket);
     }
 }
 
 void VideoIngestion::ingestAudio(AVPacket* packet) {
+    if (waitForKeyFrame) return;
 
-    // A/V Sync Gatekeeper: Drop audio until video has established a keyframe.
-    // This prevents "black screen with audio" at the start of recordings/streams.
-    if (waitForKeyFrame) {
-        return;
-    }
-
-    // Audio frames do not have "Keyframes" in the same way video does, 
-    // so we pass 'false' for the isKey parameter.
     try {
-        FrameMetadata meta = makeFrameMetadataA(packet);
-        if (shm->WriteFrame(shmChannelID, meta, packet->data) < 0) {
-            Log::error(camName + " [SHM] Failed to write audio stream.");
+        if (transcoder.isInitialized) {
+            transcoder.process(packet, [this](AVPacket* cleanPkt) {
+                // The Transcoder gives us a 48kHz AAC frame.
+                // We DO NOT manually inject ADTS! FFmpeg's TS Muxer natively does it.
+                if (tsMuxer) {
+                    tsMuxer->muxAudioPacket(cleanPkt);
+                }
+            });
+        } else {
+            // Un-transcoded stream directly to muxer
+            if (tsMuxer) {
+                tsMuxer->muxAudioPacket(packet);
+            }
         }
+        
+        // Original raw packet still goes to the disk writer
+        packetToDiskWriter(packet);
+
     } catch(...) {
-        Log::error(camName + " [SHM] Caught exception writing audio stream.");
+        Log::error(camName + " [ingestAudio] Caught exception writing audio.");
     }
-
-    packetToDiskWriter(packet);
-
 }
-
 
 // --- Private Method: openInput ---
 /**
@@ -473,6 +646,12 @@ int VideoIngestion::interruptCallback(void* ctx) {
 int VideoIngestion::cleanup() {
 
     stopAndJoinDiskWriterThread();
+
+    // Safely destroy the Muxer before freeing the SHM channel
+    if (tsMuxer) {
+        delete tsMuxer;
+        tsMuxer = nullptr;
+    }
 
     if (shmChannelID >= 0) {
         shm->ReleaseChannelForCamID(camID);

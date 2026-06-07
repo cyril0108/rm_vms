@@ -10,7 +10,7 @@ import (
 	"nvr_core/stream"
 )
 
-var LOG = logger.NewLogger("[nvr_core]","[transmux]")
+var LOG = logger.NewLogger("[nvr_core][transmux]")
 
 
 const (
@@ -50,62 +50,6 @@ func NewTSMuxSession(ctx context.Context, w http.ResponseWriter) *TSMuxSession {
 	}
 }
 
-// ProcessPacket manages the state of the stream (Synchronous PMT Binding)
-func (s *TSMuxSession) ProcessPacketX(packet stream.StreamPacket) error {
-
-	s.FactCheckDiagnostic(&packet)
-
-	// --- WARMUP & SNIFFING PHASE ---
-	if !s.pmtWritten {
-		s.warmupCount++
-
-		if packet.MediaType == stream.MediaTypeVideo && packet.IsKeyFrame {
-			s.videoCodec = packet.CodecID
-		} else if packet.MediaType == stream.MediaTypeAudio {
-			s.audioCodec = packet.CodecID
-		}
-
-		// We only finalize PMT if we have the video codec AND (we found audio OR timed out)
-		if s.videoCodec != 0 && (s.audioCodec != 0 || s.warmupCount > 60) {
-			
-			LOG.Info("[ProcessPacket] Writing Unified PMT", "VideoCodec", s.videoCodec, "AudioCodec", s.audioCodec)
-
-			s.muxer.AddElementaryStream(astits.PMTElementaryStream{
-				ElementaryPID: VideoPID,
-				StreamType:    astits.StreamType(stream.GetTSStreamType(s.videoCodec)),
-			})
-			s.muxer.SetPCRPID(VideoPID)
-
-			if s.audioCodec != 0 {
-				s.muxer.AddElementaryStream(astits.PMTElementaryStream{
-					ElementaryPID: AudioPID,
-					StreamType:    astits.StreamType(stream.GetTSStreamType(s.audioCodec)),
-				})
-			}
-
-			s.pmtWritten = true
-			s.muxer.WriteTables()
-		}
-		// ALWAYS drop packets during the warmup phase
-		return nil
-	}
-
-	// --- THE ALIGNMENT GATEKEEPER ---
-	// Even though the PMT is written, we cannot start sending payloads until the camera 
-	// generates its NEXT Video Keyframe. If we let Audio or P-frames through first, VLC deadlocks.
-	if !s.hasSentFirstIFrame {
-		if packet.MediaType == stream.MediaTypeVideo && packet.IsKeyFrame {
-			s.hasSentFirstIFrame = true
-			LOG.Info("[ProcessPacket] First Keyframe caught, opening floodgates.")
-		} else {
-			return nil // Drop EVERYTHING until the Keyframe arrives
-		}
-	}
-
-	// --- DISPATCH TO PACKETIZER ---
-	return s.writePayload(packet)
-}
-
 // ProcessPacket manages the state of the stream (Dynamic PMT Binding)
 func (s *TSMuxSession) ProcessPacket(packet stream.StreamPacket) error {
 
@@ -120,16 +64,17 @@ func (s *TSMuxSession) ProcessPacket(packet stream.StreamPacket) error {
 				descriptors := s.PrepareAudioDescriptors()
 				s.muxer.AddElementaryStream(astits.PMTElementaryStream{
 					ElementaryPID: AudioPID,
-					StreamType:    astits.StreamType(stream.GetTSStreamType(s.audioCodec)),
+					StreamType:    stream.GetTSStreamType(s.audioCodec),
 					ElementaryStreamDescriptors: descriptors,
 				})
 				s.audioRegistered = true
-				// s.muxer.WriteTables()
+				s.muxer.WriteTables()
 
 				LOG.Info("[ProcessPacket] Audio registered",
 					"pktcodec", packet.CodecID,
+					"0x90", 0x90,
 					"StreamType", stream.GetTSStreamType(packet.CodecID),
-					"astits", astits.StreamType(stream.GetTSStreamType(s.audioCodec)),
+					"astits", astits.StreamType(0x90),
 				)
 
 			} else {
@@ -149,7 +94,7 @@ func (s *TSMuxSession) ProcessPacket(packet stream.StreamPacket) error {
 			//  Bind Video
 			s.muxer.AddElementaryStream(astits.PMTElementaryStream{
 				ElementaryPID: VideoPID,
-				StreamType:    astits.StreamType(stream.GetTSStreamType(packet.CodecID)),
+				StreamType:    stream.GetTSStreamType(packet.CodecID),
 			})
 			s.muxer.SetPCRPID(VideoPID)
 
@@ -159,7 +104,7 @@ func (s *TSMuxSession) ProcessPacket(packet stream.StreamPacket) error {
 				descriptors := s.PrepareAudioDescriptors()
 				s.muxer.AddElementaryStream(astits.PMTElementaryStream{
 					ElementaryPID: AudioPID,
-					StreamType:    astits.StreamType(stream.GetTSStreamType(s.audioCodec)),
+					StreamType:    stream.GetTSStreamType(s.audioCodec),
 					ElementaryStreamDescriptors: descriptors,
 				})
 				s.audioRegistered = true
@@ -329,3 +274,63 @@ func (s *TSMuxSession) FactCheckPCR(pcr *astits.ClockReference) {
 }
 
 // ===END=== FACT CHECK DIAGNOSTIC FUNCTIONS ======
+
+
+// ========= Legacy/Preserve FUNCTIONS ======
+
+
+// ProcessPacket manages the state of the stream (Synchronous PMT Binding)
+func (s *TSMuxSession) ProcessPacketX(packet stream.StreamPacket) error {
+
+	s.FactCheckDiagnostic(&packet)
+
+	// --- WARMUP & SNIFFING PHASE ---
+	if !s.pmtWritten {
+		s.warmupCount++
+
+		if packet.MediaType == stream.MediaTypeVideo && packet.IsKeyFrame {
+			s.videoCodec = packet.CodecID
+		} else if packet.MediaType == stream.MediaTypeAudio {
+			s.audioCodec = packet.CodecID
+		}
+
+		// We only finalize PMT if we have the video codec AND (we found audio OR timed out)
+		if s.videoCodec != 0 && (s.audioCodec != 0 || s.warmupCount > 60) {
+			
+			LOG.Info("[ProcessPacket] Writing Unified PMT", "VideoCodec", s.videoCodec, "AudioCodec", s.audioCodec)
+
+			s.muxer.AddElementaryStream(astits.PMTElementaryStream{
+				ElementaryPID: VideoPID,
+				StreamType:    astits.StreamType(stream.GetTSStreamType(s.videoCodec)),
+			})
+			s.muxer.SetPCRPID(VideoPID)
+
+			if s.audioCodec != 0 {
+				s.muxer.AddElementaryStream(astits.PMTElementaryStream{
+					ElementaryPID: AudioPID,
+					StreamType:    astits.StreamType(stream.GetTSStreamType(s.audioCodec)),
+				})
+			}
+
+			s.pmtWritten = true
+			s.muxer.WriteTables()
+		}
+		// ALWAYS drop packets during the warmup phase
+		return nil
+	}
+
+	// --- THE ALIGNMENT GATEKEEPER ---
+	// Even though the PMT is written, we cannot start sending payloads until the camera 
+	// generates its NEXT Video Keyframe. If we let Audio or P-frames through first, VLC deadlocks.
+	if !s.hasSentFirstIFrame {
+		if packet.MediaType == stream.MediaTypeVideo && packet.IsKeyFrame {
+			s.hasSentFirstIFrame = true
+			LOG.Info("[ProcessPacket] First Keyframe caught, opening floodgates.")
+		} else {
+			return nil // Drop EVERYTHING until the Keyframe arrives
+		}
+	}
+
+	// --- DISPATCH TO PACKETIZER ---
+	return s.writePayload(packet)
+}

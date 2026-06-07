@@ -2,21 +2,23 @@
 #include <string>
 #include <thread>
 #include <atomic>
+#include <memory>
+#include <vector>
 
 #include "Log.h"
 #include "AVDictionary.h"
 #include "SharedMemory.h"
 #include "Recording.h"
 #include "SafeQueue.h"
+#include "AudioTranscoder.h"
 
 // --- Forward Declarations ---
-// Tell the compiler these are structs, which is all it needs to create pointers.
-// This completely removes the FFmpeg dependency from the header file.
 struct AVFormatContext;
 struct AVDictionary;
 struct AVBSFContext;
 struct AVPacket;
 
+class TSMuxer;
 
 struct VideoIngestionConfig {
     std::shared_ptr<ISharedMemory> shm;
@@ -32,13 +34,12 @@ class VideoIngestion
 public:
     VideoIngestion(const VideoIngestionConfig& config);
     ~VideoIngestion();
-    // stop
+
     void stopIngestion();
     void startRecording();
     void stopRecording();
 
 private:
-
     std::unique_ptr<RecorderWorker> recorderWorker;
     std::shared_ptr<ISharedMemory> shm;
 
@@ -51,17 +52,19 @@ private:
 
     std::string camJsonPartial;
     std::string recStatus;
-
     std::atomic<bool> recording{false};
 
     // --- FFmpeg Contexts & Options ---
     AVFormatContext* fmtCtx = nullptr;
     AVDictionary* options = nullptr;
-    AVBSFContext* bsfCtx = nullptr;       // Bitstream filter context for SPS/PPS injection
+    AVBSFContext* bsfCtx = nullptr;
+
+    AudioTranscoder transcoder;
+    TSMuxer* tsMuxer = nullptr;
 
     // Threading controls
-    std::atomic<bool> stopSignal{false}; // Each camera has its own stop flag
-    std::thread workerThread;            // The thread handling the loop
+    std::atomic<bool> stopSignal{false};
+    std::thread workerThread;
     std::thread diskWriterThread;
     SafeQueue<AVPacket*> diskWriterQueue;
 
@@ -70,13 +73,13 @@ private:
     int audioStreamIndex = -1;
     uint32_t videoCodecID = 0;
     uint32_t audioCodecID = 0;
-    bool waitForKeyFrame = true;       // Ensures we drop P-frames until our first IDR
+    bool waitForKeyFrame = true;
 
-    int startIngestion();       // The main worker thread loop
-    int openInput();            // Connects to the RTSP source
-    int cleanup();              // Safely frees all FFmpeg resources
+    int startIngestion();
+    int openInput();
+    int cleanup();
     void stopAndJoinDiskWriterThread();
-
+    void sendStreamCodecs();
     void updateRECStatus();
 
     // --- Setup Helpers ---
@@ -85,10 +88,7 @@ private:
     int initVideoFilter();
     bool isAVVC();
     const char* annexbFilterName();
-    FrameMetadata makeFrameMetadataV(AVPacket* packet, bool isKey);
-    FrameMetadata makeFrameMetadataA(AVPacket* packet);
 
-    // FFMPEG interrupt callback
     static int interruptCallback(void* ctx);
 
     // --- Packet Routing & Processing ---
