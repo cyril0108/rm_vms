@@ -37,7 +37,7 @@ const CONFIG = function() {
         .static("apiPort", port)
         .static("hostUrl", Host(port))
         .static("https", tls)
-        .static("wsProtocol", WebSocket(C.https))
+        .static("wsProtocol", WebSocket(tls))
 
         return C;
 
