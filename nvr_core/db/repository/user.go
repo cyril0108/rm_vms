@@ -11,11 +11,13 @@ import (
 var ErrUserNotFound = errors.New("user not found")
 var ErrUsernameTaken = errors.New("username already exists")
 
+
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	GetByID(ctx context.Context, id int64) (*models.User, error)
 	GetByUsername(ctx context.Context, username string) (*models.User, error)
 	GetAdmin(ctx context.Context) (*models.User, error)
+	UpdatePartial(ctx context.Context, id int64, updates PartialUpdateInterfaces) error
 	UpdateRole(ctx context.Context, id int64, roleID int64) error
 	UpdatePassword(ctx context.Context, id int64, newHash string) error
 	Deactivate(ctx context.Context, id int64) error
@@ -32,8 +34,8 @@ func NewUserRepository(db *sql.DB) UserRepository {
 // Create inserts a new user into the database.
 func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	query := `
-		INSERT INTO users (username, password, role_id, is_active) 
-		VALUES (?, ?, ?, 1)
+		INSERT INTO users (username, password, role_id, email, is_active) 
+		VALUES (?, ?, ?, ?, 1)
 	`
 
 	result, err := r.db.ExecContext(ctx, query, user.Username, user.Password, user.RoleID)
@@ -50,11 +52,11 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 }
 
 func (r *userRepo) 	GetAdmin(ctx context.Context) (*models.User, error) {
-	query := `SELECT id, username, password, role_id, is_active, created_at FROM users WHERE role_id = 1 ORDER BY id ASC LIMIT 1`
+	query := `SELECT id, username, password, role_id, email, is_active, created_at FROM users WHERE role_id = 1 ORDER BY id ASC LIMIT 1`
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query).Scan(
-		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.IsActive, &u.CreatedAt,
+		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
 	)
 
 	if err != nil {
@@ -68,11 +70,11 @@ func (r *userRepo) 	GetAdmin(ctx context.Context) (*models.User, error) {
 
 // GetByID fetches a user by their primary key.
 func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) {
-	query := `SELECT id, username, password, role_id, is_active, created_at FROM users WHERE id = ?`
+	query := `SELECT id, username, password, role_id, email, is_active, created_at FROM users WHERE id = ?`
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.IsActive, &u.CreatedAt,
+		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
 	)
 
 	if err != nil {
@@ -86,11 +88,11 @@ func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) 
 
 // GetByUsername is the workhorse for your Login API.
 func (r *userRepo) GetByUsername(ctx context.Context, username string) (*models.User, error) {
-	query := `SELECT id, username, password, role_id, is_active, created_at FROM users WHERE username = ?`
+	query := `SELECT id, username, password, role_id, email, is_active, created_at FROM users WHERE username = ?`
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, username).Scan(
-		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.IsActive, &u.CreatedAt,
+		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
 	)
 
 	if err != nil {
@@ -100,6 +102,34 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*models.
 		return nil, err
 	}
 	return &u, nil
+}
+
+func (r *userRepo) UpdatePartial(ctx context.Context, id int64, updates PartialUpdateInterfaces) error {
+	// If the map is empty, there is nothing to update
+	if len(updates) == 0 {
+		return nil
+	}
+
+	var args []interface{}
+
+	// Stitch the query together safely
+	query := JoinSetFieldsClause("UPDATE users SET ", updates) + " WHERE id = ?"
+	args = append(args, id)
+
+	result, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrUserNotFound
+	}
+
+	return nil
 }
 
 // UpdateRole changes the user's RBAC role.

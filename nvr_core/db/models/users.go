@@ -8,6 +8,7 @@ type User struct {
 	Username     string    `json:"username"`
 	Password     string    `json:"-"` // CRITICAL: Never serialize to JSON
 	RoleID       int64     `json:"role_id"`
+	Email        string    `json:"email"`
 	IsActive     bool      `json:"is_active"`
 	CreatedAt    time.Time `json:"created_at"`
 }
