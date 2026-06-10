@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/db/models"
@@ -67,7 +68,7 @@ func (s *segmentServiceBase) GetDailySummary(ctx context.Context, camID int64, p
 
 func segmentsToDTOItems(segments []*models.Segment) ([]*dto.SegmentItem, error) {
 
-	ll := LOG.Prefix("[segmentsToTimeline]")
+	ll := LOG.Prefix("[segmentsToDTOItems]")
 
 	ll.Info("segments count", "n", len(segments))
 
@@ -90,7 +91,7 @@ func segmentsToDTOItems(segments []*models.Segment) ([]*dto.SegmentItem, error) 
 
 func segmentsToSnapshots(segments []*models.Segment) ([]*dto.SegmentSnapshot, error) {
 
-	ll := LOG.Prefix("[segmentsToTimeline]")
+	ll := LOG.Prefix("[segmentsToSnapshots]")
 
 	ll.Info("segments count", "n", len(segments))
 
@@ -110,11 +111,18 @@ func segmentsToSnapshots(segments []*models.Segment) ([]*dto.SegmentSnapshot, er
 
 func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error) {
 
-	LOG.Info("[segmentsToTimeline]", "segments", len(segments))
+	limit := len(segments)
+	LOG.Info("[segmentsToTimeline]", "segments", limit)
 
-	if len(segments) == 0 {
+	if limit == 0 {
 		return []dto.TimelineBlock{}, nil
 	}
+
+	// This ensures that interleaved segments from multiple profiles 
+	// are processed in chronological order so overlaps merge correctly.
+	sort.Slice(segments, func(i, j int) bool {
+		return segments[i].StartTime < segments[j].StartTime
+	})
 
 	var blocks []dto.TimelineBlock
 
@@ -130,10 +138,10 @@ func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error)
 	// We allow a 5-second gap between segments before considering it a true "break" in the recording.
 	const gapToleranceSeconds = 5000
 
-	for i := 1; i < len(segments); i++ {
+	for i := 1; i < limit; i++ {
 		seg := segments[i]
 
-		// If this segment starts within the tolerance window of the current block's end...
+// If this segment starts within the tolerance window of the current block's end...
 		if seg.StartTime <= (currentBlock.EndTime + gapToleranceSeconds) {
 			// Extend the current block
 			if seg.EndTime > currentBlock.EndTime {
@@ -145,8 +153,8 @@ func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error)
 			blocks = append(blocks, currentBlock)
 			currentBlock = dto.TimelineBlock{
 				TimeRange: dto.TimeRange{
-					StartTime: segments[0].StartTime,
-					EndTime:   segments[0].EndTime,
+					StartTime: seg.StartTime,
+					EndTime:   seg.EndTime,
 				},
 			}
 		}

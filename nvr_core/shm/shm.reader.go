@@ -1,15 +1,11 @@
 package shm
 
 import (
-	// "context"
-	// "fmt"
 	"fmt"
 	"log"
 	"nvr_core/logger"
 	"nvr_core/stream"
-	"strconv"
 
-	// "os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -25,7 +21,6 @@ type ReaderSHM struct {
 	wg             sync.WaitGroup //
 
 	debugCount      int
-	debugSleepCount      int
 }
 
 // StartStreamReader connects to a Worker's SHM and starts reading its channels.
@@ -142,10 +137,6 @@ func (r *ReaderSHM) readChannelLoop(stop *atomic.Bool, channelID int, rb *RingBu
 			// Sleep for 1 millisecond to prevent the Goroutine from pegging the CPU to 100%.
 			// At 30 FPS, a frame arrives roughly every ~33ms, so 1ms polling is highly responsive.
 			time.Sleep(1 * time.Millisecond)
-			r.debugSleepCount++
-			if (r.debugSleepCount % 60000) < 3 {
-				r.log.Info("[#"+strconv.Itoa(r.debugSleepCount)+"] not reading")
-			}
 			continue
 		}
 
@@ -164,12 +155,9 @@ func (r *ReaderSHM) readChannelLoop(stop *atomic.Bool, channelID int, rb *RingBu
 			Payload:    frameData,
 		}
 
-		if r.checkDebugCount() {
-
-			r.log.Info("[#"+strconv.Itoa(r.debugCount)+"] reading packet", "size", meta.FrameSize)
-
-		}
-
+		// if r.checkDebugCount() {
+		// 	r.log.Info("[#"+strconv.Itoa(r.debugCount)+"] reading packet", "size", meta.FrameSize)
+		// }
 
 		bc.Broadcast <- f
 		// fileDumpTest(frameData, r.workerName, channelID)

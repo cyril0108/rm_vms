@@ -61,15 +61,14 @@ bool TSMuxer::muxVideoPacket(AVPacket* pkt, bool isKey) {
 
     isKeyFrame = isKey;
 
-    // Increment our incoming frame tracker
-    totalPacketsReceived++;
-
-    // Log exactly when a packet enters the muxer from the camera
-    if( totalPacketsReceived < 6 || (totalPacketsReceived % 10000) < 6 ) {
-        Log::info("[Muxer Diagnostic]["+shm->ChannelName()+"]["+std::to_string(shmChannelID)+"] INCOMING Video Packet #" + std::to_string(totalPacketsReceived) + 
-                  " | Size: " + std::to_string(pkt->size) + 
-                  " | PTS: " + std::to_string(pkt->pts));
-    }
+    // // Increment our incoming frame tracker
+    // totalPacketsReceived++;
+    // // Log exactly when a packet enters the muxer from the camera
+    // if( totalPacketsReceived < 6 || (totalPacketsReceived % 10000) < 6 ) {
+    //     Log::info("[Muxer Diagnostic]["+shm->ChannelName()+"]["+std::to_string(shmChannelID)+"] INCOMING Video Packet #" + std::to_string(totalPacketsReceived) + 
+    //               " | Size: " + std::to_string(pkt->size) + 
+    //               " | PTS: " + std::to_string(pkt->pts));
+    // }
 
     AVPacket* clone = av_packet_alloc();
     av_packet_ref(clone, pkt);
@@ -145,15 +144,15 @@ int TSMuxer::shmWriteCallback(void* opaque, uint8_t* buf, int buf_size) {
     TSMuxer* muxer = static_cast<TSMuxer*>(opaque);
 
     // Increment our outgoing callback trackers
-    muxer->totalCallbacksTriggered++;
-    muxer->totalBytesMuxed += buf_size;
+    // muxer->totalCallbacksTriggered++;
+    // muxer->totalBytesMuxed += buf_size;
 
-    if( muxer->totalCallbacksTriggered < 10 || (muxer->totalCallbacksTriggered % 10000) < 10 ) {
-        // Log exactly when FFmpeg decides to output container data
-        Log::info("[Muxer Diagnostic]["+muxer->shm->ChannelName()+"]["+std::to_string(muxer->shmChannelID)+"] ---> FLUSHING TO SHM Callback #" + std::to_string(muxer->totalCallbacksTriggered) +
-                  " | Block Size: " + std::to_string(buf_size) + " bytes" +
-                  " | Total Bytes Emitted So Far: " + std::to_string(muxer->totalBytesMuxed));
-    }
+    // if( muxer->totalCallbacksTriggered < 10 || (muxer->totalCallbacksTriggered % 10000) < 10 ) {
+    //     // Log exactly when FFmpeg decides to output container data
+    //     Log::info("[Muxer Diagnostic]["+muxer->shm->ChannelName()+"]["+std::to_string(muxer->shmChannelID)+"] ---> FLUSHING TO SHM Callback #" + std::to_string(muxer->totalCallbacksTriggered) +
+    //               " | Block Size: " + std::to_string(buf_size) + " bytes" +
+    //               " | Total Bytes Emitted So Far: " + std::to_string(muxer->totalBytesMuxed));
+    // }
 
     // Create a lightweight metadata wrapper for Go
     FrameMetadata meta;
