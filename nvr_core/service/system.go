@@ -35,6 +35,8 @@ func (s *systemServiceBase) GetHealthData(ctx context.Context) (dto.SystemHealth
 			health.Configured = false
 			return health, nil
 		}
+		LOG.Info("[GetHealthData] ", "err", err)
+		return health, err
 	}
 
 	if user.Password == "" {

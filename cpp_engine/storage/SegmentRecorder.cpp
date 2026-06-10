@@ -11,7 +11,7 @@ bool SegmentRecorder::StartSegment(const std::string& filename, AVStream* inVide
     if (isRecording) StopSegment();
     currentFilename = filename;
 
-    Log::info("[SegmentRecorder] started for file \n " + currentFilename);
+    // Log::info("[SegmentRecorder] started for file \n " + currentFilename);
 
     // Reset DTS trackers for the new file timeline
     lastVideoDTS = AV_NOPTS_VALUE;
@@ -137,7 +137,7 @@ void SegmentRecorder::StopSegment() {
         }
         avformat_free_context(outFormatCtx);
         outFormatCtx = nullptr;
-        Log::info("[SegmentRecorder] closing segment \n " + currentFilename);
+        // Log::info("[SegmentRecorder] closing segment \n " + currentFilename);
     }
     isRecording = false;
 }
@@ -149,7 +149,7 @@ bool SegmentRecorder::normalizeTimeline(AVPacket* packet) {
         if (packet->stream_index == outVideoStreamIndex) {
             startVideoTime = (packet->dts == AV_NOPTS_VALUE) ? packet->pts : packet->dts;
             hasStartTime = true;
-            Log::info("[SegmentRecorder] startVideoTime \n " + std::to_string(startVideoTime) + " : " + std::to_string(packet->pts));
+            // Log::info("[SegmentRecorder] startVideoTime \n " + std::to_string(startVideoTime) + " : " + std::to_string(packet->pts));
         } else {
             // Drop any stray audio/metadata until the video timeline is anchored
             return false; 
@@ -160,7 +160,7 @@ bool SegmentRecorder::normalizeTimeline(AVPacket* packet) {
     if (!hasAudioStartTime && packet->stream_index == outAudioStreamIndex) {
         startAudioTime = (packet->dts == AV_NOPTS_VALUE) ? packet->pts : packet->dts;
         hasAudioStartTime = true;
-        Log::info("[SegmentRecorder] startAudioTime \n " + std::to_string(startVideoTime) + " : " + std::to_string(packet->pts));
+        // Log::info("[SegmentRecorder] startAudioTime \n " + std::to_string(startVideoTime) + " : " + std::to_string(packet->pts));
     }
 
     // Apply the offset and clamp negative values

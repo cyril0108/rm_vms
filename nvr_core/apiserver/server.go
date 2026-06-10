@@ -88,10 +88,10 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// Camera stream
 	// =============================================
-	// mux.HandleFunc("GET /ws/stream/{id}", api.GetStream)
-	mux.HandleFunc("GET /live/camera/{id}", api.HandleLiveTransmuxTS)
-	// mux.HandleFunc("GET /ws/stream/{id}/{profile}", api.GetStream)
-	mux.HandleFunc("GET /live/camera/{id}/{profile}", api.HandleLiveTransmuxTS)
+	// mux.HandleFunc("GET /ws/stream/{cam_id}", api.GetStream)
+	mux.HandleFunc("GET /live/camera/{cam_id}", api.HandleLiveTransmuxTS)
+	// mux.HandleFunc("GET /ws/stream/{cam_id}/{profile}", api.GetStream)
+	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", api.HandleLiveTransmuxTS)
 
 	mux.HandleFunc("GET /health", api.GetHealth)
 	mux.HandleFunc("GET /health/shm/metrics", api.HandleGetSHMMetrics)
@@ -120,10 +120,14 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// Timeline and Playback
 	// =============================================
 	mux.HandleFunc("GET /api/cameras/{cam_id}/timeline/{start}/{end}", api.GetTimeline)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot", api.HandleSegmentSnapshot)
+
+	mux.HandleFunc("GET /api/cameras/{cam_id}/timeline/segs", api.GetProfileSegments)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot/range", api.GetSegmentSnapshots)
+
 	mux.HandleFunc("GET /api/cameras/{cam_id}/play", api.HandlePlayVideo)
 	mux.HandleFunc("GET /api/cameras/{cam_id}/play/ts", api.HandleTransmuxTS)
 
-	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot", api.HandleSegmentSnapshot)
 
 	// =============================================
 	// Calendar

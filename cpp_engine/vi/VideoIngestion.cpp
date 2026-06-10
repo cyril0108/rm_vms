@@ -521,7 +521,7 @@ void VideoIngestion::ingestVideo(AVPacket* packet) {
             try {
                 // Let the new TS Muxer handle the byte alignment and metadata
                 if (tsMuxer) {
-                    tsMuxer->muxVideoPacket(bsfPacket);
+                    tsMuxer->muxVideoPacket(bsfPacket, isKey);
                 }
 
                 // Original raw packet still goes to the disk writer

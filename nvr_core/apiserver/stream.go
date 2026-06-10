@@ -15,7 +15,7 @@ import (
 // GetCameras safely iterates over the sync.Map
 func (s *APIServer) GetStream(w http.ResponseWriter, r *http.Request) {
 
-	id, idErr := utils.Str2Int(r.PathValue("id"))
+	id, idErr := utils.Str2Int(r.PathValue("cam_id"))
 	if(idErr != nil) {
 		http.Error(w, "Invalid cam id", http.StatusBadRequest)
 		return

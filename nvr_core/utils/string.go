@@ -62,6 +62,20 @@ func Str2Int(str string) (int, error) {
 // 	return fmt.Sprintf("/api/cameras/%d/play/ts?time=%d", camID, time)
 // }
 
+// /api/cameras/{id}/snapshot?time=1711000050
+func PathForPlaybackSnapshotURL(camID int64, time int64) string {
+	return fmt.Sprintf("/api/cameras/%d/snapshot?time=%d", camID, time)
+}
+
+// /api/cameras/{id}/snapshot?mstime=1711000050
+func PathForPlaybackSnapshotMSURL(camID int64, time int64) string {
+	return fmt.Sprintf("/api/cameras/%d/snapshot?mstime=%d", camID, time)
+}
+
+func PathForCameraPlayURL(camID int64, time int64) string {
+	return fmt.Sprintf("/api/cameras/%d/play?time=%d", camID, time)
+}
+
 func PathForCameraPlayMSURL(camID int64, time int64) string {
 	return fmt.Sprintf("/api/cameras/%d/play?mstime=%d", camID, time)
 }

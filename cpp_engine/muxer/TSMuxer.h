@@ -18,7 +18,7 @@ public:
               AVCodecParameters* aPar, AVRational aTb);
 
     // Explicit routing methods
-    bool muxVideoPacket(AVPacket* pkt);
+    bool muxVideoPacket(AVPacket* pkt, bool isKey);
     bool muxAudioPacket(AVPacket* pkt);
 
 private:
@@ -28,10 +28,13 @@ private:
     AVFormatContext* outCtx = nullptr;
     AVIOContext* avioCtx = nullptr;
     uint8_t* avioBuffer = nullptr;
+    // const int avioBufferSize = 4096; // 32KB chunks
     const int avioBufferSize = 32768; // 32KB chunks
 
     int outVideoStreamIndex = -1;
     int outAudioStreamIndex = -1;
+
+    bool isKeyFrame = false;
 
     // We store the input timebases so we can rescale timestamps mathematically
     AVRational inVideoTimeBase;
@@ -39,6 +42,11 @@ private:
 
     int64_t lastVideoDTS = AV_NOPTS_VALUE;
     int64_t lastAudioDTS = AV_NOPTS_VALUE;
+
+    // --- DIAGNOSTIC COUNTERS ---
+    int64_t totalPacketsReceived = 0;
+    int64_t totalCallbacksTriggered = 0;
+    int64_t totalBytesMuxed = 0;
 
     void enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker);
 

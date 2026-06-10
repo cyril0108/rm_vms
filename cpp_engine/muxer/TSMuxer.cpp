@@ -56,8 +56,20 @@ bool TSMuxer::init(AVCodecParameters* vPar, AVRational vTb,
     return true;
 }
 
-bool TSMuxer::muxVideoPacket(AVPacket* pkt) {
+bool TSMuxer::muxVideoPacket(AVPacket* pkt, bool isKey) {
     if (!outCtx || outVideoStreamIndex < 0) return false;
+
+    isKeyFrame = isKey;
+
+    // Increment our incoming frame tracker
+    totalPacketsReceived++;
+
+    // Log exactly when a packet enters the muxer from the camera
+    if( totalPacketsReceived < 6 || (totalPacketsReceived % 10000) < 6 ) {
+        Log::info("[Muxer Diagnostic]["+shm->ChannelName()+"]["+std::to_string(shmChannelID)+"] INCOMING Video Packet #" + std::to_string(totalPacketsReceived) + 
+                  " | Size: " + std::to_string(pkt->size) + 
+                  " | PTS: " + std::to_string(pkt->pts));
+    }
 
     AVPacket* clone = av_packet_alloc();
     av_packet_ref(clone, pkt);
@@ -69,7 +81,17 @@ bool TSMuxer::muxVideoPacket(AVPacket* pkt) {
     // --- Delegate to the shared guard ---
     enforceMonotonicity(clone, lastVideoDTS);
 
+    // 
     int ret = av_interleaved_write_frame(outCtx, clone);
+
+    // Write immediately to bypass the interleaving cache
+    // int ret = av_write_frame(outCtx, clone);
+
+    // // Force FFmpeg to empty its 4KB buffer into SHM instantly
+    // if (outCtx->pb) {
+    //     avio_flush(outCtx->pb);
+    // }
+
     av_packet_free(&clone);
     return ret >= 0;
 }
@@ -87,7 +109,17 @@ bool TSMuxer::muxAudioPacket(AVPacket* pkt) {
     // --- Delegate to the shared guard ---
     enforceMonotonicity(clone, lastAudioDTS);
 
+    //
     int ret = av_interleaved_write_frame(outCtx, clone);
+
+    // // Write immediately
+    // int ret = av_write_frame(outCtx, clone);
+
+    // // // Force flush
+    // if (outCtx->pb) {
+    //     avio_flush(outCtx->pb);
+    // }
+
     av_packet_free(&clone);
     return ret >= 0;
 }
@@ -112,12 +144,24 @@ void TSMuxer::enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker) {
 int TSMuxer::shmWriteCallback(void* opaque, uint8_t* buf, int buf_size) {
     TSMuxer* muxer = static_cast<TSMuxer*>(opaque);
 
+    // Increment our outgoing callback trackers
+    muxer->totalCallbacksTriggered++;
+    muxer->totalBytesMuxed += buf_size;
+
+    if( muxer->totalCallbacksTriggered < 10 || (muxer->totalCallbacksTriggered % 10000) < 10 ) {
+        // Log exactly when FFmpeg decides to output container data
+        Log::info("[Muxer Diagnostic]["+muxer->shm->ChannelName()+"]["+std::to_string(muxer->shmChannelID)+"] ---> FLUSHING TO SHM Callback #" + std::to_string(muxer->totalCallbacksTriggered) +
+                  " | Block Size: " + std::to_string(buf_size) + " bytes" +
+                  " | Total Bytes Emitted So Far: " + std::to_string(muxer->totalBytesMuxed));
+    }
+
     // Create a lightweight metadata wrapper for Go
     FrameMetadata meta;
     meta.epochMs = utils::getCurrentEpochMSTime();
     meta.magic = WrapMagicNumber; // Assumes this is available via SharedMemory.h
     meta.frameSize = buf_size;
-    
+    meta.isKeyFrame = muxer->isKeyFrame ? 1 : 0;
+
     // We can assign a mediaType specifically for "TS Container Chunks" 
     // so Go knows to just pipe it directly to the HTTP socket.
     meta.mediaType = static_cast<uint8_t>(MediaType::VIDEO); // Or a dedicated TS type if you mapped one
@@ -127,5 +171,5 @@ int TSMuxer::shmWriteCallback(void* opaque, uint8_t* buf, int buf_size) {
         Log::error("[TSMuxer] Failed to write TS chunk to SHM.");
     }
 
-    return buf_size; 
+    return buf_size;
 }

@@ -9,6 +9,8 @@ import (
 )
 
 type TimelineService interface {
+	GetProfileSegmentItems(ctx context.Context, camID int64, profile string, start, end int64) ([]*dto.SegmentItem, error)
+	GetCameraSnapshots(ctx context.Context, camID int64, start, end int64) ([]*dto.SegmentSnapshot, error)
 	GetContiguousBlocks(ctx context.Context, camID int64, start, end int64) ([]dto.TimelineBlock, error)
 	GetProfileContiguousBlocks(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.TimelineBlock, error)
 	GetDailySummary(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.DailySummary, error)
@@ -16,6 +18,24 @@ type TimelineService interface {
 
 func NewTimelineService(repo repository.SegmentRepository) TimelineService {
 	return &segmentServiceBase{repo: repo}
+}
+
+func (s *segmentServiceBase) GetProfileSegmentItems(ctx context.Context, camID int64, profile string, start, end int64) ([]*dto.SegmentItem, error) {
+	segments, err := s.repo.GetProfileSegmentsByRange(ctx, camID, profile, start, end)
+	LOG.Info("[GetProfileSegmentItems]", "segments", len(segments))
+	if err != nil {
+		return nil, err
+	}
+	return segmentsToDTOItems(segments)
+}
+
+func (s *segmentServiceBase) GetCameraSnapshots(ctx context.Context, camID int64, start, end int64) ([]*dto.SegmentSnapshot, error) {
+	segments, err := s.repo.GetProfileSegmentsByRange(ctx, camID, models.SegmentSnapshotProfile, start, end)
+	LOG.Info("[GetProfileSegmentItems]", "segments", len(segments))
+	if err != nil {
+		return nil, err
+	}
+	return segmentsToSnapshots(segments)
 }
 
 func (s *segmentServiceBase) GetProfileContiguousBlocks(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.TimelineBlock, error) {
@@ -37,6 +57,57 @@ func (s *segmentServiceBase) GetContiguousBlocks(ctx context.Context, camID int6
 
 }
 
+func (s *segmentServiceBase) GetDailySummary(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.DailySummary, error) {
+	return s.repo.GetDailySummary(ctx, camID, profile, start, end)
+}
+
+// ---------------
+// Private methods
+// ---------------
+
+func segmentsToDTOItems(segments []*models.Segment) ([]*dto.SegmentItem, error) {
+
+	ll := LOG.Prefix("[segmentsToTimeline]")
+
+	ll.Info("segments count", "n", len(segments))
+
+	if len(segments) == 0 {
+		return []*dto.SegmentItem{}, nil
+	}
+
+	var list []*dto.SegmentItem
+
+	for _, seg := range segments {
+		it := dto.NewSegmentItemFrom(seg)
+		it.ConvertToSeconds()
+		list = append(list, it)
+	}
+
+	return list, nil
+
+}
+
+
+func segmentsToSnapshots(segments []*models.Segment) ([]*dto.SegmentSnapshot, error) {
+
+	ll := LOG.Prefix("[segmentsToTimeline]")
+
+	ll.Info("segments count", "n", len(segments))
+
+	if len(segments) == 0 {
+		return []*dto.SegmentSnapshot{}, nil
+	}
+
+	var list []*dto.SegmentSnapshot
+
+	for _, seg := range segments {
+		list = append(list, dto.NewSegmentSnapshotFrom(seg))
+	}
+
+	return list, nil
+
+}
+
 func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error) {
 
 	LOG.Info("[segmentsToTimeline]", "segments", len(segments))
@@ -49,8 +120,10 @@ func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error)
 
 	// Start the first block
 	currentBlock := dto.TimelineBlock{
-		StartTime: segments[0].StartTime,
-		EndTime:   segments[0].EndTime,
+		TimeRange: dto.TimeRange{
+			StartTime: segments[0].StartTime,
+			EndTime:   segments[0].EndTime,
+		},
 	}
 
 	// FFmpeg segments aren't always exactly 60 seconds due to keyframe alignment.
@@ -71,8 +144,10 @@ func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error)
 			currentBlock.ConvertToSeconds()
 			blocks = append(blocks, currentBlock)
 			currentBlock = dto.TimelineBlock{
-				StartTime: seg.StartTime,
-				EndTime:   seg.EndTime,
+				TimeRange: dto.TimeRange{
+					StartTime: segments[0].StartTime,
+					EndTime:   segments[0].EndTime,
+				},
 			}
 		}
 	}
@@ -86,6 +161,3 @@ func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error)
 
 }
 
-func (s *segmentServiceBase) GetDailySummary(ctx context.Context, camID int64, profile string, start, end int64) ([]dto.DailySummary, error) {
-	return s.repo.GetDailySummary(ctx, camID, profile, start, end)
-}

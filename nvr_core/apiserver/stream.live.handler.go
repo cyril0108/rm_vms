@@ -22,7 +22,7 @@ func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Reques
 		log.Printf("[TS Handler] Warning: Failed to clear write deadline: %v", err)
 	}
 
-	camID, err := strconv.Atoi(r.PathValue("id"))
+	camID, err := strconv.Atoi(r.PathValue("cam_id"))
 	if err != nil {
 		http.Error(w, "Invalid camera ID", http.StatusBadRequest)
 		return

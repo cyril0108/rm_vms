@@ -15,6 +15,7 @@ type UserManagementService interface {
 	UpdatePartial(ctx context.Context, adminID, userID int64, updates repository.PartialUpdateInterfaces) error
 	// Getters
 	GetByID(ctx context.Context, id int64) (*models.User, error)
+	GetByUsername(ctx context.Context, name string) (*models.User, error)
 	// Permissions
 	UpdateUserRole(ctx context.Context, adminID, targetUserID, newRoleID int64) error
 	GrantPermission(ctx context.Context, adminID, targetUserID, permID int64) error

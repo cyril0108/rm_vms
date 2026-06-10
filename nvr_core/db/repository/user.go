@@ -31,10 +31,12 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepo{db: db}
 }
 
+const SQLFieldsString string = "username, password, role_id, email, is_active"
+
 // Create inserts a new user into the database.
 func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	query := `
-		INSERT INTO users (username, password, role_id, email, is_active) 
+		INSERT INTO users (`+ SQLFieldsString +`) 
 		VALUES (?, ?, ?, ?, 1)
 	`
 
@@ -52,7 +54,7 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 }
 
 func (r *userRepo) 	GetAdmin(ctx context.Context) (*models.User, error) {
-	query := `SELECT id, username, password, role_id, email, is_active, created_at FROM users WHERE role_id = 1 ORDER BY id ASC LIMIT 1`
+	query := `SELECT id, `+ SQLFieldsString +`, created_at FROM users WHERE role_id = 1 ORDER BY id ASC LIMIT 1`
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query).Scan(
@@ -70,7 +72,7 @@ func (r *userRepo) 	GetAdmin(ctx context.Context) (*models.User, error) {
 
 // GetByID fetches a user by their primary key.
 func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) {
-	query := `SELECT id, username, password, role_id, email, is_active, created_at FROM users WHERE id = ?`
+	query := `SELECT id, `+ SQLFieldsString +`, created_at FROM users WHERE id = ?`
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
@@ -88,7 +90,7 @@ func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) 
 
 // GetByUsername is the workhorse for your Login API.
 func (r *userRepo) GetByUsername(ctx context.Context, username string) (*models.User, error) {
-	query := `SELECT id, username, password, role_id, email, is_active, created_at FROM users WHERE username = ?`
+	query := `SELECT id, `+ SQLFieldsString +`, created_at FROM users WHERE username = ?`
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, username).Scan(

@@ -3,8 +3,12 @@ package shm
 import (
 	// "context"
 	// "fmt"
+	"fmt"
 	"log"
+	"nvr_core/logger"
 	"nvr_core/stream"
+	"strconv"
+
 	// "os"
 	"sync"
 	"sync/atomic"
@@ -12,12 +16,16 @@ import (
 )
 
 type ReaderSHM struct {
+	log            *logger.Logger
 	workerName     string
 	worker         *WorkerSHM
 	camChannels    map[int]int
 	channelHub     map[int]*stream.Hub
 	channelStopper map[int]*atomic.Bool
 	wg             sync.WaitGroup //
+
+	debugCount      int
+	debugSleepCount      int
 }
 
 // StartStreamReader connects to a Worker's SHM and starts reading its channels.
@@ -39,13 +47,14 @@ func StartStreamReader(workerName string, numChannels int, bufferSize int) (*Rea
 	}
 
 	if err != nil {
-		log.Printf("[Go Manager] Failed to connect to SHM %s after retries: %v\n", shmName, err)
+		LOG.Error(fmt.Sprintf("[Go Manager] Failed to connect to SHM %s after retries: %v\n", shmName, err))
 		return nil
 	}
-	
-	log.Printf("[Go Manager] Successfully connected to %s. Spawning the reader...\n", shmName)
+
+	LOG.Info(fmt.Sprintf("[Go Manager] Successfully connected to %s. Spawning the reader...\n", shmName))
 
 	reader := ReaderSHM{
+		log: LOG.Prefix("[worker"+workerName+"]"),
 		workerName: workerName,
 		worker: shm,
 		camChannels: make(map[int]int),
@@ -58,7 +67,7 @@ func StartStreamReader(workerName string, numChannels int, bufferSize int) (*Rea
 
 	// context.Context
 
-	log.Printf("[Go Manager] %s reader spawned\n", shmName)
+	LOG.Info(fmt.Sprintf("[Go Manager] %s reader spawned\n", shmName))
 
 	return &reader;
 }
@@ -74,8 +83,7 @@ func (r *ReaderSHM) StartChannel(camID int, channelID int, existingHub *stream.H
 
 	rb := r.worker.Channels[channelID]
 	if(rb == nil) {
-
-		log.Printf("[startChannel][%d] no ring buffer!\n", channelID);
+		LOG.Error(fmt.Sprintf("[startChannel][%d] no ring buffer!\n", channelID))
 		return nil;
 	}
 
@@ -83,7 +91,7 @@ func (r *ReaderSHM) StartChannel(camID int, channelID int, existingHub *stream.H
 	hub := existingHub
 	if(hub == nil) {
 
-		log.Printf("[startChannel][%d] streamer starting!\n", channelID);
+		LOG.Info(fmt.Sprintf("[startChannel][%d] streamer starting!\n", channelID))
 		hub = stream.NewHub()
 		go hub.Run()
 
@@ -127,11 +135,17 @@ func (r *ReaderSHM) readChannelLoop(stop *atomic.Bool, channelID int, rb *RingBu
 		// frameData, timestamp, ok := rb.ReadFrame()
 		meta, frameData, ok := rb.ReadFrame()
 
+		// fmt.Printf("Read %d bytes from SHM for Worker %s Channel %d\n", len(frameData), r.workerName, channelID)
+
 		if !ok {
 			// Buffer is empty.
 			// Sleep for 1 millisecond to prevent the Goroutine from pegging the CPU to 100%.
 			// At 30 FPS, a frame arrives roughly every ~33ms, so 1ms polling is highly responsive.
 			time.Sleep(1 * time.Millisecond)
+			r.debugSleepCount++
+			if (r.debugSleepCount % 60000) < 3 {
+				r.log.Info("[#"+strconv.Itoa(r.debugSleepCount)+"] not reading")
+			}
 			continue
 		}
 
@@ -150,11 +164,24 @@ func (r *ReaderSHM) readChannelLoop(stop *atomic.Bool, channelID int, rb *RingBu
 			Payload:    frameData,
 		}
 
+		if r.checkDebugCount() {
+
+			r.log.Info("[#"+strconv.Itoa(r.debugCount)+"] reading packet", "size", meta.FrameSize)
+
+		}
+
+
 		bc.Broadcast <- f
 		// fileDumpTest(frameData, r.workerName, channelID)
 
 	}
 
+}
+
+// 
+func (r *ReaderSHM) checkDebugCount() bool {
+	r.debugCount++
+	return r.debugCount < 10 || (r.debugCount % 10000) < 10
 }
 
 // GetWorkerMetrics polls the atomic state of all active channels for this worker

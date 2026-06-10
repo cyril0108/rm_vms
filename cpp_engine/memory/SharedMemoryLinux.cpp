@@ -109,6 +109,10 @@ public:
         return true;
     }
 
+    std::string ChannelName() {
+        return _name;
+    }
+
     void ReleaseChannelForCamID(int camID) {
 
         // Lock for thread safety
