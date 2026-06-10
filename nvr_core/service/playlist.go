@@ -34,6 +34,7 @@ func (s *segmentServiceBase) GeneratePlaylist(ctx context.Context, camID int64, 
 	// Build the M3U8 Header
 	playlist := m3u8.NewM3U8Builder(camID, baseURL)
 	playlist.Begin()
+	playlist.XSetTargetDurationFor(segments)
 
 	// Append each segment
 	for _, seg := range segments {
@@ -50,9 +51,17 @@ func (s *segmentServiceBase) GenerateVODPlaylist(ctx context.Context, camID int6
 		return "", fmt.Errorf("failed to fetch segments for playlist: %w", err)
 	}
 
-	if len(segments) == 0 {
+	limit := len(segments)
+	if limit == 0 {
 		return "", ErrVideoSegmentNotFound // Reusing the error we defined in playback.go
 	}
+
+	fst := segments[0]
+	fst.StartTime = start
+
+	lstIdx := limit-1
+	lst := segments[lstIdx]
+	lst.EndTime = end
 
 	// Build the M3U8 Header
 	playlist := m3u8.NewM3U8Builder(camID, baseURL)
@@ -63,8 +72,12 @@ func (s *segmentServiceBase) GenerateVODPlaylist(ctx context.Context, camID int6
 	playlist.XSetTargetDurationFor(segments)
 
 	// Append each segment
-	for _, seg := range segments {
-		playlist.FeedVODSegment(seg)
+	for i, seg := range segments {
+		if i != lstIdx {
+			playlist.FeedVODSegment(seg)
+		} else {
+			playlist.FeedVODSegmentDuration(seg)
+		}
 	}
 
 	// Close the playlist

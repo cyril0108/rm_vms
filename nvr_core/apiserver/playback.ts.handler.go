@@ -20,23 +20,22 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// timeStr := r.URL.Query().Get("time")
-	// timestamp, err := strconv.ParseInt(timeStr, 10, 64)
-	// if err != nil {
-	// 	http.Error(w, "Invalid timestamp", http.StatusBadRequest)
-	// 	return
-	// }
 	timestamp, err := GetSearchAtTime(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	duration, _ := GetDurationTime(r)
+	if duration == 0 && err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	profile := GetQueryProfile(r)
-	// timestamp = timestamp
 
 	// Get the validated physical path from the Service
-	filePath, err := api.Services.Playback.GetVideoFilePath(r.Context(), camID, profile, timestamp)
+	seg, err := api.Services.Playback.GetVideoSegment(r.Context(), camID, profile, timestamp)
 	if err != nil {
 		if errors.Is(err, service.ErrVideoSegmentNotFound) || errors.Is(err, service.ErrFileMissing) {
 			http.Error(w, "Video not found", http.StatusNotFound)
@@ -53,6 +52,37 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Expires", "0")
 
+
+	// Create ffmpeg arguments
+	skip := utils.NewFFTime((timestamp - seg.StartTime))
+
+	ffmpegArgs := []string{
+		"-hide_banner", "-loglevel", "error",
+		"-i", seg.FilePath,
+	}
+
+	// If skip > 0, inject -ss BEFORE the input file for fast seeking
+	if skip.MS > 0 {
+	    ffmpegArgs = append([]string{"-ss", skip.TimeString()}, ffmpegArgs...)
+	}
+
+	// If duration exists, inject -t to stop transcoding at the exact end time
+	if duration > 0 {
+		d := utils.NewFFTime(duration)
+	    ffmpegArgs = append(ffmpegArgs, "-t", d.TimeString())
+	}
+
+	// Standard TS output arguments
+	ffmpegArgs = append(ffmpegArgs,
+		"-c:v", "copy",                       
+		"-bsf:v", "h264_mp4toannexb",         
+		"-c:a", "aac", // Replace -an with this if Safari stays black
+		"-b:a", "64k",
+		"-f", "mpegts",                       
+		"-muxdelay", "0",                     // Removes pipe buffering latency
+		"pipe:1",                             
+	)
+
 	// Using the r.Context() ensures FFmpeg dies if the client disconnects
 	// cmd := exec.CommandContext(r.Context(), "ffmpeg",
 	// 	"-hide_banner", "-loglevel", "error", // Suppress noisy logs
@@ -62,17 +92,19 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 	// 	"-f", "mpegts",                       // Force MPEG-TS format
 	// 	"pipe:1",                             // Output to stdout instead of a file
 	// )
-	cmd := exec.CommandContext(r.Context(), "ffmpeg",
-			"-hide_banner", "-loglevel", "error", 
-			"-i", filePath,                       
-			"-c:v", "copy",                       
-			"-bsf:v", "h264_mp4toannexb",         
-			"-c:a", "aac", // Replace -an with this if Safari stays black
-			"-b:a", "64k",
-			"-f", "mpegts",                       
-			"-muxdelay", "0",                     // Removes pipe buffering latency
-			"pipe:1",                             
-		)
+
+	cmd := exec.CommandContext(r.Context(), "ffmpeg", ffmpegArgs...)
+	// cmd := exec.CommandContext(r.Context(), "ffmpeg",
+	// 		"-hide_banner", "-loglevel", "error", 
+	// 		"-i", seg.FilePath,                       
+	// 		"-c:v", "copy",                       
+	// 		"-bsf:v", "h264_mp4toannexb",         
+	// 		"-c:a", "aac", // Replace -an with this if Safari stays black
+	// 		"-b:a", "64k",
+	// 		"-f", "mpegts",                       
+	// 		"-muxdelay", "0",                     // Removes pipe buffering latency
+	// 		"pipe:1",                             
+	// 	)
 
 	// Connect FFmpeg's stdout directly to the HTTP Response Writer
 	cmd.Stdout = w
@@ -86,7 +118,7 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 		if r.Context().Err() != nil {
 			return
 		}
-		log.Printf("[playback.ts.handler] FFmpeg error for %s: %v", filePath, err)
+		log.Printf("[playback.ts.handler] FFmpeg error for %s: %v", seg.FilePath, err)
 	}
 
 }

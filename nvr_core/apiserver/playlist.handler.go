@@ -44,8 +44,6 @@ func (api *APIServer) HandleGetPlaylist(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Crucial: Set the Apple HTTP Live Streaming MIME type
-	// w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
 	w.Header().Set("Content-Type", "audio/x-mpegurl")
 	
 	// Prevent caching so the browser/VLC always asks for fresh playlists

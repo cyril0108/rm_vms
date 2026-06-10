@@ -30,29 +30,42 @@ func GetQueryProfile(r *http.Request) string {
 	return profile
 }
 
-// Get search time from url query.
+// Get given alternative names from url query.
+// msName is prefered when both exists.
 // The returned int64 will be millisecond-base that is
 // proper for database search.
-func GetSearchAtTime(r *http.Request) (int64, error) {
-	if mstimeStr := r.URL.Query().Get("mstime"); mstimeStr != "" {
+func GetMSFromTime(r *http.Request, msName, sName string) (int64, error) {
+	if mstimeStr := r.URL.Query().Get(msName); mstimeStr != "" {
 		mstime, err := strconv.ParseInt(mstimeStr, 10, 64)
 		if err != nil {
-			return 0, errors.New("invalid mstime format")
+			return 0, errors.New("invalid " + msName + " format")
 		}
 		return mstime, nil
 	}
 
-	if timeStr := r.URL.Query().Get("time"); timeStr != "" {
+	if timeStr := r.URL.Query().Get(sName); timeStr != "" {
 		timeSec, err := strconv.ParseInt(timeStr, 10, 64)
 		if err != nil {
-			return 0, errors.New("invalid time format")
+			return 0, errors.New("invalid " + sName + " format")
 		}
 		// Shift one second so it should be within star/end time range
 		// of sql search condition.
 		return timeSec * 1000, nil
 	}
 
-	return 0, errors.New("missing time parameter")
+	return -1, errors.New("missing " + sName + " parameter")
+}
+
+// Get search time from url query.
+// The returned int64 will be millisecond-base that is
+// proper for database search.
+func GetSearchAtTime(r *http.Request) (int64, error) {
+	return GetMSFromTime(r, "mstime", "time")
+}
+
+func GetDurationTime(r *http.Request) (int64, error) {
+	return GetMSFromTime(r, "msduration", "duration")
+
 }
 
 func GetMSTimeRange(r *http.Request) (int64, int64, error) {

@@ -2,7 +2,7 @@ package m3u8
 
 import (
 	"fmt"
-	"math"
+	// "math"
 	"strings"
 
 	"nvr_core/db/models"
@@ -63,10 +63,7 @@ func (b *M3U8Builder) String() string {
 func (b *M3U8Builder) ExtINF(seg *models.Segment) {
 
 	// Calculate actual duration (e.g., 60.000 seconds)
-	durationSeconds := float64(seg.EndTime - seg.StartTime)
-	// if durationSeconds <= 0 {
-	// 	durationSeconds = 60.0 // Failsafe
-	// }
+	durationSeconds := float64(seg.EndTime - seg.StartTime) / 1000.0
 
 	// CRITICAL FIX: Clamp abnormal durations caused by camera disconnects
 	// If the wall-clock time suggests a 2-hour file, clamp it to 60s because 
@@ -79,13 +76,25 @@ func (b *M3U8Builder) ExtINF(seg *models.Segment) {
 }
 
 func (b *M3U8Builder) CalculateMaxDuration(segs []*models.Segment) int64 {
-	min := int64(math.MaxInt)
-	max := int64(0)
+	maxDuration := int64(0)
 	for _, seg := range segs {
-		if (seg.StartTime < min) { min = seg.StartTime }
-		if (seg.EndTime > max) { max = seg.EndTime }
+		dur := seg.EndTime - seg.StartTime
+
+		// Apply the exact same failsafe clamp you used in ExtINF 
+		// to prevent abnormal durations from camera disconnects
+		if dur <= 0 || dur > 120 {
+			dur = 60
+		}
+
+		if dur > maxDuration { 
+			maxDuration = dur 
+		}
 	}
-	return max - min;
+
+	if maxDuration == 0 {
+		return 60 // Final failsafe
+	}
+	return maxDuration
 }
 
 func (b *M3U8Builder) XSetTargetDurationFor(segs []*models.Segment) {
@@ -114,6 +123,20 @@ func (b *M3U8Builder) FeedVODSegment(seg *models.Segment) {
 	// 	// The actual URL VLC will call to get the video bytes.
 	// 	// It points directly to our previously built Playback API!
 	apiURI := utils.PathForCameraTSPlayMSURL(b.camID, seg.StartTime)
+	segmentURL := fmt.Sprintf("%s%s\n", b.baseURL, apiURI)
+	b.builder.WriteString(segmentURL)
+
+}
+
+func (b *M3U8Builder) FeedVODSegmentDuration(seg *models.Segment) {
+
+	b.NL()
+	b.XDiscontinuity()
+	b.ExtINF(seg)
+
+	// 	// The actual URL VLC will call to get the video bytes.
+	// 	// It points directly to our previously built Playback API!
+	apiURI := utils.PathForCameraTSPlayDurationMSURL(b.camID, seg.StartTime, seg.EndTime-seg.StartTime)
 	segmentURL := fmt.Sprintf("%s%s\n", b.baseURL, apiURI)
 	b.builder.WriteString(segmentURL)
 

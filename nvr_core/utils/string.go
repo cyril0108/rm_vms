@@ -84,6 +84,10 @@ func PathForCameraTSPlayMSURL(camID int64, time int64) string {
 	return fmt.Sprintf("/api/cameras/%d/play/ts?mstime=%d", camID, time)
 }
 
+func PathForCameraTSPlayDurationMSURL(camID, time, duration int64) string {
+	return fmt.Sprintf("/api/cameras/%d/play/ts?mstime=%d&duration=%d", camID, time, duration)
+}
+
 // HandleGetPlaylist expects: GET /api/cameras/{cam_id}/playlist.m3u8?start=1711000000&end=1711003600
 func PathForCameraPlaylistURL(camID int64, start int64, end int64) string {
 	return fmt.Sprintf("/api/cameras/%d/playlist.m3u8?start=%d&end=%d", camID, start, end)
