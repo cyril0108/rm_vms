@@ -17,7 +17,7 @@ func (r *segmentRepo) GetProfileSegmentsByRange(ctx context.Context, camID int64
 	query := `
 		SELECT id, camera_id, profile, start_time, end_time, file_path, snapshot_path, size_bytes 
 		FROM segments 
-		WHERE camera_id = ? AND profile = ? AND start_time >= ? AND start_time <= ?
+		WHERE camera_id = ? AND profile = ? AND end_time >= ? AND start_time <= ?
 		ORDER BY start_time ASC
 	`
 
@@ -46,7 +46,7 @@ func (r *segmentRepo) GetSegmentsByRange(ctx context.Context, camID int64, start
 	query := `
 		SELECT id, camera_id, profile, start_time, end_time, file_path, size_bytes 
 		FROM segments 
-		WHERE camera_id = ? AND start_time >= ? AND start_time <= ?
+		WHERE camera_id = ? AND end_time >= ? AND start_time <= ?
 		ORDER BY start_time ASC
 	`
 
@@ -73,6 +73,7 @@ func (r *segmentRepo) GetSegmentAtTime(ctx context.Context, camID int64, profile
 		SELECT id, camera_id, profile, start_time, end_time, file_path, snapshot_path, size_bytes 
 		FROM segments 
 		WHERE camera_id = ? AND profile = ? AND start_time <= ? AND end_time >= ?
+		ORDER BY start_time DESC
 		LIMIT 1
 	`
 
