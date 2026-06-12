@@ -64,7 +64,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	}
 
 	// Debug Info
-	mux.HandleFunc("GET /debug/db", api.GetDebugInfo)
+	mux.HandleFunc("GET /debug/db", authMid(http.HandlerFunc(api.GetDebugInfo)))
 
 	// =============================================
 	// Login
@@ -96,10 +96,15 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// Camera stream
 	// =============================================
-	// mux.HandleFunc("GET /ws/stream/{cam_id}", api.GetStream)
-	mux.HandleFunc("GET /live/camera/{cam_id}", authMid(http.HandlerFunc(api.HandleLiveTransmuxTS)))
-	// mux.HandleFunc("GET /ws/stream/{cam_id}/{profile}", api.GetStream)
-	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", authMid(http.HandlerFunc(api.HandleLiveTransmuxTS)))
+	// mux.HandleFunc("GET /ws/stream/{cam_id}", authMid(http.HandlerFunc(api.GetStream)))
+	// mux.HandleFunc("GET /ws/stream/{cam_id}/{profile}", authMid(http.HandlerFunc(api.GetStream)))
+
+	// NO LOGIN FOR TEST
+	// mux.HandleFunc("GET /live/camera/{cam_id}", authMid(http.HandlerFunc(api.HandleLiveTransmuxTS)))
+	// mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", authMid(http.HandlerFunc(api.HandleLiveTransmuxTS)))
+	mux.HandleFunc("GET /live/camera/{cam_id}", api.HandleLiveTransmuxTS)
+	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", api.HandleLiveTransmuxTS)
+
 
 	mux.HandleFunc("GET /health", api.GetHealth)
 	mux.HandleFunc("GET /health/shm/metrics", authMid(http.HandlerFunc(api.HandleGetSHMMetrics)))
@@ -133,8 +138,10 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/cameras/{cam_id}/timeline/segs", authMid(http.HandlerFunc(api.GetProfileSegments)))
 	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot/range", authMid(http.HandlerFunc(api.GetSegmentSnapshots)))
 
-	mux.HandleFunc("GET /api/cameras/{cam_id}/play", authMid(http.HandlerFunc(api.HandlePlayVideo)))
-	mux.HandleFunc("GET /api/cameras/{cam_id}/play/ts", authMid(http.HandlerFunc(api.HandleTransmuxTS)))
+	// mux.HandleFunc("GET /api/cameras/{cam_id}/play", authMid(http.HandlerFunc(api.HandlePlayVideo)))
+	// mux.HandleFunc("GET /api/cameras/{cam_id}/play/ts", authMid(http.HandlerFunc(api.HandleTransmuxTS)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/play", api.HandlePlayVideo)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/play/ts", api.HandleTransmuxTS)
 
 
 	// =============================================
@@ -146,9 +153,10 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// Playlist
 	// =============================================
-	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist.m3u8", authMid(http.HandlerFunc(api.HandleGetPlaylist)))
-	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist/ts.m3u8", authMid(http.HandlerFunc(api.HandleGetTSPlaylist)))
-
+	// mux.HandleFunc("GET /api/cameras/{cam_id}/playlist.m3u8", authMid(http.HandlerFunc(api.HandleGetPlaylist)))
+	// mux.HandleFunc("GET /api/cameras/{cam_id}/playlist/ts.m3u8", authMid(http.HandlerFunc(api.HandleGetTSPlaylist)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist.m3u8", api.HandleGetPlaylist)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist/ts.m3u8", api.HandleGetTSPlaylist)
 
 	// =============================================
 	// Serve Web
