@@ -10,3 +10,12 @@ type LoginResponse struct {
 	RefreshToken string   `json:"refresh_token"`
 	Permissions  []string `json:"permissions"`
 }
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type RefreshResponse struct {
+	Token       string   `json:"token"`
+	Permissions []string `json:"permissions"`
+}

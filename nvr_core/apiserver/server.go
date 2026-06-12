@@ -68,6 +68,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// Login
 	// =============================================
 	mux.HandleFunc("POST /api/login", api.HandleLogin)
+	mux.HandleFunc("POST /api/refresh", api.HandleRefresh)
 
 	// =============================================
 	// User Management

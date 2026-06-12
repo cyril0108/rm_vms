@@ -54,3 +54,49 @@ func (api *APIServer) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	RespondJSON(w, resp)
 }
+
+
+// HandleRefresh processes the silent refresh flow.
+//
+//	@Summary		Refresh Access Token
+//	@Description	Exchanges a valid refresh token for a new short-lived JWT access token and updated permissions.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		dto.RefreshRequest	true	"Refresh Token Payload"
+//	@Success		200		{object}	dto.RefreshResponse	"Successfully refreshed"
+//	@Failure		400		{string}	string				"Invalid JSON payload"
+//	@Failure		401		{string}	string				"Invalid or expired refresh token"
+//	@Failure		500		{string}	string				"Internal server error"
+//	@Router			/api/refresh [post]
+func (api *APIServer) HandleRefresh(w http.ResponseWriter, r *http.Request) {
+	// Protect against oversized payloads
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*5) 
+
+	var req dto.RefreshRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	// Hit the service layer
+	accessToken, perms, err := api.Services.Auth.RefreshToken(r.Context(), req.RefreshToken)
+	if err != nil {
+		if errors.Is(err, service.ErrUnauthorized) || errors.Is(err, service.ErrAccountDisabled) {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		log.Printf("[Auth API] Refresh error: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Formulate and send response
+	resp := dto.RefreshResponse{
+		Token:       accessToken,
+		Permissions: perms,
+	}
+
+	RespondJSON(w, resp)
+}
+

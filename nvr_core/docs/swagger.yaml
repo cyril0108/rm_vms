@@ -95,6 +95,74 @@ definitions:
       token:
         type: string
     type: object
+  dto.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.RefreshResponse:
+    properties:
+      permissions:
+        items:
+          type: string
+        type: array
+      token:
+        type: string
+    type: object
+  dto.SegmentItem:
+    properties:
+      camera_id:
+        type: integer
+      duration_ms:
+        type: integer
+      end_time:
+        type: integer
+      id:
+        type: integer
+      start_time:
+        type: integer
+      stream_url:
+        type: string
+    type: object
+  dto.SegmentSnapshot:
+    properties:
+      camera_id:
+        type: integer
+      end_time:
+        type: integer
+      id:
+        type: integer
+      start_time:
+        type: integer
+      url:
+        type: string
+    type: object
+  dto.TimelineBlock:
+    properties:
+      end_time:
+        type: integer
+      start_time:
+        type: integer
+    type: object
+  dto.TimelineResponse:
+    properties:
+      camera_id:
+        type: integer
+      segments:
+        items:
+          $ref: '#/definitions/dto.SegmentItem'
+        type: array
+      snapshots:
+        items:
+          $ref: '#/definitions/dto.SegmentSnapshot'
+        type: array
+      timelines:
+        items:
+          $ref: '#/definitions/dto.TimelineBlock'
+        type: array
+    type: object
   dto.UpdateCameraRequest:
     properties:
       http_port:
@@ -223,6 +291,8 @@ definitions:
     type: object
   process.StreamProfile:
     properties:
+      acodec:
+        type: integer
       channel_id:
         type: integer
       status:
@@ -230,6 +300,8 @@ definitions:
         type: string
       url:
         type: string
+      vcodec:
+        type: integer
       worker_id:
         description: Moved here! Can be different for main/sub
         type: integer
@@ -432,6 +504,43 @@ paths:
       summary: Deactivate camera
       tags:
       - Cameras
+  /api/cameras/{cam_id}/timeline/{start}/{end}:
+    get:
+      description: GetTimeline queries the SQLite database for video segments within
+        a time range. And returns continuous recording blocks.
+      parameters:
+      - description: Camera ID
+        in: path
+        name: cam_id
+        required: true
+        type: string
+      - description: start time in seconds
+        in: path
+        name: start
+        required: true
+        type: string
+      - description: end time in seconds
+        in: path
+        name: end
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.TimelineResponse'
+        "400":
+          description: Invalid start or end timestamps
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      tags:
+      - Timeline
   /api/cameras/{cam_id}/update:
     put:
       consumes:
@@ -580,6 +689,41 @@ paths:
           schema:
             type: string
       summary: User login
+      tags:
+      - auth
+  /api/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchanges a valid refresh token for a new short-lived JWT access
+        token and updated permissions.
+      parameters:
+      - description: Refresh Token Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully refreshed
+          schema:
+            $ref: '#/definitions/dto.RefreshResponse'
+        "400":
+          description: Invalid JSON payload
+          schema:
+            type: string
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Refresh Access Token
       tags:
       - auth
   /api/scan/{ip}/onvif:

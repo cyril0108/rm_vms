@@ -425,6 +425,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/cameras/{cam_id}/timeline/{start}/{end}": {
+            "get": {
+                "description": "GetTimeline queries the SQLite database for video segments within a time range. And returns continuous recording blocks.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Timeline"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Camera ID",
+                        "name": "cam_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "start time in seconds",
+                        "name": "start",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "end time in seconds",
+                        "name": "end",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TimelineResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid start or end timestamps",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/cameras/{cam_id}/update": {
             "put": {
                 "description": "Creates a new IP camera in the NVR database using the provided manual data.",
@@ -510,6 +564,58 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Invalid credentials or account disabled",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/refresh": {
+            "post": {
+                "description": "Exchanges a valid refresh token for a new short-lived JWT access token and updated permissions.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh Access Token",
+                "parameters": [
+                    {
+                        "description": "Refresh Token Payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully refreshed",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or expired refresh token",
                         "schema": {
                             "type": "string"
                         }
@@ -714,6 +820,111 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RefreshResponse": {
+            "type": "object",
+            "properties": {
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SegmentItem": {
+            "type": "object",
+            "properties": {
+                "camera_id": {
+                    "type": "integer"
+                },
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "end_time": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "integer"
+                },
+                "stream_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SegmentSnapshot": {
+            "type": "object",
+            "properties": {
+                "camera_id": {
+                    "type": "integer"
+                },
+                "end_time": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TimelineBlock": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.TimelineResponse": {
+            "type": "object",
+            "properties": {
+                "camera_id": {
+                    "type": "integer"
+                },
+                "segments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SegmentItem"
+                    }
+                },
+                "snapshots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SegmentSnapshot"
+                    }
+                },
+                "timelines": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TimelineBlock"
+                    }
+                }
+            }
+        },
         "dto.UpdateCameraRequest": {
             "type": "object",
             "properties": {
@@ -907,6 +1118,9 @@ const docTemplate = `{
         "process.StreamProfile": {
             "type": "object",
             "properties": {
+                "acodec": {
+                    "type": "integer"
+                },
                 "channel_id": {
                     "type": "integer"
                 },
@@ -916,6 +1130,9 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string"
+                },
+                "vcodec": {
+                    "type": "integer"
                 },
                 "worker_id": {
                     "description": "Moved here! Can be different for main/sub",
