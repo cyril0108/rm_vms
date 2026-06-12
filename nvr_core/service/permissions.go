@@ -14,6 +14,7 @@ import (
 
 type PermsService interface {
 	GetAllPermissions(ctx context.Context) ([]*models.Permission, error)
+	GetAllRoles(ctx context.Context) ([]*models.Role, error)
 }
 
 func NewPermsService(repo repository.PermissionRepository) PermsService {
@@ -21,7 +22,9 @@ func NewPermsService(repo repository.PermissionRepository) PermsService {
 }
 
 func (p *permissionsServiceBase) GetAllPermissions(ctx context.Context) ([]*models.Permission, error) {
-
 	return p.repo.GetAll(ctx)
+}
 
+func (p *permissionsServiceBase) GetAllRoles(ctx context.Context) ([]*models.Role, error) {
+	return p.repo.GetAllRoles(ctx)
 }

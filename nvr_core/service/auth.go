@@ -31,6 +31,8 @@ type AuthService interface {
 	ValidateToken(tokenString string) (jwt.MapClaims, error)
 	RefreshToken(ctx context.Context, rawRefreshToken string) (string, []string, error)
 	RevokeRefreshToken(ctx context.Context, rawRefreshToken string) (error)
+	UpdateUserStatusForPermissionChange(userID int64)
+	LogoutDeactivatedUser(ctx context.Context, userID int64) error
 }
 
 
@@ -44,6 +46,21 @@ func NewAuthService(userRepo repository.UserRepository, permRepo repository.Perm
 		tokenExpir: TokenExpireTime, // Standard session length for NVRs
 		userStatus:   NewUserStatusMap(),
 	}
+}
+
+func (s *authServiceBase) LogoutDeactivatedUser(ctx context.Context, userID int64) error {
+
+	if err := s.reTokenRepo.RevokeAllForUser(ctx, userID); err != nil {
+		return err
+	}
+
+	// ==========================================
+	// UPDATE IN-MEMORY STATUS
+	// ==========================================
+	// Register the user in the allowlist so their new JWT is instantly valid
+	s.userStatus.LogoutAll(userID)
+
+	return  nil
 }
 
 func (s *authServiceBase) Login(ctx context.Context, username string, password string) (string, string, []string, error) {
@@ -213,6 +230,11 @@ func (s *authServiceBase) RevokeRefreshToken(ctx context.Context, rawRefreshToke
 	// Hash the incoming raw token using our fast deterministic hash
 	hash := security.HashRefreshToken(rawRefreshToken)
 	return s.reTokenRepo.RevokeHashed(ctx, hash)
+}
+
+
+func (s *authServiceBase) UpdateUserStatusForPermissionChange(userID int64) {
+	s.userStatus.UpdatePermissions(userID)
 }
 
 

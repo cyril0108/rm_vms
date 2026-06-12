@@ -11,12 +11,22 @@ import (
 
 var LOG = logger.NewLogger("[nvr_core][apiserver]")
 
+// var (
+// 	ErrorInvalidPayload = errors.New("Invalid Payload")
+// )
+
 type APIResponse struct {
 	Data     any
 }
 
-func decodeRequest(r *http.Request, req *any) error {
-	return json.NewDecoder(r.Body).Decode(&req)
+func getPathID(r *http.Request, id string) (int64, error) {
+	targetIDStr := r.PathValue(id)
+	return strconv.ParseInt(targetIDStr, 10, 64)
+}
+
+func decodeRequest[T any](r *http.Request, req *T) error {
+	defer r.Body.Close()
+	return json.NewDecoder(r.Body).Decode(req)
 }
 
 func RespondJSON(w http.ResponseWriter, data any) error {

@@ -80,7 +80,16 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// User Management
 	// =============================================
-	mux.HandleFunc("PUT /api/users/{id}/permissions", authMid(http.HandlerFunc(api.HandleUpdateUserPermissions)))
+	mux.HandleFunc("GET /api/admin/users", authMid(http.HandlerFunc(api.HandleListUsers)))
+
+	mux.HandleFunc("GET /api/admin/permissions", authMid(http.HandlerFunc(api.HandleGetAllPermissions)))
+	mux.HandleFunc("GET /api/admin/roles", authMid(http.HandlerFunc(api.HandleGetAllRoles)))
+
+	mux.HandleFunc("POST /api/admin/users/create", authMid(http.HandlerFunc(api.HandleCreateUser)))
+
+	mux.HandleFunc("DELETE /api/users/{id}", authMid(http.HandlerFunc(api.HandleDeactivateUser)))
+
+	mux.HandleFunc("PUT /api/admin/users/{id}/permissions", authMid(http.HandlerFunc(api.HandleUpdateUserPermissions)))
 
 
 	// =============================================

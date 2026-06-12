@@ -1,37 +1,85 @@
 package apiserver
 
 import (
-	"encoding/json"
 	"net/http"
 	"nvr_core/apiserver/dto"
-	"strconv"
+	"nvr_core/apiserver/middleware"
 )
+
+func (api *APIServer) HandleGetAllRoles(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	if session, ok := middleware.GetSession(ctx);
+		!ok || !session.HasPermissionUserManage() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	roles, err := api.Services.Perms.GetAllRoles(ctx)
+	if err != nil {
+		http.Error(w, "Failed to get all roles", http.StatusInternalServerError)
+		return
+	}
+
+	RespondJSON(w, roles)
+
+
+}
+
+func (api *APIServer) HandleGetAllPermissions(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	if session, ok := middleware.GetSession(ctx);
+		!ok || !session.HasPermissionUserManage() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	perms, err := api.Services.Perms.GetAllPermissions(ctx)
+	if err != nil {
+		http.Error(w, "Failed to get all permissions", http.StatusInternalServerError)
+		return
+	}
+
+	RespondJSON(w, perms)
+
+}
 
 // HandleUpdateUserPermissions expects: PUT /api/users/{id}/permissions
 func (api *APIServer) HandleUpdateUserPermissions(w http.ResponseWriter, r *http.Request) {
-	// In a real scenario, you extract the Admin's ID from the JWT middleware context here.
-	adminID := int64(1) 
 
-	targetIDStr := r.PathValue("id")
-	targetUserID, err := strconv.ParseInt(targetIDStr, 10, 64)
+	session, ok := middleware.GetSession(r.Context())
+	if !ok {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	targetUserID, err := getPathID(r, "id")
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
 
-	var req dto.UpdatePermissionsRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if !session.HasPermissionUserNoSelfManage(targetUserID) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	var req *dto.UpdatePermissionsRequest
+	if err := decodeRequest(r, req); err != nil {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
 		return
 	}
 
 	// Call the service layer to perform the transactional swap
-	err = api.Services.User.UpdateUserPermissions(r.Context(), adminID, targetUserID, req.PermissionIDs)
+	err = api.Services.User.UpdateUserPermissions(r.Context(), session.UserID, targetUserID, req.PermissionIDs)
 	if err != nil {
 		// Log error internally, return generic 500 or 404 to client
 		http.Error(w, "Failed to update permissions", http.StatusInternalServerError)
 		return
 	}
+
+	api.Services.Auth.UpdateUserStatusForPermissionChange(targetUserID)
 
 	w.WriteHeader(http.StatusOK)
 	RespondJSON(w, true)

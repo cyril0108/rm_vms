@@ -17,6 +17,12 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id int64) (*models.User, error)
 	GetByUsername(ctx context.Context, username string) (*models.User, error)
 	GetAdmin(ctx context.Context) (*models.User, error)
+
+	// User Management
+	GetAll(ctx context.Context, limit, offset int) ([]*models.User, error)
+	Count(ctx context.Context) (int, error)
+
+	// Update
 	UpdatePartial(ctx context.Context, id int64, updates PartialUpdateInterfaces) error
 	UpdateRole(ctx context.Context, id int64, roleID int64) error
 	UpdatePassword(ctx context.Context, id int64, newHash string) error
@@ -38,9 +44,12 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	query := `
 		INSERT INTO users (`+ SQLFieldsString +`) 
 		VALUES (?, ?, ?, ?, 1)
+		RETURNING id
 	`
 
-	result, err := r.db.ExecContext(ctx, query, user.Username, user.Password, user.RoleID, user.Email)
+	err := r.db.QueryRowContext(ctx, query,
+		user.Username, user.Password, user.RoleID, user.Email,
+	).Scan(&user.ID)
 	if err != nil {
 		// Basic SQLite unique constraint check
 		if isUniqueConstraintViolation(err) {
@@ -49,7 +58,6 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 		return err
 	}
 
-	user.ID, err = result.LastInsertId()
 	return err
 }
 
@@ -106,6 +114,11 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*models.
 	return &u, nil
 }
 
+
+// ==============================================================
+// User Data Update
+// ==============================================================
+
 func (r *userRepo) UpdatePartial(ctx context.Context, id int64, updates PartialUpdateInterfaces) error {
 	// If the map is empty, there is nothing to update
 	if len(updates) == 0 {
@@ -154,4 +167,44 @@ func (r *userRepo) Deactivate(ctx context.Context, id int64) error {
 	query := `UPDATE users SET is_active = 0 WHERE id = ?`
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
+}
+
+
+// ==============================================================
+// User Management
+// ==============================================================
+
+// GetAll retrieves a paginated list of users.
+func (r *userRepo) GetAll(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	query := `
+		SELECT  id, ` + SQLFieldsString + `, created_at 
+		FROM users 
+		ORDER BY id DESC 
+		LIMIT ? OFFSET ?
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*models.User
+	for rows.Next() {
+		var u models.User
+		if err := rows.Scan(&u.ID, &u.Username, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt); err != nil {
+			return nil, err
+		}
+		// Never leak password hashes to the service/API layer
+		u.Password = "" 
+		users = append(users, &u)
+	}
+	return users, nil
+}
+
+// Count returns the total number of users.
+func (r *userRepo) Count(ctx context.Context) (int, error) {
+	var count int
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&count)
+	return count, err
 }

@@ -32,14 +32,14 @@ func (m *UserStatusMap) Login(userID int64) {
 func (m *UserStatusMap) UpdatePermissions(userID int64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	// Update the timestamp to now. Any JWT issued before this exact second will be rejected.
 	m.statuses[userID] = time.Now().Unix()
 }
 
 // Logout completely removes a user from the active allowlist.
 // Call this on explicit logout or account deactivation.
-func (m *UserStatusMap) Logout(userID int64) {
+func (m *UserStatusMap) LogoutAll(userID int64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.statuses, userID)

@@ -104,7 +104,7 @@ INSERT INTO permissions (id, code, description)
 VALUES
 (1, "system", "常駐系統權限，admin only"),
 (2, "user_manage", "使用者管理"),
-(3, "user_no_self_manage", "無法修改自身角色"),
+(3, "user_no_self_manage", "使用者管理(無法修改自身角色)"),
 (4, "layout_all", "佈局操作"),
 (5, "view_all_device", "裝置檢視權限"),
 (6, "camera_configure", "攝影機設定"),
@@ -126,6 +126,28 @@ CREATE TABLE role_permissions (
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE,
     FOREIGN KEY (permission_id) REFERENCES permissions (id) ON DELETE CASCADE
 ) WITHOUT ROWID;
+
+
+INSERT INTO role_permissions (role_id, permission_id)
+VALUES
+(1,1),
+(1,2),
+(1,4),
+(1,5),
+(1,6),
+(1,7),
+(1,8),
+(1,9),
+(1,10),
+(2,1),
+(2,3),
+(2,4),
+(2,5),
+(2,6),
+(2,7),
+(2,8),
+(2,9),
+(2,10);
 
 
 -- ======================================

@@ -14,6 +14,25 @@ type contextKey string
 
 const sessionKey = contextKey("session_data")
 
+type PERMISSION string
+
+const (
+	PERMSystem PERMISSION ="system"
+
+	PERMUserManage PERMISSION = "user_manage"
+	PERMUserNoSelfManage PERMISSION = "user_no_self_manage"
+
+	PERMLayout_all PERMISSION = "layout_all"
+
+	PERMViewAllDevice PERMISSION = "view_all_device"
+	PERMCameraConfigure PERMISSION = "camera_configure"
+	PERMCameraPtz PERMISSION = "camera_ptz"
+	PERMCameraPlayback PERMISSION = "camera_playback"
+	PERMCameraLive PERMISSION = "camera_live"
+
+	PERMRecordingExport PERMISSION = "recording_export"
+)
+
 // SessionData holds the extracted JWT claims for easy access in handlers
 type SessionData struct {
 	UserID      int64
@@ -83,6 +102,20 @@ func GetSession(ctx context.Context) (SessionData, bool) {
 }
 
 // HasPermission is a quick utility to check if a user has a specific permission
-func (s SessionData) HasPermission(requiredPerm string) bool {
-	return slices.Contains(s.Permissions, requiredPerm)
+// func (s SessionData) HasPermission(requiredPerm string) bool {
+// 	return slices.Contains(s.Permissions, requiredPerm)
+// }
+
+func (s SessionData) HasPermission(requiredPerm PERMISSION) bool {
+	return slices.Contains(s.Permissions, string(requiredPerm))
+}
+
+
+// ---------------------------
+func (s SessionData) HasPermissionUserManage() bool {
+	return s.HasPermission(PERMUserManage) || s.HasPermission(PERMUserNoSelfManage)
+}
+
+func (s SessionData) HasPermissionUserNoSelfManage(targetId int64) bool {
+	return s.HasPermission(PERMUserManage) || (s.HasPermission(PERMUserNoSelfManage) && s.UserID != targetId)
 }

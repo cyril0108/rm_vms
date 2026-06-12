@@ -14,6 +14,7 @@ type PermissionRepository interface {
 
     // Standard CRUD for administrative UI
     GetAll(ctx context.Context) ([]*models.Permission, error)
+    GetAllRoles(ctx context.Context) ([]*models.Role, error)
     GetRolePermissions(ctx context.Context, roleID int64) ([]*models.Permission, error)
 
     // User permission management
@@ -92,6 +93,27 @@ func (r *permissionRepo) GetAll(ctx context.Context) ([]*models.Permission, erro
         perms = append(perms, &p)
     }
     return perms, rows.Err()
+}
+
+// GetAll fetches all available roles to populate the Admin UI checkboxes.
+func (r *permissionRepo) GetAllRoles(ctx context.Context) ([]*models.Role, error) {
+    query := `SELECT id, name, description FROM roles ORDER BY id ASC`
+
+    rows, err := r.db.QueryContext(ctx, query)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var roles []*models.Role
+    for rows.Next() {
+        var r models.Role
+        if err := rows.Scan(&r.ID, &r.Name, &r.Description); err != nil {
+            return nil, err
+        }
+        roles = append(roles, &r)
+    }
+    return roles, rows.Err()
 }
 
 // GetRolePermissions fetches only the permissions assigned to a specific role.
