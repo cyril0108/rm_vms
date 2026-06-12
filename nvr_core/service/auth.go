@@ -30,6 +30,7 @@ type AuthService interface {
 	// ValidateToken parses a JWT and returns its claims if valid
 	ValidateToken(tokenString string) (jwt.MapClaims, error)
 	RefreshToken(ctx context.Context, rawRefreshToken string) (string, []string, error)
+	RevokeRefreshToken(ctx context.Context, rawRefreshToken string) (error)
 }
 
 
@@ -161,10 +162,10 @@ func (s *authServiceBase) ValidateToken(tokenString string) (jwt.MapClaims, erro
 }
 
 /**
- * =========================
+ * ------------------------------------
  * @param  {[type]} s *authServiceBase) RefreshToken(ctx context.Context, rawRefreshToken string) (string, []string, error [description]
  * @return {[type]}   [description]
- * =========================
+ * ------------------------------------
  */
 func (s *authServiceBase) RefreshToken(ctx context.Context, rawRefreshToken string) (string, []string, error) {
 	// Hash the incoming raw token using our fast deterministic hash
@@ -208,9 +209,20 @@ func (s *authServiceBase) RefreshToken(ctx context.Context, rawRefreshToken stri
 	return accessToken, permissions, nil
 }
 
+func (s *authServiceBase) RevokeRefreshToken(ctx context.Context, rawRefreshToken string) (error) {
+	// Hash the incoming raw token using our fast deterministic hash
+	hash := security.HashRefreshToken(rawRefreshToken)
+	return s.reTokenRepo.RevokeHashed(ctx, hash)
+}
+
+
+// =================================================================
+// =================================================================
 /**
  * Private function that generate our access token
  */
+// =================================================================
+// =================================================================
 func (s *authServiceBase) generateToken(user *models.User, permissions []string) (string, error) {
 
 	tokenID := uuid.New().String()

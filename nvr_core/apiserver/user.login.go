@@ -100,3 +100,32 @@ func (api *APIServer) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	RespondJSON(w, resp)
 }
 
+// HandleAppLogout expects: POST /api/logout
+//
+//	@Summary		App Logout
+//	@Description	Invalidates a specific mobile/desktop session by revoking its refresh token.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		dto.RefreshRequest	true	"Refresh Token to revoke"
+//	@Success		200		{string}	string					"Successfully logged out"
+//	@Router			/api/logout [post]
+func (api *APIServer) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*5)
+
+	var req dto.RefreshRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	// Hit the service layer to revoke the token
+	err := api.Services.Auth.RevokeRefreshToken(r.Context(), req.RefreshToken)
+	if err != nil {
+		// Log the error but still return 200 OK to the client. 
+		// If they are trying to log out, we shouldn't block them with server errors.
+		log.Printf("[Auth API] App Logout error: %v", err)
+	}
+
+	RespondJSON(w, map[string]string{"message": "Logged out successfully"})
+}

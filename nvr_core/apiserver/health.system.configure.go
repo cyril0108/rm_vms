@@ -37,7 +37,7 @@ func (s *APIServer) HandleAdminInitConfigure(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := s.Services.User.CreateUser(ctx, 1, u); err != nil {
-		LOG.Error("Error when creating admin %v", err)
+		LOG.Error("Error when creating admin", "err", err)
 		http.Error(w, "Failed to configure admin", http.StatusInternalServerError)
 		return
 	}

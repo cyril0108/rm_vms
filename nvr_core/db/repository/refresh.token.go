@@ -19,6 +19,7 @@ type RefreshTokenRepository interface {
 	
 	// Revoke invalidates a single specific session [cite: 262]
 	Revoke(ctx context.Context, id string) error
+	RevokeHashed(ctx context.Context, hash string) error
 	
 	// RevokeAllForUser instantly locks a user out of all active sessions across all devices 
 	RevokeAllForUser(ctx context.Context, userID int64) error
@@ -56,7 +57,7 @@ func (r *refreshTokenRepo) Create(ctx context.Context, token *models.RefreshToke
 	return err
 }
 
-// GetByHash retrieves a token by its bcrypt hash. 
+// GetByHash retrieves a token by its hash. 
 func (r *refreshTokenRepo) GetByHash(ctx context.Context, hash string) (*models.RefreshToken, error) {
 	query := `
 		SELECT id, user_id, token_hash, user_agent, client_ip, is_revoked, expires_at, created_at 
@@ -83,6 +84,12 @@ func (r *refreshTokenRepo) GetByHash(ctx context.Context, hash string) (*models.
 func (r *refreshTokenRepo) Revoke(ctx context.Context, id string) error {
 	query := `UPDATE refresh_tokens SET is_revoked = 1 WHERE id = ?`
 	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}
+
+func (r *refreshTokenRepo) RevokeHashed(ctx context.Context, hash string) error {
+	query := `UPDATE refresh_tokens SET is_revoked = 1 WHERE token_hash = ?`
+	_, err := r.db.ExecContext(ctx, query, hash)
 	return err
 }
 

@@ -28,6 +28,13 @@ func NewUserManagementService(uRepo repository.UserRepository, pRepo repository.
 }
 
 func (s *userServiceBase) CreateUser(ctx context.Context, adminID int64, user *models.User) error {
+
+	hashed, err := security.HashPassword(user.Password)
+	if err != nil {
+		return fmt.Errorf("hashing password failed: %w", err)
+	}
+	user.Password = hashed
+
 	return s.userRepo.Create(ctx, user)
 }
 

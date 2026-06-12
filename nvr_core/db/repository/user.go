@@ -40,7 +40,7 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 		VALUES (?, ?, ?, ?, 1)
 	`
 
-	result, err := r.db.ExecContext(ctx, query, user.Username, user.Password, user.RoleID)
+	result, err := r.db.ExecContext(ctx, query, user.Username, user.Password, user.RoleID, user.Email)
 	if err != nil {
 		// Basic SQLite unique constraint check
 		if isUniqueConstraintViolation(err) {
