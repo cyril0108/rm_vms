@@ -15,6 +15,10 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+type RefreshLogoutRequest struct {
+	Logout bool `json:"logout"`
+}
+
 type RefreshResponse struct {
 	Token       string   `json:"token"`
 	Permissions []string `json:"permissions"`

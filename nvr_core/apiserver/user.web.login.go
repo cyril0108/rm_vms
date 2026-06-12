@@ -108,7 +108,7 @@ func (api *APIServer) HandleWebLogin(w http.ResponseWriter, r *http.Request) {
 //	@Failure		401		{string}	string				"Invalid or expired refresh token"
 //	@Failure		500		{string}	string				"Internal server error"
 //	@Router			/api/refresh [post]
-func (api *APIServer) HandleWebRefresh(w http.ResponseWriter, r *http.Request) {
+func (api *APIServer) HandleWebRefreshOrLogout(w http.ResponseWriter, r *http.Request) {
 
 	// Extract the refresh token directly from the Secure Cookie
 	rawRefreshToken, err := getWebRefreshTokenCookie(r)
@@ -117,18 +117,23 @@ func (api *APIServer) HandleWebRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var req dto.RefreshLogoutRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	if req.Logout {
+		api.doWebLogout(w, rawRefreshToken)
+		return
+	}
 
 	// Check refresh token
 	accessToken, perms, err := api.Services.Auth.RefreshToken(r.Context(), rawRefreshToken)
 	if err != nil {
 		if errors.Is(err, service.ErrUnauthorized) || errors.Is(err, service.ErrAccountDisabled) {
 			// If the refresh token is dead, clear the cookie so the browser forgets it
-			http.SetCookie(w, &http.Cookie{
-				Name:   WebCookieNameRefreshToken,
-				Value:  "",
-				Path:   "/api/web/refresh",
-				MaxAge: -1, 
-			})
+			revokeWebRefreshTokenCookie(w)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -148,17 +153,36 @@ func (api *APIServer) HandleWebRefresh(w http.ResponseWriter, r *http.Request) {
 
 
 // HandleWebLogout expects: POST /api/web/logout
-func (api *APIServer) HandleWebLogout(w http.ResponseWriter, r *http.Request) {
+// func (api *APIServer) HandleWebLogout(w http.ResponseWriter, r *http.Request) {
 
-	// (Optional but recommended) Extract the cookie, hash it, and mark it as Revoked in your SQLite DB
-	rawRefreshToken, err := getWebRefreshTokenCookie(r)
-	if err != nil {
-		http.Error(w, "No refresh token found", http.StatusUnauthorized)
-		return
-	}
+// 	// (Optional but recommended) Extract the cookie, hash it, and mark it as Revoked in your SQLite DB
+// 	rawRefreshToken, err := getWebRefreshTokenCookie(r)
+// 	if err != nil {
+// 		log.Printf("[HandleWebLogout] err %v", err)
+// 		http.Error(w, "No refresh token found", http.StatusUnauthorized)
+// 		return
+// 	}
+
+// 	revokeResult := ""
+// 	err = api.Services.Auth.RevokeRefreshToken(api.Context, rawRefreshToken)
+// 	if err != nil {
+// 		// http.Error(w, "No refresh token found", http.StatusUnauthorized)
+// 		// return
+// 		log.Printf("[Web Auth] Failed to revoke db refresh token: %v", err)
+// 		revokeResult = " Warning: Failed to revoke in db. Check system log for detail."
+// 	}
+
+// 	// Tell the browser to delete the cookie
+// 	revokeWebRefreshTokenCookie(w)
+
+// 	w.WriteHeader(http.StatusOK)
+// 	w.Write([]byte(`{"message": "Logged out successfully.` + revokeResult + `"}`))
+// }
+
+func (api *APIServer) doWebLogout(w http.ResponseWriter, rawRefreshToken string) {
 
 	revokeResult := ""
-	err = api.Services.Auth.RevokeRefreshToken(api.Context, rawRefreshToken)
+	err := api.Services.Auth.RevokeRefreshToken(api.Context, rawRefreshToken)
 	if err != nil {
 		// http.Error(w, "No refresh token found", http.StatusUnauthorized)
 		// return

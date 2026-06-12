@@ -72,8 +72,8 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("POST /api/refresh", api.HandleRefresh)
 
 	mux.HandleFunc("POST /api/web/login", api.HandleWebLogin)
-	mux.HandleFunc("POST /api/web/logout", api.HandleWebLogout)
-	mux.HandleFunc("POST /api/web/refresh", api.HandleWebRefresh)
+	// mux.HandleFunc("POST /api/web/logout", api.HandleWebLogout)
+	mux.HandleFunc("POST /api/web/refresh", api.HandleWebRefreshOrLogout)
 
 	// =============================================
 	// User Management

@@ -15,6 +15,10 @@ type APIResponse struct {
 	Data     any
 }
 
+func decodeRequest(r *http.Request, req *any) error {
+	return json.NewDecoder(r.Body).Decode(&req)
+}
+
 func RespondJSON(w http.ResponseWriter, data any) error {
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(APIResponse{
