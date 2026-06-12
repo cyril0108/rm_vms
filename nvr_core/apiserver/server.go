@@ -54,6 +54,8 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 
 	mux := http.NewServeMux()
 
+	authMid := middleware.RequireAuth(api.Services.Auth)
+
 	// Mount configure
 	if health, err := svcs.System.GetHealthData(ctx);
 	  err == nil && !health.Configured {
@@ -68,84 +70,84 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// Login
 	// =============================================
 	mux.HandleFunc("POST /api/login", api.HandleLogin)
-	mux.HandleFunc("POST /api/logout", api.HandleLogout)
-	mux.HandleFunc("POST /api/refresh", api.HandleRefresh)
+	mux.HandleFunc("POST /api/logout", authMid(http.HandlerFunc(api.HandleLogout)))
+	mux.HandleFunc("POST /api/refresh", authMid(http.HandlerFunc(api.HandleRefresh)))
 
 	mux.HandleFunc("POST /api/web/login", api.HandleWebLogin)
 	// mux.HandleFunc("POST /api/web/logout", api.HandleWebLogout)
-	mux.HandleFunc("POST /api/web/refresh", api.HandleWebRefreshOrLogout)
+	mux.HandleFunc("POST /api/web/refresh", authMid(http.HandlerFunc(api.HandleWebRefreshOrLogout)))
 
 	// =============================================
 	// User Management
 	// =============================================
-	mux.HandleFunc("PUT /api/users/{id}/permissions", api.HandleUpdateUserPermissions)
+	mux.HandleFunc("PUT /api/users/{id}/permissions", authMid(http.HandlerFunc(api.HandleUpdateUserPermissions)))
 
 
 	// =============================================
 	// Camera Discovery
 	// =============================================
-	mux.HandleFunc("GET /api/scan", api.HandleCameraScan)
-	mux.HandleFunc("GET /api/scansweep", api.HandleCameraSweep)
-	mux.HandleFunc("POST /api/scansweep/detail", api.HandleBulkONVIFScan)
+	mux.HandleFunc("GET /api/scan", authMid(http.HandlerFunc(api.HandleCameraScan)))
+	mux.HandleFunc("GET /api/scansweep", authMid(http.HandlerFunc(api.HandleCameraSweep)))
+	mux.HandleFunc("POST /api/scansweep/detail", authMid(http.HandlerFunc(api.HandleBulkONVIFScan)))
 
-	mux.HandleFunc("GET /api/scan/{ip}", api.HandleCameraProbe)
-	mux.HandleFunc("POST /api/scan/{ip}/onvif", api.HandleFetchCameraONVIF)
+	mux.HandleFunc("GET /api/scan/{ip}", authMid(http.HandlerFunc(api.HandleCameraProbe)))
+	mux.HandleFunc("POST /api/scan/{ip}/onvif", authMid(http.HandlerFunc(api.HandleFetchCameraONVIF)))
 
 	// =============================================
 	// Camera stream
 	// =============================================
 	// mux.HandleFunc("GET /ws/stream/{cam_id}", api.GetStream)
-	mux.HandleFunc("GET /live/camera/{cam_id}", api.HandleLiveTransmuxTS)
+	mux.HandleFunc("GET /live/camera/{cam_id}", authMid(http.HandlerFunc(api.HandleLiveTransmuxTS)))
 	// mux.HandleFunc("GET /ws/stream/{cam_id}/{profile}", api.GetStream)
-	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", api.HandleLiveTransmuxTS)
+	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", authMid(http.HandlerFunc(api.HandleLiveTransmuxTS)))
 
 	mux.HandleFunc("GET /health", api.GetHealth)
-	mux.HandleFunc("GET /health/shm/metrics", api.HandleGetSHMMetrics)
+	mux.HandleFunc("GET /health/shm/metrics", authMid(http.HandlerFunc(api.HandleGetSHMMetrics)))
 
 	// =============================================
 	// Camera Management
 	// =============================================
-	mux.HandleFunc("GET /api/cameras", api.GetCameras)
-	mux.HandleFunc("GET /api/cameras/db", api.GetDBCameras)
-	mux.HandleFunc("GET /api/cameras/{id}/onvif", api.HandleFetchSystemCameraONVIF)
+	mux.HandleFunc("GET /api/cameras", authMid(http.HandlerFunc(api.GetCameras)))
+	mux.HandleFunc("GET /api/cameras/db", authMid(http.HandlerFunc(api.GetDBCameras)))
+	mux.HandleFunc("GET /api/cameras/{id}/onvif", authMid(http.HandlerFunc(api.HandleFetchSystemCameraONVIF)))
 
-	mux.HandleFunc("POST /api/cameras/add", api.AddCamera)
-	mux.HandleFunc("POST /api/cameras/add/onvif", api.AddONVIFCamera)
-	mux.HandleFunc("PUT /api/cameras/{cam_id}/update", api.UpdateCamera)
-	mux.HandleFunc("PUT /api/cameras/{cam_id}/onvif", api.UpdateCameraONVIF)
-	mux.HandleFunc("PUT /api/cameras/{cam_id}/auth", api.UpdateCameraAuth)
-	mux.HandleFunc("POST /api/cameras/{cam_id}/update", api.UpdateCamera)
-	mux.HandleFunc("POST /api/cameras/{cam_id}/stop", api.DeactivateCamera)
-	mux.HandleFunc("POST /api/cameras/{cam_id}/start", api.ActivateCamera)
+	mux.HandleFunc("POST /api/cameras/add", authMid(http.HandlerFunc(api.AddCamera)))
+	mux.HandleFunc("POST /api/cameras/add/onvif", authMid(http.HandlerFunc(api.AddONVIFCamera)))
+	mux.HandleFunc("PUT /api/cameras/{cam_id}/update", authMid(http.HandlerFunc(api.UpdateCamera)))
+	mux.HandleFunc("PUT /api/cameras/{cam_id}/onvif", authMid(http.HandlerFunc(api.UpdateCameraONVIF)))
+	mux.HandleFunc("PUT /api/cameras/{cam_id}/auth", authMid(http.HandlerFunc(api.UpdateCameraAuth)))
+	mux.HandleFunc("POST /api/cameras/{cam_id}/update", authMid(http.HandlerFunc(api.UpdateCamera)))
+	mux.HandleFunc("POST /api/cameras/{cam_id}/stop", authMid(http.HandlerFunc(api.DeactivateCamera)))
+	mux.HandleFunc("POST /api/cameras/{cam_id}/start", authMid(http.HandlerFunc(api.ActivateCamera)))
 
 	// Becareful with this
-	mux.HandleFunc("DELETE /api/cameras/{cam_id}", api.DeleteCamera)
+	mux.HandleFunc("DELETE /api/cameras/{cam_id}", authMid(http.HandlerFunc(api.DeleteCamera)))
 
 
 	// =============================================
 	// Timeline and Playback
 	// =============================================
-	mux.HandleFunc("GET /api/cameras/{cam_id}/timeline/{start}/{end}", api.GetTimeline)
-	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot", api.HandleSegmentSnapshot)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/timeline/{start}/{end}", authMid(http.HandlerFunc(api.GetTimeline)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot", authMid(http.HandlerFunc(api.HandleSegmentSnapshot)))
 
-	mux.HandleFunc("GET /api/cameras/{cam_id}/timeline/segs", api.GetProfileSegments)
-	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot/range", api.GetSegmentSnapshots)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/timeline/segs", authMid(http.HandlerFunc(api.GetProfileSegments)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/snapshot/range", authMid(http.HandlerFunc(api.GetSegmentSnapshots)))
 
-	mux.HandleFunc("GET /api/cameras/{cam_id}/play", api.HandlePlayVideo)
-	mux.HandleFunc("GET /api/cameras/{cam_id}/play/ts", api.HandleTransmuxTS)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/play", authMid(http.HandlerFunc(api.HandlePlayVideo)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/play/ts", authMid(http.HandlerFunc(api.HandleTransmuxTS)))
 
 
 	// =============================================
 	// Calendar
 	// =============================================
-	mux.HandleFunc("GET /api/cameras/{cam_id}/summary/{start}/{end}", api.HandleGetDailySummary)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/summary/{start}/{end}", authMid(http.HandlerFunc(api.HandleGetDailySummary)))
 
 
 	// =============================================
 	// Playlist
 	// =============================================
-	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist.m3u8", api.HandleGetPlaylist)
-	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist/ts.m3u8", api.HandleGetTSPlaylist)
+	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist.m3u8", authMid(http.HandlerFunc(api.HandleGetPlaylist)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist/ts.m3u8", authMid(http.HandlerFunc(api.HandleGetTSPlaylist)))
 
 
 	// =============================================
