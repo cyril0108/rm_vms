@@ -71,11 +71,11 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	mux.HandleFunc("POST /api/login", api.HandleLogin)
 	mux.HandleFunc("POST /api/logout", authMid(http.HandlerFunc(api.HandleLogout)))
-	mux.HandleFunc("POST /api/refresh", authMid(http.HandlerFunc(api.HandleRefresh)))
+	mux.HandleFunc("POST /api/refresh", api.HandleRefresh)
 
 	mux.HandleFunc("POST /api/web/login", api.HandleWebLogin)
 	// mux.HandleFunc("POST /api/web/logout", api.HandleWebLogout)
-	mux.HandleFunc("POST /api/web/refresh", authMid(http.HandlerFunc(api.HandleWebRefreshOrLogout)))
+	mux.HandleFunc("POST /api/web/refresh", api.HandleWebRefreshOrLogout)
 
 	// =============================================
 	// User Management
