@@ -37,6 +37,9 @@ type APIServer struct {
 	Services *service.Services
 }
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs *service.Services) {
 
 	LOG.Info("Initializing API server")

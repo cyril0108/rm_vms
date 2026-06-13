@@ -202,6 +202,13 @@ definitions:
       uuid:
         type: string
     type: object
+  dto.UpdatePermissionsRequest:
+    properties:
+      permission_ids:
+        items:
+          type: integer
+        type: array
+    type: object
   models.Camera:
     properties:
       created_at:
@@ -243,6 +250,24 @@ definitions:
       username:
         type: string
       uuid:
+        type: string
+    type: object
+  models.Permission:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+    type: object
+  models.Role:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
         type: string
     type: object
   onvif.OnvifRecord:
@@ -691,6 +716,61 @@ paths:
       summary: User login
       tags:
       - auth
+  /api/logout:
+    post:
+      consumes:
+      - application/json
+      description: Invalidates a specific mobile/desktop session by revoking its refresh
+        token.
+      parameters:
+      - description: Refresh Token to revoke
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged out
+          schema:
+            type: string
+      summary: App Logout
+      tags:
+      - auth
+  /api/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all permissions that can be assigned to users
+        or roles. Requires MANAGE_USERS permission.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of permissions
+          schema:
+            items:
+              $ref: '#/definitions/models.Permission'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden - Insufficient permissions
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get all permissions
+      tags:
+      - permissions
   /api/refresh:
     post:
       consumes:
@@ -726,6 +806,38 @@ paths:
       summary: Refresh Access Token
       tags:
       - auth
+  /api/roles:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all roles defined in the system. Requires MANAGE_USERS
+        permission.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of roles
+          schema:
+            items:
+              $ref: '#/definitions/models.Role'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden - Insufficient permissions
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get all roles
+      tags:
+      - permissions
   /api/scan/{ip}/onvif:
     post:
       consumes:
@@ -757,4 +869,87 @@ paths:
       tags:
       - Cameras
       - Scan
+  /api/users/{id}/permissions:
+    put:
+      consumes:
+      - application/json
+      description: Overwrites a user's direct permission grants. Cannot be used to
+        modify one's own permissions. Requires MANAGE_USERS permission.
+      parameters:
+      - description: Target User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Array of permission IDs
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Permissions updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid user ID or payload
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden - Cannot manage own permissions or insufficient access
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update user explicit permissions
+      tags:
+      - users
+  /api/web/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user by username and password. Returns a short-lived
+        JWT access token, a long-lived refresh token, and a list of user permissions.
+      parameters:
+      - description: User Login Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully authenticated
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Invalid JSON payload
+          schema:
+            type: string
+        "401":
+          description: Invalid credentials or account disabled
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: User login
+      tags:
+      - auth
 swagger: "2.0"
