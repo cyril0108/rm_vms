@@ -1,13 +1,13 @@
 
 import {
-    axios,
+    AX,
     URLAPIPath,
     URLHostPath,
 } from "./base"
 
 
 const timeline = function(camID, from, to) {
-    return axios.get(URLAPIPath("cameras", camID, "timeline", from, to))
+    return AX.get(URLAPIPath("cameras", camID, "timeline", from, to))
 }
 
 

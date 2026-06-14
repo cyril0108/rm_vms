@@ -1,5 +1,10 @@
 
 import config from '@/config'
+import {
+    UserNeedLogin,
+    UpdateAX,
+    AX,
+} from './base.ax'
 import axios from 'axios'
 
 console.log("[API] config", config)
@@ -21,6 +26,9 @@ const URLAPIPath = function(...comps) {
 }
 
 export {
+    UserNeedLogin,
+    UpdateAX,
+    AX,
     axios,
     HostBase,
     APIBase,

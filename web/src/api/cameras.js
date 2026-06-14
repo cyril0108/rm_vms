@@ -1,13 +1,13 @@
 
 import {
-    axios,
+    AX,
     URLAPIPath,
     URLHostPath,
 } from "./base"
 
 
 const cameraList = function() {
-    return axios.get(URLAPIPath("cameras"))
+    return AX.get(URLAPIPath("cameras"))
 }
 
 const CAM = {

@@ -101,7 +101,7 @@ func (api *APIServer) HandleDeactivateUser(w http.ResponseWriter, r *http.Reques
 	RespondJSON(w, map[string]string{"message": "User deactivated successfully"})
 }
 
-// HandleUpdateUserRole expects: PATCH /api/admin/users/{id}/role
+// HandleUpdateUserRole expects: PUT /api/admin/users/{id}/role
 func (api *APIServer) HandleUpdateUserRole(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()

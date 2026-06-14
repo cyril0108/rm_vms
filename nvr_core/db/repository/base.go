@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"nvr_core/db/models"
 	"nvr_core/logger"
 	"strings"
 	"time"
@@ -8,11 +9,9 @@ import (
 
 var LOG = logger.NewLogger("[nvr_core][db][repository]")
 
-type PartialUpdateInterfaces map[string]interface{}
-
 // Format:
 // JoinSetFieldsClause("UPDATE table SET", updates)
-func JoinSetFieldsClause(queryPrefix string, updates PartialUpdateInterfaces) string {
+func JoinSetFieldsClause(queryPrefix string, updates models.PartialUpdateInterfaces) string {
 
 	var args []interface{}
 	var setClauses []string

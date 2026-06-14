@@ -157,9 +157,10 @@ VALUES
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL, -- Never store plaintext! Use bcrypt/argon2 in Go
-    role_id INTEGER NOT NULL,
-    is_active BOOLEAN DEFAULT 1, -- Allows instantly disabling a user without deleting their logs
+    name TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role_id  INTEGER NOT NULL,
+    is_active BOOLEAN DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE RESTRICT
 );

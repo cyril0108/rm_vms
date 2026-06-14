@@ -23,7 +23,7 @@ type UserRepository interface {
 	Count(ctx context.Context) (int, error)
 
 	// Update
-	UpdatePartial(ctx context.Context, id int64, updates PartialUpdateInterfaces) error
+	UpdatePartial(ctx context.Context, id int64, updates models.PartialUpdateInterfaces) error
 	UpdateRole(ctx context.Context, id int64, roleID int64) error
 	UpdatePassword(ctx context.Context, id int64, newHash string) error
 	Deactivate(ctx context.Context, id int64) error
@@ -37,18 +37,19 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepo{db: db}
 }
 
-const SQLFieldsString string = "username, password, role_id, email, is_active"
+const SQLFieldsString string = "username, name, password, role_id, email, is_active"
 
 // Create inserts a new user into the database.
 func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	query := `
 		INSERT INTO users (`+ SQLFieldsString +`) 
-		VALUES (?, ?, ?, ?, 1)
+		VALUES (?, ?, ?, ?, ?, ?)
 		RETURNING id
 	`
 
 	err := r.db.QueryRowContext(ctx, query,
-		user.Username, user.Password, user.RoleID, user.Email,
+		user.Username, user.Name, user.Password, user.RoleID, user.Email,
+		user.IsActive,
 	).Scan(&user.ID)
 	if err != nil {
 		// Basic SQLite unique constraint check
@@ -66,7 +67,7 @@ func (r *userRepo) 	GetAdmin(ctx context.Context) (*models.User, error) {
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query).Scan(
-		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
+		&u.ID, &u.Username, &u.Name, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
 	)
 
 	if err != nil {
@@ -84,7 +85,7 @@ func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) 
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
+		&u.ID, &u.Username, &u.Name, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
 	)
 
 	if err != nil {
@@ -102,7 +103,7 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*models.
 
 	var u models.User
 	err := r.db.QueryRowContext(ctx, query, username).Scan(
-		&u.ID, &u.Username, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
+		&u.ID, &u.Username, &u.Name, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt,
 	)
 
 	if err != nil {
@@ -119,7 +120,7 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*models.
 // User Data Update
 // ==============================================================
 
-func (r *userRepo) UpdatePartial(ctx context.Context, id int64, updates PartialUpdateInterfaces) error {
+func (r *userRepo) UpdatePartial(ctx context.Context, id int64, updates models.PartialUpdateInterfaces) error {
 	// If the map is empty, there is nothing to update
 	if len(updates) == 0 {
 		return nil
@@ -192,7 +193,7 @@ func (r *userRepo) GetAll(ctx context.Context, limit, offset int) ([]*models.Use
 	var users []*models.User
 	for rows.Next() {
 		var u models.User
-		if err := rows.Scan(&u.ID, &u.Username, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.Name, &u.Password, &u.RoleID, &u.Email, &u.IsActive, &u.CreatedAt); err != nil {
 			return nil, err
 		}
 		// Never leak password hashes to the service/API layer

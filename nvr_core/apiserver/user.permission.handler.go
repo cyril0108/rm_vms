@@ -9,7 +9,7 @@ import (
 // HandleGetAllRoles retrieves all available user roles.
 //
 //	@Summary		Get all roles
-//	@Description	Retrieves a list of all roles defined in the system. Requires MANAGE_USERS permission.
+//	@Description	Retrieves a list of all roles defined in the system. Requires user_manage permission.
 //	@Tags			permissions
 //	@Accept			json
 //	@Produce		json
@@ -42,7 +42,7 @@ func (api *APIServer) HandleGetAllRoles(w http.ResponseWriter, r *http.Request) 
 // HandleGetAllPermissions retrieves all available system permissions.
 //
 //	@Summary		Get all permissions
-//	@Description	Retrieves a list of all permissions that can be assigned to users or roles. Requires MANAGE_USERS permission.
+//	@Description	Retrieves a list of all permissions that can be assigned to users or roles. Requires user_manage permission.
 //	@Tags			permissions
 //	@Accept			json
 //	@Produce		json
@@ -74,7 +74,7 @@ func (api *APIServer) HandleGetAllPermissions(w http.ResponseWriter, r *http.Req
 // HandleUpdateUserPermissions expects: PUT /api/users/{id}/permissions
 //
 //	@Summary		Update user explicit permissions
-//	@Description	Overwrites a user's direct permission grants. Cannot be used to modify one's own permissions. Requires MANAGE_USERS permission.
+//	@Description	Overwrites a user's direct permission grants. Cannot be used to modify one's own permissions. Requires user_manage permission.
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json

@@ -25,7 +25,7 @@ type CameraRepository interface {
 	// Create and Manage
 	Create(ctx context.Context, cam *models.Camera) (int64, error)
 	Update(ctx context.Context, cam *models.Camera) error
-	UpdatePartial(ctx context.Context, id int64, updates PartialUpdateInterfaces) error
+	UpdatePartial(ctx context.Context, id int64, updates models.PartialUpdateInterfaces) error
 	SetActivate(ctx context.Context, id int64, active int) error
 	Delete(ctx context.Context, id int64) error
 	Activate(ctx context.Context, id int64) error
@@ -335,7 +335,7 @@ func (r *cameraRepo) Delete(ctx context.Context, id int64) error {
 }
 
 
-func (r *cameraRepo) UpdatePartial(ctx context.Context, id int64, updates PartialUpdateInterfaces) error {
+func (r *cameraRepo) UpdatePartial(ctx context.Context, id int64, updates models.PartialUpdateInterfaces) error {
 	// If the map is empty, there is nothing to update
 	if len(updates) == 0 {
 		return nil

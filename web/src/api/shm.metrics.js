@@ -1,12 +1,12 @@
 
 import {
-    axios,
+    AX,
     URLHostPath,
 } from "./base"
 
 
 const shmMetrics = function() {
-    return axios.get(URLHostPath("health", "shm", "metrics"))
+    return AX.get(URLHostPath("health", "shm", "metrics"))
 }
 
 

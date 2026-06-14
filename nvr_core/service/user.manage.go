@@ -17,7 +17,7 @@ type UserManagementService interface {
 	GetAllUsers(ctx context.Context, page, pageSize int) ([]*models.User, int, error)
 	CreateUser(ctx context.Context, adminID int64, user *models.User) error
 	UpdateUserPassword(ctx context.Context, adminID, userID int64, encrypt string) error
-	UpdatePartial(ctx context.Context, adminID, userID int64, updates repository.PartialUpdateInterfaces) error
+	UpdatePartial(ctx context.Context, adminID, userID int64, updates models.PartialUpdateInterfaces) error
 	DeactivateUser(ctx context.Context, adminID, targetUserID int64) error
 
 	// Permissions
@@ -42,7 +42,7 @@ func (s *userServiceBase) CreateUser(ctx context.Context, adminID int64, user *m
 	return s.userRepo.Create(ctx, user)
 }
 
-func (s *userServiceBase) UpdatePartial(ctx context.Context, adminID, userID int64, updates repository.PartialUpdateInterfaces) error {
+func (s *userServiceBase) UpdatePartial(ctx context.Context, adminID, userID int64, updates models.PartialUpdateInterfaces) error {
 	return s.userRepo.UpdatePartial(ctx, userID, updates)
 }
 

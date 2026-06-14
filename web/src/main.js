@@ -11,3 +11,9 @@ const app = createApp(App)
 app.use(router)
 
 app.mount('#app')
+
+window.WEBAPP = app
+
+import API from '@/api'
+
+window.WEBAPI = API
