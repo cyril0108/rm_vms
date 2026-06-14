@@ -12,31 +12,25 @@ type CreateUserRequest struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
-	RoleId   int64  `json:"role_id"`
-	IsActive *bool   `json:"is_active"`
+	RoleID   int64  `json:"role_id"`
+	IsActive *bool  `json:"is_active"`
 }
 
 func (cu *CreateUserRequest) MapToDBUser() *models.User {
 	u := &models.User{
 		Username: cu.Username,
+		Name: cu.Name,
 		Password: cu.Password,
 		Email: cu.Email,
-		RoleID: cu.RoleId,
+		RoleID: cu.RoleID,
 	}
 	if cu.IsActive != nil {
 		u.IsActive = *cu.IsActive
+	} else {
+		u.IsActive = true
 	}
 	return u
 }
-
-// func (cu *CreateUserRequest) MapToPartialInterface() *models.PartialUpdateInterfaces {
-
-// 	var updates *models.PartialUpdateInterfaces
-
-// 	// if u.Name != nil { updates["name"] = *u.Name }
-
-
-// }
 
 type UpdateUserRequest struct {
 	Name     *string `json:"name,omitempty"`
@@ -46,9 +40,9 @@ type UpdateUserRequest struct {
 	IsActive *bool   `json:"is_active,omitempty"`
 }
 
-func (ur *UpdateUserRequest) MapToPartialInterface() *models.PartialUpdateInterfaces {
+func (ur *UpdateUserRequest) MapToPartialInterface() models.PartialUpdateInterfaces {
 
-	var updates models.PartialUpdateInterfaces
+	updates := make(models.PartialUpdateInterfaces)
 
 	if ur.Name      != nil { updates["name"] = *ur.Name }
 	if ur.Password  != nil { updates["password"] = *ur.Password }
@@ -56,7 +50,7 @@ func (ur *UpdateUserRequest) MapToPartialInterface() *models.PartialUpdateInterf
 	if ur.RoleId    != nil { updates["role_id"] = *ur.RoleId }
 	if ur.IsActive  != nil { updates["is_active"] = *ur.IsActive }
 
-	return &updates
+	return updates
 
 }
 

@@ -89,10 +89,12 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/admin/roles", authMid(http.HandlerFunc(api.HandleGetAllRoles)))
 
 	mux.HandleFunc("POST /api/admin/users/create", authMid(http.HandlerFunc(api.HandleCreateUser)))
+	mux.HandleFunc("PUT /api/admin/users/{id}", authMid(http.HandlerFunc(api.HandleUpdateUser)))
+	mux.HandleFunc("PUT /api/admin/users/{id}/password", authMid(http.HandlerFunc(api.HandleUpdateUserPassword)))
+	mux.HandleFunc("PUT /api/admin/users/{id}/permissions", authMid(http.HandlerFunc(api.HandleUpdateUserPermissions)))
 
 	mux.HandleFunc("DELETE /api/users/{id}", authMid(http.HandlerFunc(api.HandleDeactivateUser)))
 
-	mux.HandleFunc("PUT /api/admin/users/{id}/permissions", authMid(http.HandlerFunc(api.HandleUpdateUserPermissions)))
 
 
 	// =============================================

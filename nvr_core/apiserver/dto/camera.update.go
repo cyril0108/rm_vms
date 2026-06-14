@@ -1,8 +1,9 @@
 package dto
 
 import (
-	"nvr_core/security"
+	"nvr_core/db/models"
 	"nvr_core/onvif"
+	"nvr_core/security"
 )
 
 // UpdateCameraRequest uses pointers so we can differentiate between
@@ -59,9 +60,9 @@ func Onvif2UpdateCameraDetail(cam *onvif.OnvifRecord) *CameraDetailResponse {
 	}
 }
 
-func (u *UpdateCameraRequest) ToMapInterface(masterKey []byte) map[string]interface{} {
+func (u *UpdateCameraRequest) ToMapInterface(masterKey []byte) models.PartialUpdateInterfaces {
 
-	updates := make(map[string]interface{})
+	updates := make(models.PartialUpdateInterfaces)
 
 	if u.Name != nil { updates["name"] = *u.Name }
 	if u.UUID != nil { updates["uuid"] = *u.UUID }
@@ -105,9 +106,9 @@ func (u *UpdateCameraRequest) ToMapInterface(masterKey []byte) map[string]interf
 
 }
 
-func (u *UpdateCameraRequest) ToUserPWDMapInterface(masterKey []byte) map[string]interface{} {
+func (u *UpdateCameraRequest) ToUserPWDMapInterface(masterKey []byte) models.PartialUpdateInterfaces {
 
-	updates := make(map[string]interface{})
+	updates := make(models.PartialUpdateInterfaces)
 
 	if u.Username != nil { updates["username"] = *u.Username }
 

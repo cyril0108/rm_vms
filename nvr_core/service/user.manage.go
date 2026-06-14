@@ -43,6 +43,15 @@ func (s *userServiceBase) CreateUser(ctx context.Context, adminID int64, user *m
 }
 
 func (s *userServiceBase) UpdatePartial(ctx context.Context, adminID, userID int64, updates models.PartialUpdateInterfaces) error {
+
+	if pwd, ok := updates["password"].(string); ok {
+		hashed, err := security.HashPassword(pwd)
+		if err != nil {
+			return fmt.Errorf("hashing password failed: %w", err)
+		}
+		updates["password"] = hashed
+	}
+
 	return s.userRepo.UpdatePartial(ctx, userID, updates)
 }
 

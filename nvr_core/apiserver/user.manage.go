@@ -68,6 +68,47 @@ func (api *APIServer) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (api *APIServer) HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	session, ok := middleware.GetSession(ctx)
+	if !ok {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	targetUserID, err := getPathID(r, "id")
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	if !session.HasPermissionUserNoSelfManage(targetUserID) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	var payload dto.UpdateUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	maps := payload.MapToPartialInterface()
+	err = api.Services.User.UpdatePartial(ctx, session.UserID, targetUserID, maps)
+	if err != nil {
+		http.Error(w, "Failed to update role", http.StatusInternalServerError)
+		return
+	}
+
+	if _, ok := (maps)["role_id"].(int64); ok {
+		// Instantly expire their current session so they are forced to refresh and get their new permissions
+		api.Services.Auth.UpdateUserStatusForPermissionChange(targetUserID)
+	}
+
+	RespondJSON(w, map[string]string{"message": "Role updated successfully"})
+}
+
 // HandleDeactivateUser expects: DELETE /api/admin/users/{id}
 func (api *APIServer) HandleDeactivateUser(w http.ResponseWriter, r *http.Request) {
 
@@ -99,6 +140,46 @@ func (api *APIServer) HandleDeactivateUser(w http.ResponseWriter, r *http.Reques
 	_ = api.Services.Auth.LogoutDeactivatedUser(ctx, targetUserID)
 
 	RespondJSON(w, map[string]string{"message": "User deactivated successfully"})
+}
+
+func (api *APIServer) HandleUpdateUserPassword(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	session, ok := middleware.GetSession(ctx)
+	if !ok {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	targetUserID, err := getPathID(r, "id")
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	if !session.HasPermissionUserNoSelfManage(targetUserID) || targetUserID == session.UserID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	var payload struct {
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	err = api.Services.User.UpdateUserPassword(ctx, session.UserID, targetUserID, payload.Password)
+	if err != nil {
+		http.Error(w, "Failed to update role", http.StatusInternalServerError)
+		return
+	}
+
+	// Instantly expire their current session so they are forced to refresh and get their new permissions
+	api.Services.Auth.UpdateUserStatusForPermissionChange(targetUserID)
+
+	RespondJSON(w, map[string]string{"message": "Role updated successfully"})
 }
 
 // HandleUpdateUserRole expects: PUT /api/admin/users/{id}/role

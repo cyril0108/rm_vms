@@ -24,7 +24,13 @@ func NewUserStatusMap() *UserStatusMap {
 func (m *UserStatusMap) Login(userID int64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.statuses[userID] = time.Now().Unix()
+
+	if _, ok := m.statuses[userID]; !ok {
+		// only update login status if it does not exits
+		// Otherwise tokens for older login app/web 
+		// will be expired right away.
+		m.statuses[userID] = time.Now().Unix()
+	}
 }
 
 // UpdatePermissions instantly invalidates all currently active JWTs for a user

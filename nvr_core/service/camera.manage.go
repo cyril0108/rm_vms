@@ -16,7 +16,7 @@ type CameraManagementService interface {
 	GetAll(ctx context.Context) ([]*models.Camera, error)
 	GetAllForInSystemCheck(ctx context.Context) ([]*models.Camera, error)
 	AddCamera(ctx context.Context, cam *models.Camera) (int64, error)
-	UpdateCamera(ctx context.Context, id int64, cam map[string]interface{}) error
+	UpdateCamera(ctx context.Context, id int64, cam models.PartialUpdateInterfaces) error
 	DeleteCamera(ctx context.Context, id int64) error
 	ActivateCamera(ctx context.Context, id int64) error
 	DeactivateCamera(ctx context.Context, id int64) error
@@ -43,7 +43,7 @@ func (s *cameraServiceBase) AddCamera(ctx context.Context, cam *models.Camera) (
 	return s.repo.Create(ctx, cam)
 }
 
-func (s *cameraServiceBase) UpdateCamera(ctx context.Context, id int64, cam map[string]interface{}) error {
+func (s *cameraServiceBase) UpdateCamera(ctx context.Context, id int64, cam models.PartialUpdateInterfaces) error {
 	return s.repo.UpdatePartial(ctx, id, cam)
 }
 

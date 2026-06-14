@@ -157,13 +157,16 @@ VALUES
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
-    name TEXT UNIQUE NOT NULL,
+    name TEXT DEFAULT "",
     password TEXT NOT NULL,
     role_id  INTEGER NOT NULL,
     is_active BOOLEAN DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE RESTRICT
 );
+
+alter table users 
+add column name TEXT DEFAULT "";
 
 -- USER_CAMERA_ACCESS (Resource-Level Mapping)
 -- NVR Specific: Binds a user to specific cameras. 
