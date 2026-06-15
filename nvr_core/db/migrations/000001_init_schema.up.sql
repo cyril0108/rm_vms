@@ -85,8 +85,14 @@ CREATE TABLE roles (
 
 INSERT INTO roles (id, name, description)
 VALUES 
-(1, "擁有者", "admin"),
-(2, "管理者", "manager");
+(1, "admin", "擁有者"),
+(2, "manager", "管理者");
+
+INSERT INTO roles (id, name, description)
+VALUES 
+(3, "advance_user", "進階影像瀏覽使用者"),
+(4, "browser", "影像瀏覽使用者"),
+(5, "live_viewer", "即時影像監看使用者");
 
 UPDATE sqlite_sequence SET seq = (SELECT MAX(id) FROM roles) WHERE name = 'roles';
 
@@ -149,6 +155,18 @@ VALUES
 (2,9),
 (2,10);
 
+INSERT INTO role_permissions (role_id, permission_id)
+VALUES
+(3,6),
+(3,7),
+(3,8),
+(3,9),
+(3,10),
+(4,8),
+(4,9),
+(4,10),
+(5,10);
+
 
 -- ======================================
 -- USERS TABLE
@@ -165,8 +183,6 @@ CREATE TABLE users (
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE RESTRICT
 );
 
-alter table users 
-add column name TEXT DEFAULT "";
 
 -- USER_CAMERA_ACCESS (Resource-Level Mapping)
 -- NVR Specific: Binds a user to specific cameras. 
