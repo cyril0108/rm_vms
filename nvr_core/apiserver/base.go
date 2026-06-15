@@ -11,13 +11,7 @@ import (
 
 var LOG = logger.NewLogger("[nvr_core][apiserver]")
 
-// var (
-// 	ErrorInvalidPayload = errors.New("Invalid Payload")
-// )
 
-type APIResponse struct {
-	Data     any
-}
 
 func getPathID(r *http.Request, id string) (int64, error) {
 	targetIDStr := r.PathValue(id)
@@ -27,13 +21,6 @@ func getPathID(r *http.Request, id string) (int64, error) {
 func decodeRequest[T any](r *http.Request, req *T) error {
 	defer r.Body.Close()
 	return json.NewDecoder(r.Body).Decode(req)
-}
-
-func RespondJSON(w http.ResponseWriter, data any) error {
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(APIResponse{
-		Data: data,
-	})
 }
 
 func GetQueryProfile(r *http.Request) string {

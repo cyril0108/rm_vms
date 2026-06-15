@@ -8,9 +8,7 @@ import (
 	"nvr_core/apiserver/dto"
 	"nvr_core/db/models"
 
-	// "nvr_core/db/models"
 	"nvr_core/onvif"
-	// "nvr_core/process"
 	"nvr_core/utils"
 )
 
@@ -29,13 +27,13 @@ func (s *APIServer) UpdateCamera(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	var newCamera dto.UpdateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&newCamera); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
@@ -45,7 +43,7 @@ func (s *APIServer) UpdateCamera(w http.ResponseWriter, r *http.Request) {
 	if err := s.Services.Camera.UpdateCamera(ctx, camID, cam); err != nil {
 		errstr := fmt.Sprintf("Failed to update camera: %v", err)
 		log.Print(errstr)
-		http.Error(w, errstr, http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, errstr, http.StatusBadRequest)
 		return
 	}
 
@@ -57,7 +55,7 @@ func (s *APIServer) UpdateCamera(w http.ResponseWriter, r *http.Request) {
 	// theCamera := dto.MapCameraToDetail(*cam)
 
 	w.WriteHeader(http.StatusCreated)
-	if err := RespondJSON(w, "success"); err != nil {
+	if err := utils.RespondJSON(w, "", "success"); err != nil {
 		log.Printf("Error encoding new camera response: %v", err)
 	}
 }
@@ -80,7 +78,7 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
@@ -90,7 +88,7 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 	var newCamera *dto.UpdateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&newCamera); err != nil {
 		ll.Info("incorrect form?", "data", r.Body)
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
@@ -100,18 +98,18 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 	// before save
 	cam, err := s.Services.Camera.GetByID(ctx, camID)
 	if  err != nil {
-		http.Error(w, "Failed to get camera data or it does not exist.", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Failed to get camera data or it does not exist.", http.StatusBadRequest)
 		return
 	} else {
 
 		good, err := onvif.VerifyCredentials(cam.IPAddress, *newCamera.Username, *newCamera.Password)
 		if err != nil {
 			errstr := fmt.Sprintf("Failed to check credentials: %v", err)
-			http.Error(w, errstr, http.StatusBadRequest)
+			utils.RespondJSONHTTPStatus(w, errstr, http.StatusBadRequest)
 			return
 		}
 		if !good {
-			http.Error(w, "Camera credentials was wrong", http.StatusForbidden)
+			utils.RespondJSONHTTPStatus(w, "Camera credentials was wrong", http.StatusForbidden)
 			return
 		}
 
@@ -122,7 +120,7 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 	if err := s.Services.Camera.UpdateCamera(ctx, camID, camMap); err != nil {
 		errstr := fmt.Sprintf("Failed to update camera: %v", err)
 		log.Print(errstr)
-		http.Error(w, errstr, http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, errstr, http.StatusBadRequest)
 		return
 	}
 
@@ -136,7 +134,7 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 
 
 	w.WriteHeader(http.StatusCreated)
-	if err := RespondJSON(w, "success"); err != nil {
+	if err := utils.RespondJSON(w, "", "success"); err != nil {
 		log.Printf("Error encoding new camera response: %v", err)
 	}
 }
@@ -156,13 +154,13 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	var camReq dto.CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&camReq); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
@@ -172,7 +170,7 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 	// before save
 	cam, err := s.Services.Camera.GetByID(ctx, camID)
 	if err != nil {
-		http.Error(w, "Failed to get camera data or it does not exist.", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Failed to get camera data or it does not exist.", http.StatusBadRequest)
 		return
 	}
 
@@ -189,10 +187,10 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 	camOnvif, err := onvif.FetchCameraONVIFData(cam.IPAddress, user, pwd)
 	if err != nil {
 
-		// http.Error(w, "Failed to get ONVIF data", http.StatusInternalServerError)
+		// utils.RespondJSONHTTPStatus(w, "Failed to get ONVIF data", http.StatusInternalServerError)
 		errstr := fmt.Sprintf("Failed to get ONVIF data: %v", err)
 		log.Print(errstr)
-		http.Error(w, errstr, http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, errstr, http.StatusBadRequest)
 
 		return
 	}
@@ -202,7 +200,7 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 
 	if err := s.Services.Camera.UpdateCamera(ctx, camID, data); err != nil {
 		log.Printf("Failed to update camera: %v", err)
-		http.Error(w, "Failed to update camera", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to update camera", http.StatusInternalServerError)
 		return
 	}
 
@@ -212,7 +210,7 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	if err := RespondJSON(w, *dto.Onvif2UpdateCameraDetail(camOnvif)); err != nil {
+	if err := utils.RespondJSON(w, *dto.Onvif2UpdateCameraDetail(camOnvif), ""); err != nil {
 		log.Printf("Error encoding new camera response: %v", err)
 	}
 }

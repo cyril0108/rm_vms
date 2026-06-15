@@ -24,7 +24,7 @@ func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Reques
 
 	camID, err := strconv.Atoi(r.PathValue("cam_id"))
 	if err != nil {
-		http.Error(w, "Invalid camera ID", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid camera ID", http.StatusBadRequest)
 		return
 	}
 
@@ -32,13 +32,13 @@ func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Reques
 
 	worker, err := api.PM.CameraWorker(camID, profile)
 	if err != nil {
-		http.Error(w, "No worker for camera/profile", http.StatusNotFound)
+		utils.RespondJSONHTTPStatus(w, "No worker for camera/profile", http.StatusNotFound)
 		return
 	}
 
 	hub := worker.StreamHubForCam(camID, profile)
 	if hub == nil {
-		http.Error(w, "Stream not running", http.StatusNotFound)
+		utils.RespondJSONHTTPStatus(w, "Stream not running", http.StatusNotFound)
 		return
 	}
 

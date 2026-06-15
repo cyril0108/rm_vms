@@ -8,6 +8,7 @@ import (
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/service"
+	"nvr_core/utils"
 )
 
 // HandleLogin authenticates a user and provides session tokens.
@@ -18,7 +19,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			credentials	body		dto.LoginRequest	true	"User Login Credentials"
-//	@Success		200			{object}	dto.LoginResponse	"Successfully authenticated"
+//	@Success		200			{object}	APIResponse{ Data:dto.LoginResponse }	"Successfully authenticated"
 //	@Failure		400			{string}	string				"Invalid JSON payload"
 //	@Failure		401			{string}	string				"Invalid credentials or account disabled"
 //	@Failure		500			{string}	string				"Internal server error"
@@ -29,30 +30,31 @@ func (api *APIServer) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
 	// Call the Auth Service
-	token, refresh, perms, err := api.Services.Auth.Login(r.Context(), req.Username, req.Password)
+	user, token, refresh, perms, err := api.Services.Auth.Login(r.Context(), req.Username, req.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrAccountDisabled) {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 		log.Printf("[Auth API] Login error: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	// Formulate Response
 	resp := dto.LoginResponse{
+		User: *dto.NewLoginUser(user),
 		Token:        token,
 		RefreshToken: refresh,
 		Permissions:  perms,
 	}
 
-	RespondJSON(w, resp)
+	utils.RespondJSON(w, resp, "")
 }
 
 
@@ -75,7 +77,7 @@ func (api *APIServer) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.RefreshRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
@@ -83,11 +85,11 @@ func (api *APIServer) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	accessToken, perms, err := api.Services.Auth.RefreshToken(r.Context(), req.RefreshToken)
 	if err != nil {
 		if errors.Is(err, service.ErrUnauthorized) || errors.Is(err, service.ErrAccountDisabled) {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			utils.RespondJSONHTTPStatus(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 		log.Printf("[Auth API] Refresh error: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -97,7 +99,7 @@ func (api *APIServer) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 		Permissions: perms,
 	}
 
-	RespondJSON(w, resp)
+	utils.RespondJSON(w, resp, "")
 }
 
 // HandleAppLogout expects: POST /api/logout
@@ -115,7 +117,7 @@ func (api *APIServer) HandleLogout(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.RefreshRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
@@ -127,5 +129,5 @@ func (api *APIServer) HandleLogout(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[Auth API] App Logout error: %v", err)
 	}
 
-	RespondJSON(w, map[string]string{"message": "Logged out successfully"})
+	utils.RespondJSON(w, "", "Logged out successfully")
 }

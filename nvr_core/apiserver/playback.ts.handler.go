@@ -16,19 +16,19 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	timestamp, err := GetSearchAtTime(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	duration, _ := GetDurationTime(r)
 	if duration == 0 && err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -38,10 +38,10 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 	seg, err := api.Services.Playback.GetVideoSegment(r.Context(), camID, profile, timestamp)
 	if err != nil {
 		if errors.Is(err, service.ErrVideoSegmentNotFound) || errors.Is(err, service.ErrFileMissing) {
-			http.Error(w, "Video not found", http.StatusNotFound)
+			utils.RespondJSONHTTPStatus(w, "Video not found", http.StatusNotFound)
 			return
 		}
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

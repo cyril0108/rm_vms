@@ -3,6 +3,7 @@ package apiserver
 import (
 	"encoding/hex"
 	"net/http"
+	"nvr_core/utils"
 )
 
 // =======================================
@@ -29,7 +30,7 @@ func (s *APIServer) HandleExportMasterKey(w http.ResponseWriter, r *http.Request
 		"instructions":   "Store this key in a secure password manager. If the server hardware fails, you will need this exact string to decrypt camera passwords.",
 	}
 
-	if err := RespondJSON(w, response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	if err := utils.RespondJSON(w, response, ""); err != nil {
+		utils.RespondJSONHTTPStatus(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }

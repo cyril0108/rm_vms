@@ -26,7 +26,7 @@ var (
 
 type AuthService interface {
 	// Login validates credentials and returns (accessToken, refreshToken, permissions, error)
-	Login(ctx context.Context, username string, password string) (string, string, []string, error)
+	Login(ctx context.Context, username string, password string) (*models.User, string, string, []string, error)
 	// ValidateToken parses a JWT and returns its claims if valid
 	ValidateToken(tokenString string) (jwt.MapClaims, error)
 	RefreshToken(ctx context.Context, rawRefreshToken string) (string, []string, error)
@@ -63,25 +63,25 @@ func (s *authServiceBase) LogoutDeactivatedUser(ctx context.Context, userID int6
 	return  nil
 }
 
-func (s *authServiceBase) Login(ctx context.Context, username string, password string) (string, string, []string, error) {
+func (s *authServiceBase) Login(ctx context.Context, username string, password string) (*models.User, string, string, []string, error) {
 	// Fetch user by username
 	user, err := s.userRepo.GetByUsername(ctx, username)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
-			return "", "", nil, ErrInvalidCredentials // Generic error to prevent username enumeration
+			return nil, "", "", nil, ErrInvalidCredentials // Generic error to prevent username enumeration
 		}
-		return "", "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	// Check active status
 	if !user.IsActive {
-		return "", "", nil, ErrAccountDisabled
+		return nil, "", "", nil, ErrAccountDisabled
 	}
 
 	// Verify bcrypt password hash
 	match, err := security.CheckPasswordHash(password, user.Password)
 	if err != nil || !match {
-		return "", "", nil, ErrInvalidCredentials
+		return nil, "", "", nil, ErrInvalidCredentials
 	}
 
 	// Try to migrate to new hash algorithm automatically
@@ -97,7 +97,7 @@ func (s *authServiceBase) Login(ctx context.Context, username string, password s
 	// Fetch the aggregated permissions (Role + Direct Grants)
 	permissions, err := s.permRepo.GetUserPermissionCodes(ctx, user.ID)
 	if err != nil {
-		return "", "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	// ==========================================
@@ -105,7 +105,7 @@ func (s *authServiceBase) Login(ctx context.Context, username string, password s
 	// ==========================================
 	accessToken, err := s.generateToken(user, permissions)
 	if err != nil {
-		return "", "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	// ==========================================
@@ -113,7 +113,7 @@ func (s *authServiceBase) Login(ctx context.Context, username string, password s
 	// ==========================================
 	rawRefreshToken, err := security.GenerateSecureToken(32) // Generates a 64-character hex string
 	if err != nil {
-		return "", "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	// Hash the token before storing it in SQLite
@@ -129,7 +129,7 @@ func (s *authServiceBase) Login(ctx context.Context, username string, password s
 
 	// Save to database
 	if err := s.reTokenRepo.Create(ctx, refreshTokenRecord); err != nil {
-		return "", "", nil, err
+		return nil, "", "", nil, err
 	}
 
 	// ==========================================
@@ -138,7 +138,7 @@ func (s *authServiceBase) Login(ctx context.Context, username string, password s
 	// Register the user in the allowlist so their new JWT is instantly valid
 	s.userStatus.Login(user.ID)
 
-	return accessToken, rawRefreshToken, permissions, nil
+	return user, accessToken, rawRefreshToken, permissions, nil
 }
 
 func (s *authServiceBase) ValidateToken(tokenString string) (jwt.MapClaims, error) {

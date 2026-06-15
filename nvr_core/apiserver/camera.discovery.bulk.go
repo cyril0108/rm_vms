@@ -2,20 +2,21 @@ package apiserver
 
 import (
 	"encoding/json"
-	"sync"
 	"log"
 	"net/http"
+	"sync"
 
 	"nvr_core/network"
 	"nvr_core/onvif"
 	"nvr_core/onvif/discovery"
+	"nvr_core/utils"
 )
 
 // HandleBulkONVIFScan performs a fast sweep followed by authenticated data fetching
 func (s *APIServer) HandleBulkONVIFScan(w http.ResponseWriter, r *http.Request) {
 	var req onvif.BulkScanRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondErrInvalidPayload(w)
 		return
 	}
 
@@ -30,20 +31,20 @@ func (s *APIServer) HandleBulkONVIFScan(w http.ResponseWriter, r *http.Request) 
 	if req.StartIP == "" {
 		baseIP, err := network.GetPrimarySubnetBase()
 		if err != nil {
-			http.Error(w, "Failed to detect LAN subnet", http.StatusInternalServerError)
+			utils.RespondJSONHTTPStatus(w, "Failed to detect LAN subnet", http.StatusInternalServerError)
 			return
 		}
 		sweepResults = ScanSweepPrimarySubnet(ctx, baseIP)
 	} else {
 		if err := network.IsSafeTarget(req.StartIP); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		sweepResults, _ = ScanSweepSubnetRange(ctx, req.StartIP, req.EndIP)
 	}
 
 	if len(sweepResults) == 0 {
-		RespondJSON(w, []onvif.OnvifRecord{}) // Return empty array if no cameras found
+		utils.RespondJSON(w, []onvif.OnvifRecord{}, "") // Return empty array if no cameras found
 		return
 	}
 
@@ -92,7 +93,7 @@ func (s *APIServer) HandleBulkONVIFScan(w http.ResponseWriter, r *http.Request) 
 
 	detailedRecords = s.ApplyCamerasOnvifRecordInSystemCheck(ctx, detailedRecords)
 
-	if err := RespondJSON(w, detailedRecords); err != nil {
+	if err := utils.RespondJSON(w, detailedRecords, ""); err != nil {
 		log.Printf("Error encoding bulk results: %v", err)
 	}
 }

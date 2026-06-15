@@ -3,6 +3,7 @@ package apiserver
 import (
 	"net/http"
 	"nvr_core/shm"
+	"nvr_core/utils"
 )
 
 // HandleGetSHMMetrics aggregates the ring buffer stats from all running workers
@@ -19,5 +20,5 @@ func (api *APIServer) HandleGetSHMMetrics(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	RespondJSON(w, allMetrics)
+	utils.RespondJSON(w, allMetrics, "")
 }

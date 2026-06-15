@@ -1,9 +1,6 @@
 package webserver
 
 import (
-	// "fmt"
-	// "io"
-	// "log"
 	"io"
 	"log"
 	"net/http"
@@ -11,10 +8,7 @@ import (
 	"strings"
 	"time"
 
-	// "path/filepath"
-	// "time"
 	"nvr_core/utils"
-
 )
 
 func ServeWeb(mux *http.ServeMux, config *utils.Config) {

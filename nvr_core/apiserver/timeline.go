@@ -15,7 +15,7 @@ func (api *APIServer) GetProfileSegments(w http.ResponseWriter, r *http.Request)
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
@@ -23,14 +23,14 @@ func (api *APIServer) GetProfileSegments(w http.ResponseWriter, r *http.Request)
 
 	start, end, err := GetMSTimeRange(r)
 	if err != nil {
-		http.Error(w, "Invalid start or end timestamps", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid start or end timestamps", http.StatusBadRequest)
 		return
 	}
 
 	items, err := api.Services.Timeline.GetProfileSegmentItems(api.Context, camID, profile, start, end)
 
 	if err != nil {
-		http.Error(w, "failed to get profile segments", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "failed to get profile segments", http.StatusInternalServerError)
 		return
 	}
 
@@ -40,7 +40,7 @@ func (api *APIServer) GetProfileSegments(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Send the JSON payload
-	if err := RespondJSON(w, response); err != nil {
+	if err := utils.RespondJSON(w, response, ""); err != nil {
 		log.Printf("[API] Error encoding response: %v", err)
 	}
 
@@ -51,20 +51,20 @@ func (api *APIServer) GetSegmentSnapshots(w http.ResponseWriter, r *http.Request
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	start, end, err := GetMSTimeRange(r)
 	if err != nil {
-		http.Error(w, "Invalid start or end timestamps", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid start or end timestamps", http.StatusBadRequest)
 		return
 	}
 
 	items, err := api.Services.Timeline.GetCameraSnapshots(api.Context, camID, start, end)
 
 	if err != nil {
-		http.Error(w, "failed to get profile segments", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "failed to get profile segments", http.StatusInternalServerError)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (api *APIServer) GetSegmentSnapshots(w http.ResponseWriter, r *http.Request
 	}
 
 	// Send the JSON payload
-	if err := RespondJSON(w, response); err != nil {
+	if err := utils.RespondJSON(w, response, ""); err != nil {
 		log.Printf("[API] Error encoding response: %v", err)
 	}
 
@@ -98,7 +98,7 @@ func (api *APIServer) GetTimeline(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
@@ -110,7 +110,7 @@ func (api *APIServer) GetTimeline(w http.ResponseWriter, r *http.Request) {
 	end, err3 := strconv.ParseInt(endStr, 10, 64)
 
 	if err2 != nil || err3 != nil {
-		http.Error(w, "Invalid query parameters. Requires cam_id, start, and end (Unix ms)", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid query parameters. Requires cam_id, start, and end (Unix ms)", http.StatusBadRequest)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (api *APIServer) GetTimeline(w http.ResponseWriter, r *http.Request) {
 
 	if(errTimeline != nil) {
 		log.Println("[GetTimeline] failed to get timeline blocks", errTimeline.Error())
-		http.Error(w, "failed to get timeline blocks", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "failed to get timeline blocks", http.StatusInternalServerError)
 		return
 	}
 
@@ -133,7 +133,7 @@ func (api *APIServer) GetTimeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send the JSON payload
-	if err := RespondJSON(w, response); err != nil {
+	if err := utils.RespondJSON(w, response, ""); err != nil {
 		log.Printf("[API] Error encoding search response: %v", err)
 	}
 }
@@ -143,7 +143,7 @@ func (api *APIServer) HandleSegmentSnapshot(w http.ResponseWriter, r *http.Reque
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
@@ -151,7 +151,7 @@ func (api *APIServer) HandleSegmentSnapshot(w http.ResponseWriter, r *http.Reque
 	// of sql search condition.
 	timestamp, err := GetSearchAtTime(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -159,10 +159,10 @@ func (api *APIServer) HandleSegmentSnapshot(w http.ResponseWriter, r *http.Reque
 	filePath, err := api.Services.Playback.GetVideoSnapshotFilePath(r.Context(), camID, timestamp)
 	if err != nil {
 		if errors.Is(err, service.ErrVideoSegmentNotFound) || errors.Is(err, service.ErrFileMissing) {
-			http.Error(w, "Snapshot not found", http.StatusNotFound)
+			utils.RespondJSONHTTPStatus(w, "Snapshot not found", http.StatusNotFound)
 			return
 		}
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

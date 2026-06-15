@@ -13,13 +13,13 @@ import (
 func (api *APIServer) HandleGetPlaylist(w http.ResponseWriter, r *http.Request) {
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	start, end, err := GetMSTimeRange(r)
 	if err != nil {
-		http.Error(w, "Invalid start or end timestamps", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid start or end timestamps", http.StatusBadRequest)
 		return
 	}
 
@@ -37,10 +37,10 @@ func (api *APIServer) HandleGetPlaylist(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		if errors.Is(err, service.ErrVideoSegmentNotFound) {
-			http.Error(w, "No video found for this time range", http.StatusNotFound)
+			utils.RespondJSONHTTPStatus(w, "No video found for this time range", http.StatusNotFound)
 			return
 		}
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

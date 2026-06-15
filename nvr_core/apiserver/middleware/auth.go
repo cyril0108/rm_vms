@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"nvr_core/service"
+	"nvr_core/utils"
 )
 
 // contextKey is an unexported type to prevent collisions in the context map
@@ -49,7 +50,7 @@ func RequireAuth(authService service.AuthService) func(http.Handler) http.Handle
 			// Extract the token from the Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-				http.Error(w, "Unauthorized: missing or invalid Bearer token", http.StatusUnauthorized)
+				utils.RespondJSONHTTPStatus(w, "Unauthorized: missing or invalid Bearer token", http.StatusUnauthorized)
 				return
 			}
 
@@ -58,7 +59,7 @@ func RequireAuth(authService service.AuthService) func(http.Handler) http.Handle
 			// Validate the token using your Auth Service
 			claims, err := authService.ValidateToken(tokenString)
 			if err != nil {
-				http.Error(w, "Unauthorized: invalid or expired token", http.StatusUnauthorized)
+				utils.RespondJSONHTTPStatus(w, "Unauthorized: invalid or expired token", http.StatusUnauthorized)
 				return
 			}
 

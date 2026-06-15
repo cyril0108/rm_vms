@@ -17,7 +17,7 @@ func (s *APIServer) GetStream(w http.ResponseWriter, r *http.Request) {
 
 	id, idErr := utils.Str2Int(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 

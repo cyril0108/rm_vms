@@ -9,6 +9,7 @@ import (
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/service"
+	"nvr_core/utils"
 )
 
 const WebCookieNameRefreshToken = "nvr_refresh_token"
@@ -65,19 +66,19 @@ func (api *APIServer) HandleWebLogin(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
 	// Call the EXACT SAME Auth Service used by mobile apps
-	token, refreshToken, perms, err := api.Services.Auth.Login(r.Context(), req.Username, req.Password)
+	user, token, refreshToken, perms, err := api.Services.Auth.Login(r.Context(), req.Username, req.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrAccountDisabled) {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 		log.Printf("[Web Auth] Login error: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -87,11 +88,12 @@ func (api *APIServer) HandleWebLogin(w http.ResponseWriter, r *http.Request) {
 
 	// Formulate Response: ONLY return the short-lived JWT and permissions in the JSON body
 	resp := dto.LoginResponse{
+		User: *dto.NewLoginUser(user),
 		Token:       token,
 		Permissions: perms,
 	}
 
-	RespondJSON(w, resp)
+	utils.RespondJSON(w, resp, "")
 }
 
 
@@ -113,13 +115,13 @@ func (api *APIServer) HandleWebRefreshOrLogout(w http.ResponseWriter, r *http.Re
 	// Extract the refresh token directly from the Secure Cookie
 	rawRefreshToken, err := getWebRefreshTokenCookie(r)
 	if err != nil {
-		http.Error(w, "No refresh token found", http.StatusUnauthorized)
+		utils.RespondJSONHTTPStatus(w, "No refresh token found", http.StatusUnauthorized)
 		return
 	}
 
 	var req dto.RefreshLogoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
@@ -134,11 +136,11 @@ func (api *APIServer) HandleWebRefreshOrLogout(w http.ResponseWriter, r *http.Re
 		if errors.Is(err, service.ErrUnauthorized) || errors.Is(err, service.ErrAccountDisabled) {
 			// If the refresh token is dead, clear the cookie so the browser forgets it
 			revokeWebRefreshTokenCookie(w)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			utils.RespondJSONHTTPStatus(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 		log.Printf("[Web Auth] Refresh error: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -148,7 +150,7 @@ func (api *APIServer) HandleWebRefreshOrLogout(w http.ResponseWriter, r *http.Re
 		Permissions: perms,
 	}
 
-	RespondJSON(w, resp)
+	utils.RespondJSON(w, resp, "")
 }
 
 
@@ -159,14 +161,14 @@ func (api *APIServer) HandleWebRefreshOrLogout(w http.ResponseWriter, r *http.Re
 // 	rawRefreshToken, err := getWebRefreshTokenCookie(r)
 // 	if err != nil {
 // 		log.Printf("[HandleWebLogout] err %v", err)
-// 		http.Error(w, "No refresh token found", http.StatusUnauthorized)
+// 		utils.RespondJSONHTTPStatus(w, "No refresh token found", http.StatusUnauthorized)
 // 		return
 // 	}
 
 // 	revokeResult := ""
 // 	err = api.Services.Auth.RevokeRefreshToken(api.Context, rawRefreshToken)
 // 	if err != nil {
-// 		// http.Error(w, "No refresh token found", http.StatusUnauthorized)
+// 		// utils.RespondJSONHTTPStatus(w, "No refresh token found", http.StatusUnauthorized)
 // 		// return
 // 		log.Printf("[Web Auth] Failed to revoke db refresh token: %v", err)
 // 		revokeResult = " Warning: Failed to revoke in db. Check system log for detail."
@@ -184,7 +186,7 @@ func (api *APIServer) doWebLogout(w http.ResponseWriter, rawRefreshToken string)
 	revokeResult := ""
 	err := api.Services.Auth.RevokeRefreshToken(api.Context, rawRefreshToken)
 	if err != nil {
-		// http.Error(w, "No refresh token found", http.StatusUnauthorized)
+		// utils.RespondJSONHTTPStatus(w, "No refresh token found", http.StatusUnauthorized)
 		// return
 		log.Printf("[Web Auth] Failed to revoke db refresh token: %v", err)
 		revokeResult = " Warning: Failed to revoke in db. Check system log for detail."

@@ -13,19 +13,19 @@ func (api *APIServer) HandlePlayVideo(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	// timeStr := r.URL.Query().Get("time")
 	// timestamp, err := strconv.ParseInt(timeStr, 10, 64)
 	// if err != nil {
-	// 	http.Error(w, "Invalid timestamp", http.StatusBadRequest)
+	// 	utils.RespondJSONHTTPStatus(w, "Invalid timestamp", http.StatusBadRequest)
 	// 	return
 	// }
 	timestamp, err := GetSearchAtTime(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -35,10 +35,10 @@ func (api *APIServer) HandlePlayVideo(w http.ResponseWriter, r *http.Request) {
 	filePath, err := api.Services.Playback.GetVideoFilePath(r.Context(), camID, profile, timestamp)
 	if err != nil {
 		if errors.Is(err, service.ErrVideoSegmentNotFound) || errors.Is(err, service.ErrFileMissing) {
-			http.Error(w, "Video not found", http.StatusNotFound)
+			utils.RespondJSONHTTPStatus(w, "Video not found", http.StatusNotFound)
 			return
 		}
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

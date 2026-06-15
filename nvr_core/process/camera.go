@@ -4,7 +4,8 @@ import "nvr_core/db/models"
 
 // StreamProfile represents the state of a specific stream on a specific worker
 type StreamProfile struct {
-    URL       string `json:"url"`
+    Source    string `json:"source"`
+    LiveURL   string `json:"live_url"`
     WorkerID  int    `json:"worker_id"` // Moved here! Can be different for main/sub
     ChannelID int    `json:"channel_id"`
     VCodec    uint32 `json:"vcodec"`
@@ -63,7 +64,7 @@ func NewCameraRuntime(c *models.Camera) *Camera {
 
 func NewStreamProfile(url string) *StreamProfile {
     pf := &StreamProfile{
-        URL: url,
+        Source: url,
         WorkerID: -1,
         Status: "",
         ChannelID: -1,

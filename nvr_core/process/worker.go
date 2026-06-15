@@ -314,7 +314,7 @@ func (w *Worker) StartStreamProfile(camID int, profile string, sp *StreamProfile
 	rStr := strconv.FormatBool(recording)
 
 	sp.Status = "starting"
-	command := fmt.Sprintf("START %d %s %s %s", camID, profile, sp.URL, rStr)
+	command := fmt.Sprintf("START %d %s %s %s", camID, profile, sp.Source, rStr)
 	return w.SendCommand(command)
 
 }

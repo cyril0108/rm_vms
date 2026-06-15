@@ -86,10 +86,7 @@ CREATE TABLE roles (
 INSERT INTO roles (id, name, description)
 VALUES 
 (1, "admin", "擁有者"),
-(2, "manager", "管理者");
-
-INSERT INTO roles (id, name, description)
-VALUES 
+(2, "manager", "管理者"),
 (3, "advance_user", "進階影像瀏覽使用者"),
 (4, "browser", "影像瀏覽使用者"),
 (5, "live_viewer", "即時影像監看使用者");
@@ -153,10 +150,7 @@ VALUES
 (2,7),
 (2,8),
 (2,9),
-(2,10);
-
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
+(2,10),
 (3,6),
 (3,7),
 (3,8),

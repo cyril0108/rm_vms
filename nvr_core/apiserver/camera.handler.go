@@ -24,7 +24,7 @@ func (s *APIServer) GetCameras(w http.ResponseWriter, r *http.Request) {
 
 	camList := s.PM.AllCameras()
 
-	if err := RespondJSON(w, camList); err != nil {
+	if err := utils.RespondJSON(w, camList, ""); err != nil {
 		log.Printf("Error encoding camera list: %v", err)
 		// Connection likely dropped; no need to write http.Error
 	}
@@ -45,13 +45,13 @@ func (s *APIServer) GetDBCameras(w http.ResponseWriter, r *http.Request) {
 
 	if(err != nil) {
 		log.Printf("Error getting database camera list: %v", err)
-		http.Error(w, "failed to get db cameras.", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "failed to get db cameras.", http.StatusInternalServerError)
 		return
 	}
 
 	log.Printf("[GetCameras] camList(%d)\n", len(camList))
 
-	if err := RespondJSON(w, camList); err != nil {
+	if err := utils.RespondJSON(w, camList, ""); err != nil {
 		log.Printf("Error encoding camera list: %v", err)
 		// Connection likely dropped; no need to write http.Error
 	}
@@ -70,7 +70,7 @@ func (s *APIServer) HandleFetchSystemCameraONVIF(w http.ResponseWriter, r *http.
 
 	camID, idErr := utils.Str2CamID(r.PathValue("id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
@@ -79,20 +79,20 @@ func (s *APIServer) HandleFetchSystemCameraONVIF(w http.ResponseWriter, r *http.
 	cam, camErr := s.Services.Camera.GetByID(ctx, camID)
 	if camErr != nil {
 
-		http.Error(w, "No camera data with given ID", http.StatusNotFound)
+		utils.RespondJSONHTTPStatus(w, "No camera data with given ID", http.StatusNotFound)
 		return
 
 	}
 
 	pwd, pwdErr := cam.DecryptPassword(s.CFG.Server.MasterKey())
 	if pwdErr != nil {
-		http.Error(w, "Failed to decrypt camera password", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to decrypt camera password", http.StatusInternalServerError)
 		return
 	}
 
 	result, err := onvif.FetchCameraONVIFData(cam.IPAddress, cam.Username, pwd)
 	if result==nil && err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -100,9 +100,9 @@ func (s *APIServer) HandleFetchSystemCameraONVIF(w http.ResponseWriter, r *http.
 		result.ErrorMSG = err.Error()
 	}
 
-	if err := RespondJSON(w, result); err != nil {
+	if err := utils.RespondJSON(w, result, ""); err != nil {
 		log.Printf("Error fetching camera ONVIF data: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
 	}
 
 }
@@ -145,7 +145,7 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 
 	var newCamera dto.CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&newCamera); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 	if _, err := s.Services.Camera.AddCamera(ctx, cam); err != nil {
 		errstr := fmt.Sprintf("Failed to add camera: %v", err)
 		log.Print(errstr)
-		http.Error(w, errstr, http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, errstr, http.StatusBadRequest)
 		return
 	}
 
@@ -164,7 +164,7 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 	theCamera := dto.MapCameraToDetail(*cam)
 
 	w.WriteHeader(http.StatusCreated)
-	if err := RespondJSON(w, theCamera); err != nil {
+	if err := utils.RespondJSON(w, theCamera, ""); err != nil {
 		log.Printf("Error encoding new camera response: %v", err)
 	}
 }
@@ -191,17 +191,17 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 
 	var camReq dto.CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&camReq); err != nil {
-		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
 	cam, camErr := onvif.FetchCameraONVIFData(camReq.IPAddress, camReq.Username, camReq.Password)
 	if camErr != nil {
 
-		// http.Error(w, "Failed to get ONVIF data", http.StatusInternalServerError)
+		// utils.RespondJSONHTTPStatus(w, "Failed to get ONVIF data", http.StatusInternalServerError)
 		errstr := fmt.Sprintf("Failed to get ONVIF data: %v", camErr)
 		log.Print(errstr)
-		http.Error(w, errstr, http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, errstr, http.StatusBadRequest)
 
 		return
 	}
@@ -211,14 +211,14 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 	newCam.EncryptPassword(camReq.Password, s.CFG.Server.MasterKey())
 	if _, err := s.Services.Camera.AddCamera(ctx, newCam); err != nil {
 		log.Printf("Failed to add camera: %v", err)
-		http.Error(w, "Failed to add camera", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to add camera", http.StatusInternalServerError)
 		return
 	}
 
 	s.PM.AssignNewCamera(newCam)
 
 	w.WriteHeader(http.StatusCreated)
-	if err := RespondJSON(w, dto.MapCameraToDetail(*newCam)); err != nil {
+	if err := utils.RespondJSON(w, dto.MapCameraToDetail(*newCam), ""); err != nil {
 		log.Printf("Error encoding new camera response: %v", err)
 	}
 }
@@ -238,23 +238,23 @@ func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	ctx := r.Context()
 	if err := s.Services.Camera.ActivateCamera(ctx, int64(camID)); err != nil {
 		log.Printf("Failed to deactivate camera: %v", err)
-		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to stop camera recording", http.StatusInternalServerError)
 		return
 	}
 
 	if err := s.PM.StartCameraRecording(int(camID)); err != nil {
 		log.Printf("Failed to activate camera runtime err: %v", err)
-		http.Error(w, "Failed to start camera recording", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to start camera recording", http.StatusInternalServerError)
 	}
 
-	if err := RespondJSON(w, "started"); err != nil {
+	if err := utils.RespondJSON(w, "", "started"); err != nil {
 		log.Printf("Error encoding response: %v", err)
 	}
 
@@ -275,23 +275,23 @@ func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	ctx := r.Context()
 	if err := s.Services.Camera.DeactivateCamera(ctx, camID); err != nil {
 		log.Printf("Failed to deactivate camera: %v", err)
-		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to stop camera recording", http.StatusInternalServerError)
 		return
 	}
 
 	if err := s.PM.StopCameraRecording(int(camID)); err != nil {
 		log.Printf("Failed to deactivate camera runtime err: %v", err)
-		http.Error(w, "Failed to stop camera recording", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to stop camera recording", http.StatusInternalServerError)
 	}
 
-	if err := RespondJSON(w, "stopped"); err != nil {
+	if err := utils.RespondJSON(w, "", "stopped"); err != nil {
 		log.Printf("Error encoding response: %v", err)
 	}
 
@@ -312,23 +312,23 @@ func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
-		http.Error(w, "Invalid cam id", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
 	// if(camID <= 3 && camID>0) {
-	// 	http.Error(w, "[dev] testing camera id should not be deleted.", http.StatusBadRequest)
+	// 	utils.RespondJSONHTTPStatus(w, "[dev] testing camera id should not be deleted.", http.StatusBadRequest)
 	// 	return
 	// }
 
 	ctx := r.Context()
 	if err := s.Services.Camera.DeleteCamera(ctx, camID); err != nil {
 		log.Printf("Failed to delete camera: %v", err)
-		http.Error(w, "Failed to delete camera", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to delete camera", http.StatusInternalServerError)
 		return
 	}
 
-	if err := RespondJSON(w, "deleted"); err != nil {
+	if err := utils.RespondJSON(w, "", "deleted"); err != nil {
 		log.Printf("Error encoding delete camera response: %v", err)
 	}
 
