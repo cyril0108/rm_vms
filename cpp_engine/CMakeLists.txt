@@ -1,8 +1,38 @@
 cmake_minimum_required(VERSION 3.10)
-project(nvr_worker)
+
+if(NOT DEFINED THE_VERSION OR THE_VERSION STREQUAL "")
+    set(THE_VERSION "0.0.0")
+endif()
+
+project(nvr_worker VERSION ${THE_VERSION})
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+# ==============================================================================
+# VERSIONING METADATA EXTRACTION
+# ==============================================================================
+# Fetch the Git Hash if it does not exist
+if(NOT DEFINED GIT_HASH OR GIT_HASH STREQUAL "unknown" OR GIT_HASH STREQUAL "")
+    execute_process(
+        COMMAND git rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+endif()
+
+# Fallback just in case you compile outside of Git
+if(NOT GIT_HASH)
+    set(GIT_HASH "unknown")
+endif()
+
+# Fetch the current Timestamp
+string(TIMESTAMP BUILD_TIME "%Y-%m-%dT%H:%M:%S")
+# ==============================================================================
+
 
 # Find FFmpeg Libraries
 find_package(PkgConfig REQUIRED)
@@ -45,3 +75,12 @@ target_link_libraries(nvr_worker
     swresample
 )
 
+
+# ==============================================================================
+# INJECT MACROS INTO C++
+# ==============================================================================
+target_compile_definitions(nvr_worker PRIVATE 
+    NVR_VERSION="${PROJECT_VERSION}"
+    NVR_GIT_HASH="${GIT_HASH}"
+    NVR_BUILD_TIME="${BUILD_TIME}"
+)

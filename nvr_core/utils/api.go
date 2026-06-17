@@ -29,11 +29,13 @@ func RespondJSONHTTPStatus(w http.ResponseWriter, payload interface{}, code int)
 
     if message, ok := payload.(string); ok {
     	json.NewEncoder(w).Encode(APIResponse{
+    	    Data: "",
     	    Message: message,
     	})
     } else 
     if err, ok := payload.(error); ok {
     	json.NewEncoder(w).Encode(APIResponse{
+    		Data: "",
     	    Message: err.Error(),
     	})
     } else {

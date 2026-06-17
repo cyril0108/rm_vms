@@ -17,6 +17,11 @@ std::string cameraKey(std::string camID, std::string profile) {
 }
 
 int main(int argc, char* argv[]) {
+
+    std::cout << "Starting NVR Worker v" << NVR_VERSION 
+                  << " (Commit: " << NVR_GIT_HASH 
+                  << " | Built: " << NVR_BUILD_TIME << ")" << std::endl;
+
     // Optimize I/O
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);

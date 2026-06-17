@@ -1,0 +1,8 @@
+#pragma once
+#include <string>
+
+namespace NVR {
+    const std::string VERSION = "@PROJECT_VERSION@";
+    const std::string GIT_COMMIT = "@GIT_HASH@";
+    const std::string BUILD_TIMESTAMP = "@BUILD_TIME@";
+}

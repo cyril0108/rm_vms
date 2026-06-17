@@ -1,16 +1,23 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"time"
 
 	// Internal Packages
 	"nvr_core/apiserver"
 	"nvr_core/db"
+	"nvr_core/logger"
 	"nvr_core/process"
 	"nvr_core/service"
 	"nvr_core/utils"
+)
+
+// Version Info with default values
+// Should be set by GO_LDFLAGS
+var (
+    Version   = "dev"
+    CommitSHA = "none"
+    BuildTime = "unknown"
 )
 
 // @title           NVR Core API
@@ -24,28 +31,36 @@ func main() {
 	ctx, cancel := utils.SetupSignalContext()
 	defer cancel() // Ensures resources are freed when main exits
 
+	ll := logger.NewLogger("")
+
 	// Load Configuration
-	fmt.Println("================================================")
-	fmt.Println("[Go Manager] v.0.0.1")
-	fmt.Println("[Go Manager] Loading config...")
+	ll.Info("=======================================================================")
+	ll = ll.Prefix("[Go]")
+
+	ll.Info("", "ver", Version, "commit", CommitSHA, "build_time", BuildTime)
+
+	ll.Info("Loading config...")
 
 	cfg, err := utils.LoadConfig("config.json")
 	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
+		// log.Fatalf("Error loading config: %v", err)
+		ll.Error("Error loading config", "error", err)
+		return
 	}
 
 	dbPath := cfg.Server.DBPath+"/nvr_metadata.db"
 
-	log.Println("Attempting to open DB at:", dbPath)
+	ll.Info("Attempting to open DB at:", "path", dbPath)
 	dbConn, err := db.InitiateDB(ctx, dbPath)
 
 	if err != nil {
-		log.Fatalf("Error Initiate database: %v", err)
+		// log.Fatalf("Error Initiate database: %v", err)
+		ll.Error("Error Initiate database", "error", err)
+		return
 	}
 
 
-	fmt.Printf("[Go Manager] Config Loaded. Storage: %s, Port: %d \n", 
-			cfg.Server.StoragePath, cfg.Server.Port)
+	ll.Info("Config Loaded", "Storage", cfg.Server.StoragePath, "Port", cfg.Server.Port)
 
 	servs := service.NewServices(dbConn)
 	ingester := service.StartIngester(ctx, dbConn)
@@ -53,7 +68,9 @@ func main() {
 	// Load cameras from db
 	cams, err := servs.Camera.GetAll(ctx)
 	if err != nil {
-		log.Fatalf("Error loading cameras: %v", err)
+		// log.Fatalf("Error loading cameras: %v", err)
+		ll.Error("Error loading cameras", "error", err)
+		return
 	}
 
 	pm := process.Startup(ctx, cfg, ingester, cams)
@@ -63,7 +80,8 @@ func main() {
 	// Block until the context is canceled (SIGINT/SIGTERM received)
 	<-ctx.Done()
 
-	fmt.Println("\n[Signal] Shutdown signal received. Terminating in 5 seconds...")
+	// fmt.Println("\n[Signal] Shutdown signal received. Terminating in 5 seconds...")
+	ll.Info("\n[Signal] Shutdown signal received. Terminating in 5 seconds...")
 
 	// TODO:
 	// At this point, the context is canceled. 

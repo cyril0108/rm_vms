@@ -4,7 +4,10 @@
 
 # Docker Build Name
 DOCKER_IMAGE_NAME = vmsnvr
-VERSION = 0.1
+VERSION = 0.1.1
+GIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null)
+BUILD_TIME ?= $(shell date '+%Y-%m-%dT%H:%M:%S' 2>/dev/null)
+
 
 # -- Output Binaries --
 # The C++ worker binary name (must match what main.go looks for)
@@ -20,7 +23,7 @@ VUE_DIR := web
 
 # -- Build Flags --
 # -s disables symbol table, -w disables DWARF generation. Shrinks binary by ~25%
-GO_LDFLAGS := -ldflags="-s -w"
+GO_LDFLAGS := -ldflags="-s -w -X 'main.Version=$(VERSION)' -X 'main.CommitSHA=$(GIT_HASH)' -X 'main.BuildTime=$(BUILD_TIME)'"
 
 # -- Tools --
 GO := go
@@ -45,7 +48,7 @@ all: build-go build-cpp
 build-cpp: ## Build C++ Worker
 	@echo "--- Building C++ Worker ---"
 	$(MKDIR) $(CPP_ENGINE_BUILD_DIR)
-	cd $(CPP_ENGINE_BUILD_DIR) && $(CMAKE) .. && $(MAKE)
+	cd $(CPP_ENGINE_BUILD_DIR) && $(CMAKE) -DTHE_VERSION=${VERSION} -DGIT_HASH=$(GIT_HASH) .. && $(MAKE)
 	# Copy the compiled binary from build folder to project root
 	$(CP) $(CPP_ENGINE_BUILD_DIR)/nvr_worker ./$(WORKER_BIN_NAME)
 	@echo "✔ C++ Worker built successfully: ./$(WORKER_BIN_NAME)"
@@ -75,7 +78,7 @@ vue: ## Build Vue
 
 # Build Docker image
 docker: ## Build Docker image
-	docker build --platform linux/amd64 -t $(DOCKER_IMAGE_NAME) .
+	docker build --build-arg GIT_HASH=$(GIT_HASH) --build-arg BUILD_TIME=$(BUILD_TIME) --platform linux/amd64 -t $(DOCKER_IMAGE_NAME) .
 # 	docker build -t $(DOCKER_IMAGE_NAME) .
 
 dockersave: ## export docker image
