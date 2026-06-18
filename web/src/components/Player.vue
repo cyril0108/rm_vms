@@ -56,7 +56,7 @@ const fetchTimeline = function(day) {
 
     if( typeof response.data === "object" ) {
 
-      let data = response.data.Data ?? {}
+      let data = response.data.data ?? {}
 
       ll.log("data", data);
 

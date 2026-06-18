@@ -48,7 +48,7 @@ const UpdateCameras = function() {
       // metrics.value = data;
       // lastUpdate.value = new Date;
       ll.log("data", data);
-      cameras.value = data.Data;
+      cameras.value = data.data;
 
     } else {
 
@@ -73,9 +73,9 @@ const UpdateData = function() {
   .then(response=>{
 
     let data = response.data;
-    if (typeof data === "object" && typeof data.Data === "object") {
+    if (typeof data === "object" && typeof data.data === "object") {
 
-      metrics.value = data.Data;
+      metrics.value = data.data;
       lastUpdate.value = new Date;
 
     } else {

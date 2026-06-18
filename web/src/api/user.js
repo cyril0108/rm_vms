@@ -17,9 +17,9 @@ const login = function(username , password) {
     }).then(response=>{
 
         logger.log(response)
-        if(response && response.data && response.data.Data) {
+        if(response && response.data && response.data.data) {
 
-            let d = response.data.Data;
+            let d = response.data.data;
             let token = d.token
             logger.log(token)
 
@@ -37,9 +37,9 @@ const refresh = function(username , password) {
     return AX.post(URLAPIPath("web", "refresh"), {}).then(response=>{
 
         logger.log(response)
-        if(response && response.data && response.data.Data) {
+        if(response && response.data && response.data.data) {
 
-            let d = response.data.Data;
+            let d = response.data.data;
             let token = d.token
             logger.log(token)
 
