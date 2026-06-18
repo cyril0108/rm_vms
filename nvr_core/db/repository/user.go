@@ -126,10 +126,10 @@ func (r *userRepo) UpdatePartial(ctx context.Context, id int64, updates models.P
 		return nil
 	}
 
-	var args []interface{}
 
 	// Stitch the query together safely
-	query := JoinSetFieldsClause("UPDATE users SET ", updates) + " WHERE id = ?"
+	query, args := JoinSetFieldsClause("UPDATE users SET ", updates)
+	query = query + " WHERE id = ?"
 	args = append(args, id)
 
 	result, err := r.db.ExecContext(ctx, query, args...)
