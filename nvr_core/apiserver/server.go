@@ -60,14 +60,29 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	authMid := middleware.RequireAuth(api.Services.Auth)
 
 	// Mount configure
-	if health, err := svcs.System.GetHealthData(ctx);
-	  err == nil && !health.Configured {
-	  LOG.Info("NVR account not configured. Init with configure API.")
-	  mux.HandleFunc("POST /api/configure", api.HandleAdminInitConfigure)
-	}
+	// if health, err := svcs.System.GetHealthData(ctx);
+	//   err == nil && !health.Configured {
+	//   LOG.Info("NVR account not configured. Init with configure API.")
+	// }
+
+	// =============================================
+	// System
+	// =============================================
+	mux.HandleFunc("GET /health", api.GetHealth)
+	mux.HandleFunc("POST /api/configure", api.HandleAdminInitConfigure)
+
 
 	// Debug Info
+	mux.HandleFunc("GET /health/shm/metrics", authMid(http.HandlerFunc(api.HandleGetSHMMetrics)))
 	mux.HandleFunc("GET /debug/db", authMid(http.HandlerFunc(api.GetDebugInfo)))
+
+	// =============================================
+	// Hardware and License
+	// =============================================
+	// Return machine id and server name
+	mux.HandleFunc("GET /api/machine", authMid(http.HandlerFunc(api.HandleGetMachineInfo)))
+	mux.HandleFunc("POST /api/license", authMid(http.HandlerFunc(api.HandleReceiveLicense)))
+
 
 	// =============================================
 	// Login
@@ -79,6 +94,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("POST /api/web/login", api.HandleWebLogin)
 	// mux.HandleFunc("POST /api/web/logout", api.HandleWebLogout)
 	mux.HandleFunc("POST /api/web/refresh", api.HandleWebRefreshOrLogout)
+
 
 	// =============================================
 	// User Management
@@ -100,12 +116,12 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// Camera Discovery
 	// =============================================
-	mux.HandleFunc("GET /api/scan", authMid(http.HandlerFunc(api.HandleCameraScan)))
-	mux.HandleFunc("GET /api/scansweep", authMid(http.HandlerFunc(api.HandleCameraSweep)))
-	mux.HandleFunc("POST /api/scansweep/detail", authMid(http.HandlerFunc(api.HandleBulkONVIFScan)))
+	mux.HandleFunc("GET /api/scan", (http.HandlerFunc(api.HandleCameraScan)))
+	mux.HandleFunc("GET /api/scansweep", (http.HandlerFunc(api.HandleCameraSweep)))
+	mux.HandleFunc("POST /api/scansweep/detail", (http.HandlerFunc(api.HandleBulkONVIFScan)))
 
-	mux.HandleFunc("GET /api/scan/{ip}", authMid(http.HandlerFunc(api.HandleCameraProbe)))
-	mux.HandleFunc("POST /api/scan/{ip}/onvif", authMid(http.HandlerFunc(api.HandleFetchCameraONVIF)))
+	mux.HandleFunc("GET /api/scan/{ip}", (http.HandlerFunc(api.HandleCameraProbe)))
+	mux.HandleFunc("POST /api/scan/{ip}/onvif", (http.HandlerFunc(api.HandleFetchCameraONVIF)))
 
 	// =============================================
 	// Camera stream
@@ -120,8 +136,6 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", api.HandleLiveTransmuxTS)
 
 
-	mux.HandleFunc("GET /health", api.GetHealth)
-	mux.HandleFunc("GET /health/shm/metrics", authMid(http.HandlerFunc(api.HandleGetSHMMetrics)))
 
 	// =============================================
 	// Camera Management

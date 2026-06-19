@@ -9,15 +9,12 @@ type SystemDebugInfo struct {
 	LastSegment SegmentItem `json:"last_segment"`
 }
 
-
-
-// {
-//     "Data": {
-//         "health": "ok",
-//         "configured": true
-//     }
-// }
 type SystemHealthInfo struct {
 	Health     string `json:"health"`
 	Configured bool   `json:"configured"`
+}
+
+type SystemMachineInfo struct {
+	MachineID     string `json:"machine_id"`
+	ServerName    string `json:"server_name"`
 }
