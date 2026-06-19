@@ -50,6 +50,8 @@ func (s *APIServer) HandleBulkONVIFScan(w http.ResponseWriter, r *http.Request) 
 
 	log.Printf("[BulkScan] Phase 1 Complete. Found %d potential ONVIF devices. Starting Phase 2...", len(sweepResults))
 
+	log.Printf("[BulkScan] user %s p %s", req.Username, req.Password)
+
 	// ==========================================
 	// PHASE 2: Concurrent Data Fetching
 	// ==========================================
@@ -66,7 +68,7 @@ func (s *APIServer) HandleBulkONVIFScan(w http.ResponseWriter, r *http.Request) 
 				defer wg.Done()
 
 				// Only fetch heavy data for IPs we KNOW are cameras
-				record, err := onvif.FetchCameraONVIFData(targetIP, req.Username, req.Password)
+				record, err := onvif.FetchCameraONVIFData(targetIP, DefaultScanPort, req.Username, req.Password)
 				if err != nil {
 					log.Printf("[BulkScan] Failed to authenticate or fetch data for %s: %v", targetIP, err)
 					return // Skip this camera, likely wrong password

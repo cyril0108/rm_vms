@@ -90,7 +90,12 @@ func (s *APIServer) HandleFetchSystemCameraONVIF(w http.ResponseWriter, r *http.
 		return
 	}
 
-	result, err := onvif.FetchCameraONVIFData(cam.IPAddress, cam.Username, pwd)
+	port, err := GetRequestPort(r)
+	if err != nil {
+		port = DefaultScanPort
+	}
+
+	result, err := onvif.FetchCameraONVIFData(cam.IPAddress, port, cam.Username, pwd)
 	if result==nil && err != nil {
 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -159,7 +164,8 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.PM.AssignNewCamera(cam)
+	//
+	// s.PM.AssignNewCamera(cam)
 
 	theCamera := dto.MapCameraToDetail(*cam)
 
@@ -195,7 +201,14 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cam, camErr := onvif.FetchCameraONVIFData(camReq.IPAddress, camReq.Username, camReq.Password)
+	port, err := GetRequestPort(r)
+	if err != nil {
+		port = DefaultScanPort
+	}
+
+// LOG.Debug("[AddONVIFCamera] receive", "u", camReq.Username, "p", camReq.Password)
+
+	cam, camErr := onvif.FetchCameraONVIFData(camReq.IPAddress, port, camReq.Username, camReq.Password)
 	if camErr != nil {
 
 		// utils.RespondJSONHTTPStatus(w, "Failed to get ONVIF data", http.StatusInternalServerError)
@@ -215,7 +228,7 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.PM.AssignNewCamera(newCam)
+	// s.PM.AssignNewCamera(newCam)
 
 	w.WriteHeader(http.StatusCreated)
 	if err := utils.RespondJSON(w, dto.MapCameraToDetail(*newCam), ""); err != nil {

@@ -17,6 +17,7 @@ import (
 	xsdonvif "github.com/use-go/onvif/xsd/onvif"
 
 	"nvr_core/db/models"
+	"nvr_core/logger"
 	"nvr_core/utils"
 )
 
@@ -38,8 +39,13 @@ func (cr *OnvifRecord) MapToDBCamera() *models.Camera {
 }
 
 // FetchCameraONVIFData connects to an ONVIF device and extracts its DB-ready metadata
-func FetchCameraONVIFData(ip string, username string, password string) (*OnvifRecord, error) {
-	address := fmt.Sprintf("%s:80", ip)
+// func FetchCameraONVIFData(ip string, username string, password string) (*OnvifRecord, error) {
+// 	return FetchCameraONVIFDataAddesss(address, username, password)
+// }
+
+func FetchCameraONVIFData(ip string, port int, username, password string) (*OnvifRecord, error) {
+
+	address := fmt.Sprintf("%s:%d", ip, port)
 
 	customClient := &http.Client{
 		Transport: &AuthInterceptor{
@@ -66,6 +72,9 @@ func FetchCameraONVIFData(ip string, username string, password string) (*OnvifRe
 		Username: username,
 		Password: password,
 	}
+
+ll := logger.NewLogger("[]")
+ll.Debug("[AddONVIFCamera] receive", "u", username, "p", password)
 
 	// Fetch Device Information (Firmware, Serial, etc.)
 	devInfoReq := device.GetDeviceInformation{}

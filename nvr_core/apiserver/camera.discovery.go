@@ -63,7 +63,12 @@ func (s *APIServer) HandleFetchCameraONVIF(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := onvif.FetchCameraONVIFData(targetIP, cam.Username, cam.Password)
+	port, err := GetRequestPort(r)
+	if err != nil {
+		port = DefaultScanPort
+	}
+
+	result, err := onvif.FetchCameraONVIFData(targetIP, port, cam.Username, cam.Password)
 	if result==nil && err != nil {
 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
 		return

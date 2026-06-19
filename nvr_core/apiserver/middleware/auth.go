@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"slices"
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 
+	"nvr_core/logger"
 	"nvr_core/service"
 	"nvr_core/utils"
 )
@@ -42,6 +43,9 @@ type SessionData struct {
 	Permissions []string
 }
 
+var AUTHLOG = logger.NewLogger("[AUTH]")
+
+
 // RequireAuth is a middleware that enforces JWT authentication
 func RequireAuth(authService service.AuthService) func(http.Handler) http.HandlerFunc {
 	return func(next http.Handler) http.HandlerFunc {
@@ -50,6 +54,7 @@ func RequireAuth(authService service.AuthService) func(http.Handler) http.Handle
 			// Extract the token from the Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+				AUTHLOG.Debug("NO token");
 				utils.RespondJSONHTTPStatus(w, "Unauthorized: missing or invalid Bearer token", http.StatusUnauthorized)
 				return
 			}
@@ -59,6 +64,7 @@ func RequireAuth(authService service.AuthService) func(http.Handler) http.Handle
 			// Validate the token using your Auth Service
 			claims, err := authService.ValidateToken(tokenString)
 			if err != nil {
+				AUTHLOG.Debug("Invalid Token");
 				utils.RespondJSONHTTPStatus(w, "Unauthorized: invalid or expired token", http.StatusUnauthorized)
 				return
 			}

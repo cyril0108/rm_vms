@@ -184,7 +184,7 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 		pwd = camReq.Password
 	}
 
-	camOnvif, err := onvif.FetchCameraONVIFData(cam.IPAddress, user, pwd)
+	camOnvif, err := onvif.FetchCameraONVIFData(cam.IPAddress, 80, user, pwd)
 	if err != nil {
 
 		// utils.RespondJSONHTTPStatus(w, "Failed to get ONVIF data", http.StatusInternalServerError)

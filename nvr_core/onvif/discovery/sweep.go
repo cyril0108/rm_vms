@@ -40,7 +40,7 @@ func (v *Verifier) SweepSubnetRange(ctx context.Context, baseIP string, from int
 		wg.Add(1)
 		go func(ip string) {
 			defer wg.Done()
-			
+
 			// Use the UnicastProbe method we built earlier
 			isONVIF, rawData := v.unicastProbe(ip)
 			if isONVIF {

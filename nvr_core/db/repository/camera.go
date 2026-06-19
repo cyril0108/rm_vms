@@ -337,8 +337,6 @@ func (r *cameraRepo) Delete(ctx context.Context, id int64) error {
 
 func (r *cameraRepo) UpdatePartial(ctx context.Context, id int64, updates models.PartialUpdateInterfaces) error {
 
-LOG.Info("[UpdatePartial]", "id", id)
-
 	// If the map is empty, there is nothing to update
 	if len(updates) == 0 {
 		return nil
@@ -348,8 +346,6 @@ LOG.Info("[UpdatePartial]", "id", id)
 	query, args := JoinSetFieldsClause("UPDATE cameras SET ", updates)
 	query = query + " WHERE id = ?"
 	args = append(args, id)
-
-LOG.Info("[UpdatePartial]", "q", query)
 
 	result, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {

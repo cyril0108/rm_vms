@@ -11,7 +11,7 @@ import (
 
 var LOG = logger.NewLogger("[nvr_core][apiserver]")
 
-
+const DefaultScanPort int = 80
 
 func getPathID(r *http.Request, id string) (int64, error) {
 	targetIDStr := r.PathValue(id)
@@ -94,5 +94,16 @@ func GetMSTimeRange(r *http.Request) (int64, int64, error) {
 	LOG.Info("[GetMSTimeRange] ms: ", "s", start, "e", end)
 
 	return  start, end, nil
+
+}
+
+func GetRequestPort(r *http.Request) (int, error) {
+
+	// Parse timestamps
+	p := r.URL.Query().Get("port")
+
+	port, err := strconv.ParseInt(p, 10, 64)
+
+	return  int(port), err
 
 }
