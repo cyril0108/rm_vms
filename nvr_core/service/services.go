@@ -18,6 +18,7 @@ type Services struct {
 	Playback   PlaybackService
 	Playlist   PlaylistService
 	System     SystemService
+	SysSetting SystemSettingService
 }
 
 
@@ -29,6 +30,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	retknRepo := repository.NewRefreshTokenRepository(dbConn)
 	permRepo  := repository.NewPermissionRepository(dbConn)
 	cameraRepo := repository.NewCameraRepository(dbConn)
+	sssRepo    := repository.NewSystemSettingsRepository(dbConn)
 	timelineSvc := NewTimelineService(segRepo)
 	playbackSvc := NewPlaybackService(segRepo)
 	playlistSvc := NewPlaylistService(segRepo)
@@ -38,6 +40,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	userSvc := NewUserManagementService(userRepo, permRepo)
 	permSvc := NewPermsService(permRepo)
 	camSvc := NewCameraManagementService(cameraRepo, segRepo)
+	sssSvc := NewSysSettingService(sssRepo)
 
 	return &Services{
 		Auth:     authSvc,
@@ -48,6 +51,7 @@ func NewServices(dbConn *sql.DB) *Services {
 		Playback: playbackSvc,
 		Playlist: playlistSvc,
 		System:   systemSvc,
+		SysSetting: sssSvc,
 	}
 }
 

@@ -18,3 +18,8 @@ type SystemMachineInfo struct {
 	MachineID     string `json:"machine_id"`
 	ServerName    string `json:"server_name"`
 }
+
+type SystemSettingRequest struct {
+	Key         string `json:"key"`
+	Value       string `json:"value"`
+}

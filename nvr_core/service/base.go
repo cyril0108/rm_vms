@@ -40,3 +40,7 @@ type systemServiceBase struct {
 	db *sql.DB
 	repo repository.UserRepository
 }
+
+type sysSettingServiceBase struct {
+	repo repository.SystemSettingsRepository
+}
