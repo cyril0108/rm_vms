@@ -15,7 +15,7 @@ const defaultConfig = {
     }
 };
 
-const LoginPath = '/';
+const LoginPath = '/web/';
 
 /// !Axios Creation Functions
 ///========================================================
@@ -40,8 +40,13 @@ const axiosCreate = function(config) {
 
               logger.log("got error response", error.response)
 
+              let apires = new APIResponse(error.response)
+
+              if( apires.forbidden && storage.token ) {
+                RefreshToken()
+              }
                 // Wrap the error response as well so your catch blocks get the same object structure
-                return Promise.reject(new APIResponse(error.response));
+                return Promise.reject(apires);
             }
 
             // For network errors (like timeout or CORS) where no response was received
@@ -100,6 +105,32 @@ if(storage.token) {
 // status = FORBIDDEN
 const UserNeedLogin = function(apiresponse) {
   return apiresponse.tokenExpired;
+}
+
+let GettingRefreshToken;
+const RefreshToken = function() {
+  if(!GettingRefreshToken) {
+    GettingRefreshToken = true
+    AX.post("/api/web/refresh", {}).then(apires=>{
+
+        if(apires.success) {
+
+            let d = apires.data;
+            let token = d.token
+            logger.log("refresh token", token)
+            logger.log("refresh apiresponse", apires)
+
+            if( token && token.length > 0 ) {
+                UpdateAX.login(token)
+            }
+
+        }
+
+    })
+    .finally(()=>{
+      GettingRefreshToken = false;
+    })
+  }
 }
 
 // let RedirectToLoginPageShown = false;

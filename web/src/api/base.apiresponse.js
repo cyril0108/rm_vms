@@ -26,9 +26,15 @@ const APIResponse = function(response) {
     let message = payload.message;
 
     DEFINE(this)
-    .static("data", payload)
+    .static("raw", response)
+    .static("data", payload.data)
     .static("message", message)
     .static("statusCode", statusCode)
+    .property("forbidden", {
+        get: function() {
+            return statusCode == 401
+        }
+    })
     .property("success", {
         get: function() {
             switch(statusCode) {
