@@ -17,7 +17,7 @@ var ErrLicenseExpired = errors.New("License is expired.")
 
 
 type LicenseService interface {
-	ProcessLicenses(ctx context.Context, licenses[]string) (dto.LicenseProcessResult)
+	ProcessLicenses(ctx context.Context, licenses[]string) (dto.LicenseProcessResult, []*models.License)
 
 	CreateLicense(ctx context.Context, lic *models.License) (error)
 	GetAllLicenses(ctx context.Context) ([]*models.License, error)
@@ -29,6 +29,7 @@ func NewLicenseService(repo repository.LicenseRepository) LicenseService {
 }
 
 func (s *licenseServiceBase) CreateLicense(ctx context.Context, lic *models.License) (error) {
+	// if s.IsValidLicense()
 	return s.repo.Create(ctx, lic)
 }
 
@@ -41,8 +42,11 @@ func (s *licenseServiceBase) GetValidLicenses(ctx context.Context) ([]*models.Li
 }
 
 // Process the licenses and check their info. Accepted licenses will be stored in database.
-func (s *licenseServiceBase) ProcessLicenses(ctx context.Context, licenses[]string) (dto.LicenseProcessResult) {
+func (s *licenseServiceBase) ProcessLicenses(ctx context.Context, licenses[]string) (dto.LicenseProcessResult, []*models.License) {
 
+	ll := LOG.Prefix("[ProcessLicenses]")
+
+	var acceptedLics []*models.License
 	var result dto.LicenseProcessResult
 	machine := hardware.GetPersistentMachineID()
 
@@ -58,20 +62,36 @@ func (s *licenseServiceBase) ProcessLicenses(ctx context.Context, licenses[]stri
 
 		} else {
 
-			lice := models.License{
+			lice := &models.License{
 				RawToken: lic,
 			}
 
 			lice.LoadClaims(&claims)
 
-			valid, err := IsValidLicense(machine, &lice);
+			valid, err := IsValidLicense(machine, lice);
 			if valid {
 
-				result.Accepted = append(result.Accepted, &dto.LicenseResult{
+				r :=  &dto.LicenseResult{
 					Token: lic,
 					Claims: &claims,
-					Error: err.Error(),
-				})
+				}
+
+				if err != nil {
+					r.Error = err.Error()
+				}
+
+				result.Accepted = append(result.Accepted, r)
+
+
+				if err := s.CreateLicense(ctx, lice); err != nil {
+
+					ll.Error("Error when add license to database", "error", err)
+
+				} else {
+
+					acceptedLics = append(acceptedLics, lice)
+
+				}
 
 			} else {
 
@@ -86,7 +106,7 @@ func (s *licenseServiceBase) ProcessLicenses(ctx context.Context, licenses[]stri
 
 	}
 
-	return result
+	return result, acceptedLics
 
 }
 

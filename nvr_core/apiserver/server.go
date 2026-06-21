@@ -83,8 +83,8 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/machine", authMid(http.HandlerFunc(api.HandleGetMachineInfo)))
 	mux.HandleFunc("POST /api/license", authMid(http.HandlerFunc(api.HandleReceiveLicense)))
 
-	mux.HandleFunc("GET /api/license/all", authMid(http.HandlerFunc(api.HandleGetAllLicenses)))
-	mux.HandleFunc("GET /api/license/status", authMid(http.HandlerFunc(api.HandleGetLicenseStatus)))
+	mux.HandleFunc("GET /api/license/all", authMid(http.HandlerFunc(api.HandleGetLicenseList)))
+	mux.HandleFunc("GET /api/license/status", authMid(http.HandlerFunc(api.HandleGetActiveLicenseStatus)))
 
 
 	// =============================================

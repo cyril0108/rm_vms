@@ -80,11 +80,13 @@ func (r *licenseRepo) GetValidLicenses(ctx context.Context) ([]*models.License, 
 	query := `
 		SELECT id, raw_token, iss, aud, kind, machine_id, max_devices, issued_at, expires_at, uploaded_at
 		FROM licenses
-		WHERE expires_at > now()
+		WHERE expires_at > ?
 		ORDER BY uploaded_at DESC
 	`
+	// Get the exact current Unix timestamp from the Go runtime
+	now := time.Now().Unix()
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, now)
 	if err != nil {
 		return nil, err
 	}

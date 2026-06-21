@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"nvr_core/db/models"
+	"nvr_core/license"
 	"nvr_core/logger"
 	"nvr_core/service"
 	"nvr_core/utils"
@@ -16,6 +17,7 @@ import (
 type Manager struct {
 	cfg           *utils.Config
 	ctx           context.Context
+	LicManage     *license.LicenseManager
 	workers       []*Worker
 	binaryPath    string
 	camMainWorker map[int]int
@@ -50,8 +52,33 @@ func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath st
 	return mgr
 }
 
+func (m *Manager) SetLicenseManager(lm *license.LicenseManager) {
+	m.LicManage = lm
+}
+
 func (m *Manager) AllCameras() []*Camera {
 	return utils.CopyMapValues(m.cams, &m.mu)
+}
+
+func (m *Manager) ActiveCameraCount() int {
+	cams := m.AllCameras()
+	cnt := 0
+	for _, cam := range cams {
+		if cam.Active {
+			cnt++
+		}
+	}
+	return cnt
+}
+
+// Do not allow adding camera when existing number is larger then
+// licensed number
+func (m *Manager) CanAddNewCamera() bool {
+	return len(m.cams) >= m.LicManage.MaxCamera()
+}
+
+func (m *Manager) ReachMaxLicenseNumber() bool {
+	return m.ActiveCameraCount() >= m.LicManage.MaxCamera()
 }
 
 // StartAll launches all worker processes
@@ -179,6 +206,10 @@ func (m *Manager) StartCameraRecording(camID int) error {
 		err2 = subWorker.StartCamRecording(camID, utils.SegmentSubProfile)
 	}
 
+	if cam := m.cams[camID]; cam != nil {
+		cam.Active = true
+	}
+
 	return errors.Join(err1, err2)
 }
 
@@ -196,6 +227,10 @@ func (m *Manager) StopCameraRecording(camID int) error {
 	if subId >= 0 {
 		subWorker := m.workers[subId];
 		err2 = subWorker.StopCamRecording(camID, utils.SegmentSubProfile)
+	}
+
+	if cam := m.cams[camID]; cam != nil {
+		cam.Active = false
 	}
 
 	return errors.Join(err1, err2)

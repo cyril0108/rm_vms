@@ -13,8 +13,10 @@ type APIResponse struct {
 }
 
 var (
+	ErrorForbidden = errors.New("Forbidden")
 	ErrorInvalidPayload = errors.New("Invalid Payload")
 	ErrorFailedToEncodeResponse = errors.New("Failed to encode response")
+	ErrorReachMaxLicense = errors.New("Reached max license number")
 )
 
 
@@ -52,6 +54,14 @@ func RespondJSON(w http.ResponseWriter, data any, message string) error {
 		Data: data,
 		Message: message,
 	})
+}
+
+func RespondErrForbidden(w http.ResponseWriter) {
+	RespondJSONHTTPStatus(w, ErrorForbidden, http.StatusForbidden)
+}
+
+func RespondErrReachMaxLicense(w http.ResponseWriter) {
+	RespondJSONHTTPStatus(w, ErrorReachMaxLicense, http.StatusBadRequest)
 }
 
 func RespondErrFailedToEncodeResponse(w http.ResponseWriter) {

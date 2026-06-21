@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"nvr_core/apiserver/dto"
+	"nvr_core/apiserver/middleware"
 	"nvr_core/db/models"
 
 	"nvr_core/onvif"
@@ -24,6 +25,12 @@ import (
 // @Failure      500     {string}  string "Internal server error"
 // @Router       /api/cameras/{cam_id}/update [put]
 func (s *APIServer) UpdateCamera(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraConfig() {
+		utils.RespondErrForbidden(w)
+		return
+	}
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
@@ -73,6 +80,12 @@ func (s *APIServer) UpdateCamera(w http.ResponseWriter, r *http.Request) {
 // @Failure      500     {string}  string "Internal server error"
 // @Router       /api/cameras/{cam_id}/auth [put]
 func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraConfig() {
+		utils.RespondErrForbidden(w)
+		return
+	}
 
 	ll := LOG.Lin("fn","[UpdateCameraAuth]")
 
@@ -152,6 +165,12 @@ func (s *APIServer) UpdateCameraAuth(w http.ResponseWriter, r *http.Request) {
 // @Router       /api/cameras/{cam_id}/onvif [put]
 func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraConfig() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
 		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
@@ -206,7 +225,9 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 
 	// We need to restart camera worker
 	if cameraNeedRestart(cam, updateCam) {
+
 		log.Printf("New camera data needs reboot. We do not have means for that now: %v", camID)
+
 	}
 
 	w.WriteHeader(http.StatusCreated)

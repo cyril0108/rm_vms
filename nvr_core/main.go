@@ -6,6 +6,8 @@ import (
 	// Internal Packages
 	"nvr_core/apiserver"
 	"nvr_core/db"
+	"nvr_core/hardware"
+	"nvr_core/license"
 	"nvr_core/logger"
 	"nvr_core/process"
 	"nvr_core/service"
@@ -65,8 +67,23 @@ func main() {
 	servs := service.NewServices(dbConn)
 	ingester := service.StartIngester(ctx, dbConn)
 
+
+	//--------------------------
+	// Boot Up Licenses
+	//--------------------------
+	machineID := hardware.GetPersistentMachineID()
+	lm := license.NewLicenseManager()
+	lics, err := servs.License.GetValidLicenses(ctx)
+	if err == nil {
+		lm.InitWithLicenses(lics, machineID)
+	} else {
+		lm.InitWithLicenses(nil, machineID)
+		ll.Error("Error loading valid licenses", "error", err)
+	}
+
+
 	// Load cameras from db
-	cams, err := servs.Camera.GetAll(ctx)
+	cams, err := servs.Camera.StartUpCameras(ctx, lm.MaxCamera())
 	if err != nil {
 		// log.Fatalf("Error loading cameras: %v", err)
 		ll.Error("Error loading cameras", "error", err)
@@ -74,6 +91,7 @@ func main() {
 	}
 
 	pm := process.Startup(ctx, cfg, ingester, cams)
+	pm.SetLicenseManager(lm)
 
 	go apiserver.Initiate(ctx, cfg, pm, servs)
 

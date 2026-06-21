@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"nvr_core/apiserver/dto"
+	"nvr_core/apiserver/middleware"
 
 	"nvr_core/onvif"
 	"nvr_core/utils"
@@ -148,9 +149,20 @@ JSON Payload {
 // @Router       /api/cameras/add [post]
 func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraConfig() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	if s.PM.CanAddNewCamera() {
+		utils.RespondErrReachMaxLicense(w)
+		return
+	}
+
 	var newCamera dto.CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&newCamera); err != nil {
-		utils.RespondJSONHTTPStatus(w, "Invalid JSON payload", http.StatusBadRequest)
+		utils.RespondErrInvalidPayload(w)
 		return
 	}
 
@@ -194,6 +206,18 @@ JSON Payload {
 // @Failure      500     {string}  string "Failed to get ONVIF data or internal server error"
 // @Router       /api/cameras/add/onvif [post]
 func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraConfig() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	if s.PM.CanAddNewCamera() {
+		utils.RespondErrReachMaxLicense(w)
+		return
+	}
+
 
 	var camReq dto.CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&camReq); err != nil {
@@ -249,6 +273,18 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 // @Router       /api/cameras/{cam_id}/start [post]
 func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraConfig() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	if s.PM.ReachMaxLicenseNumber() {
+		utils.RespondErrReachMaxLicense(w)
+		return
+	}
+
+
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
 		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
@@ -286,6 +322,12 @@ func (s *APIServer) ActivateCamera(w http.ResponseWriter, r *http.Request) {
 // @Router       /api/cameras/{cam_id}/stop [post]
 func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraConfig() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
 		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
@@ -322,6 +364,12 @@ func (s *APIServer) DeactivateCamera(w http.ResponseWriter, r *http.Request) {
 // @Failure      500     {string}  string  "Internal server error"
 // @Router       /api/cameras/{cam_id} [delete]
 func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraConfig() {
+		utils.RespondErrForbidden(w)
+		return
+	}
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {

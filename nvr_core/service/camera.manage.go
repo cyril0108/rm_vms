@@ -15,6 +15,7 @@ type CameraManagementService interface {
 	GetByID(ctx context.Context, id int64) (*models.Camera, error)
 	GetAll(ctx context.Context) ([]*models.Camera, error)
 	GetAllForInSystemCheck(ctx context.Context) ([]*models.Camera, error)
+	StartUpCameras(ctx context.Context, licMax int) ([]*models.Camera, error)
 	AddCamera(ctx context.Context, cam *models.Camera) (int64, error)
 	UpdateCamera(ctx context.Context, id int64, cam models.PartialUpdateInterfaces) error
 	DeleteCamera(ctx context.Context, id int64) error
@@ -66,4 +67,54 @@ func (s *cameraServiceBase) ActivateCamera(ctx context.Context, id int64) error 
 
 func (s *cameraServiceBase) DeactivateCamera(ctx context.Context, id int64) error {
 	return s.repo.Deactivate(ctx, id)
+}
+
+/// Load all cameras, if number of active cameras is more than license allowed,
+/// disable cameras to match licensed number.
+func (s *cameraServiceBase) StartUpCameras(ctx context.Context, licMax int) ([]*models.Camera, error) {
+
+	ll := LOG.Prefix("[StartUpCameras]")
+
+	cams, err := s.repo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	count := 0
+	var deacts []*models.Camera
+
+	for _, cam := range cams {
+
+		if cam.IsActive {
+			count++
+		}
+
+		if count > licMax {
+			cam.IsActive = false
+			deacts = append(deacts, cam)
+		}
+
+	}
+
+	var deactErrors []*error
+	for _, cam := range deacts {
+
+		if err := s.repo.Deactivate(ctx, cam.ID); err != nil {
+
+			// We will continue load the cameras anyway,
+			// even if deactivate db data is not successful.
+			deactErrors = append(deactErrors, &err)
+
+		}
+
+	}
+
+	if len(deactErrors) > 0 {
+
+		ll.Error("Deactivate cameras errors", "errors", deactErrors)
+
+	}
+
+	return cams, nil;
+
 }

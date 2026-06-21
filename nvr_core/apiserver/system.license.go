@@ -6,13 +6,12 @@ import (
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/hardware"
-	"nvr_core/security"
 	"nvr_core/utils"
 )
 
 
 
-func (s *APIServer) HandleGetLicenseStatus(w http.ResponseWriter, r *http.Request) {
+func (s *APIServer) HandleGetLicenseList(w http.ResponseWriter, r *http.Request) {
 
 	list, err := s.Services.License.GetAllLicenses(r.Context())
 	if err != nil {
@@ -34,19 +33,28 @@ func (s *APIServer) HandleGetLicenseStatus(w http.ResponseWriter, r *http.Reques
 
 }
 
+func (s *APIServer) HandleGetActiveLicenseStatus(w http.ResponseWriter, r *http.Request) {
 
-func (s *APIServer) HandleGetAllLicenses(w http.ResponseWriter, r *http.Request) {
+	status := s.PM.LicManage.Status
 
-	list, err := s.Services.License.GetAllLicenses(r.Context())
-	if err != nil {
-		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	utils.RespondJSON(w, list, "success")
+	utils.RespondJSON(w, status, "success")
 	return
 
 }
+
+
+// func (s *APIServer) HandleGetAllLicenses(w http.ResponseWriter, r *http.Request) {
+
+// 	list, err := s.Services.License.GetAllLicenses(r.Context())
+// 	if err != nil {
+// 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	utils.RespondJSON(w, list, "success")
+// 	return
+
+// }
 
 
 // HandleReceiveLicense
@@ -69,19 +77,21 @@ func (s *APIServer) HandleReceiveLicense(w http.ResponseWriter, r *http.Request)
 
 	ll.Info("got Licenses", "count", len(licReq.Licenses))
 
-	for _, lic := range licReq.Licenses {
+	ctx := r.Context()
 
-		ll.Info("Checking license", "license", lic)
+	result, licenses := s.Services.License.ProcessLicenses(ctx, licReq.Licenses)
 
-		claims, err := security.GetLicenseInfo(lic)
-		if err == nil {
-			res.Claims = append(res.Claims, claims)
-		} else {
-			ll.Error("Error when checking license info", "err", err)
+	if len(licenses) > 0 {
+
+		for _, lic := range licenses {
+
+			// license should have ID after successful creation.
+			s.PM.LicManage.AddLicense(lic)
+
 		}
 
 	}
 
-	utils.RespondJSON(w, res, "success")
+	utils.RespondJSON(w, result, "")
 	return
 }

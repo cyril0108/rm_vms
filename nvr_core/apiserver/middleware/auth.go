@@ -119,6 +119,7 @@ func (s SessionData) HasPermission(requiredPerm PERMISSION) bool {
 
 
 // ---------------------------
+// User Manage
 func (s SessionData) HasPermissionUserManage() bool {
 	return s.HasPermission(PERMUserManage) || s.HasPermission(PERMUserNoSelfManage)
 }
@@ -126,3 +127,23 @@ func (s SessionData) HasPermissionUserManage() bool {
 func (s SessionData) HasPermissionUserNoSelfManage(targetId int64) bool {
 	return s.HasPermission(PERMUserManage) || (s.HasPermission(PERMUserNoSelfManage) && s.UserID != targetId)
 }
+
+
+// ---------------------------
+// Cameras
+func (s SessionData) HasPermissionCameraConfig() bool {
+	return s.HasPermission(PERMCameraConfigure)
+}
+
+func (s SessionData) HasPermissionCameraLive() bool {
+	return s.HasPermission(PERMCameraLive)
+}
+
+func (s SessionData) HasPermissionCameraPlayback() bool {
+	return s.HasPermission(PERMCameraPlayback)
+}
+
+func (s SessionData) HasPermissionCameraPTZ() bool {
+	return s.HasPermission(PERMCameraPtz)
+}
+

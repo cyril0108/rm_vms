@@ -16,7 +16,7 @@ func (api *APIServer) HandleListUsers(w http.ResponseWriter, r *http.Request) {
 
 	session, ok := middleware.GetSession(r.Context())
 	if !ok || !session.HasPermissionUserManage() { // Strictly enforce permissions
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
@@ -43,13 +43,13 @@ func (api *APIServer) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	session, ok := middleware.GetSession(ctx)
 	if !ok || !session.HasPermissionUserManage() {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
 	var req dto.CreateUserRequest
 	if err := decodeRequest(r, &req); err != nil {
-		utils.RespondJSONHTTPStatus(w, "Invalid payload", http.StatusBadRequest)
+		utils.RespondErrInvalidPayload(w)
 		return
 	}
 
@@ -71,7 +71,7 @@ func (api *APIServer) HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	session, ok := middleware.GetSession(ctx)
 	if !ok {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
@@ -82,13 +82,13 @@ func (api *APIServer) HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !session.HasPermissionUserNoSelfManage(targetUserID) {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
 	var payload dto.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		utils.RespondJSONHTTPStatus(w, "Invalid payload", http.StatusBadRequest)
+		utils.RespondErrInvalidPayload(w)
 		return
 	}
 
@@ -113,7 +113,7 @@ func (api *APIServer) HandleDeactivateUser(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	session, ok := middleware.GetSession(ctx)
 	if !ok {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (api *APIServer) HandleDeactivateUser(w http.ResponseWriter, r *http.Reques
 	}
 
 	if !session.HasPermissionUserNoSelfManage(targetUserID) {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
@@ -145,7 +145,7 @@ func (api *APIServer) HandleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 	ctx := r.Context()
 	session, ok := middleware.GetSession(ctx)
 	if !ok {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
@@ -156,7 +156,7 @@ func (api *APIServer) HandleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 	}
 
 	if !session.HasPermissionUserNoSelfManage(targetUserID) || targetUserID == session.UserID {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
@@ -164,7 +164,7 @@ func (api *APIServer) HandleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		utils.RespondJSONHTTPStatus(w, "Invalid payload", http.StatusBadRequest)
+		utils.RespondErrInvalidPayload(w)
 		return
 	}
 
@@ -186,7 +186,7 @@ func (api *APIServer) HandleUpdateUserRole(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	session, ok := middleware.GetSession(ctx)
 	if !ok {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
@@ -197,7 +197,7 @@ func (api *APIServer) HandleUpdateUserRole(w http.ResponseWriter, r *http.Reques
 	}
 
 	if !session.HasPermissionUserNoSelfManage(targetUserID) {
-		utils.RespondJSONHTTPStatus(w, "Forbidden", http.StatusForbidden)
+		utils.RespondErrForbidden(w)
 		return
 	}
 
@@ -205,7 +205,7 @@ func (api *APIServer) HandleUpdateUserRole(w http.ResponseWriter, r *http.Reques
 		RoleID int64 `json:"role_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		utils.RespondJSONHTTPStatus(w, "Invalid payload", http.StatusBadRequest)
+		utils.RespondErrInvalidPayload(w)
 		return
 	}
 
