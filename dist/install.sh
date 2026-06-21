@@ -30,7 +30,7 @@ cp nvr_service /opt/nvr/bin/
 cp nvr_worker /opt/nvr/bin/
 cp -r web /opt/nvr/bin/web
 # Assumes config.json is bundled in your tarball next to the installer
-cp config.json /etc/nvr/config.json
+cp config.json /opt/nvr/bin/config.json
 
 echo "🔒 Step 5: Locking down permissions..."
 # Give ownership to the new nvr user
@@ -46,7 +46,7 @@ chmod 750 /etc/nvr
 # Ensure binaries are executable and config is readable by the nvr group
 chmod +x /opt/nvr/bin/nvr_service
 chmod +x /opt/nvr/bin/nvr_worker
-chmod 640 /etc/nvr/config.json
+chmod 640 /opt/nvr/bin/config.json
 
 echo "🔄 Step 6: Setting up systemd background service..."
 cp nvr.service /etc/systemd/system/

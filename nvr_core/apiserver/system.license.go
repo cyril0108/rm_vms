@@ -35,9 +35,15 @@ func (s *APIServer) HandleGetLicenseList(w http.ResponseWriter, r *http.Request)
 
 func (s *APIServer) HandleGetActiveLicenseStatus(w http.ResponseWriter, r *http.Request) {
 
-	status := s.PM.LicManage.Status
+	lics := s.PM.LicManage.Status
+	max := s.PM.LicManage.MaxCamera()
+	using := s.PM.ActiveCameraCount()
 
-	utils.RespondJSON(w, status, "success")
+	utils.RespondJSON(w, dto.LicenseStatusResponse{
+		Licenses: lics,
+		MaxDevice: max,
+		Using: using,
+	}, "success")
 	return
 
 }

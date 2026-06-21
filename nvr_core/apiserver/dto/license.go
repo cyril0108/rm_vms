@@ -29,6 +29,12 @@ type LicenseProcessResult struct {
 	Rejected []*LicenseResult `json:"rejected"`
 }
 
+type LicenseStatusResponse struct {
+	Licenses     []*LicenseStatus `json:"licenses"`
+	MaxDevice    int              `json:"max_device"`
+	Using int              `json:"using"`
+}
+
 type LicenseStatus struct {
 	Token      string    `json:"token"`
 	models.License
