@@ -5,12 +5,51 @@ import (
 	"net/http"
 
 	"nvr_core/apiserver/dto"
+	"nvr_core/hardware"
 	"nvr_core/security"
 	"nvr_core/utils"
 )
 
-// HandleAdminInitConfigure
-//
+
+
+func (s *APIServer) HandleGetLicenseStatus(w http.ResponseWriter, r *http.Request) {
+
+	list, err := s.Services.License.GetAllLicenses(r.Context())
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var result []*dto.LicenseStatus
+	machine := hardware.GetPersistentMachineID()
+
+	for _, lic := range list {
+		LIC := &dto.LicenseStatus {}
+		LIC.LoadToken(lic.RawToken, machine)
+		result = append(result, LIC)
+	}
+
+	utils.RespondJSON(w, result, "success")
+	return
+
+}
+
+
+func (s *APIServer) HandleGetAllLicenses(w http.ResponseWriter, r *http.Request) {
+
+	list, err := s.Services.License.GetAllLicenses(r.Context())
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	utils.RespondJSON(w, list, "success")
+	return
+
+}
+
+
+// HandleReceiveLicense
 func (s *APIServer) HandleReceiveLicense(w http.ResponseWriter, r *http.Request) {
 
 	ll := LOG.Prefix("[HandleReceiveLicense]")

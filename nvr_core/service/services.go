@@ -11,6 +11,7 @@ import (
 // Even though, it's a bridge between API process and Repositories.
 type Services struct {
 	Auth       AuthService
+	License    LicenseService
 	Perms      PermsService
 	User       UserManagementService
 	Camera     CameraManagementService
@@ -31,6 +32,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	permRepo  := repository.NewPermissionRepository(dbConn)
 	cameraRepo := repository.NewCameraRepository(dbConn)
 	sssRepo    := repository.NewSystemSettingsRepository(dbConn)
+	licRepo    := repository.NewLicenseRepository(dbConn)
 	timelineSvc := NewTimelineService(segRepo)
 	playbackSvc := NewPlaybackService(segRepo)
 	playlistSvc := NewPlaylistService(segRepo)
@@ -41,9 +43,11 @@ func NewServices(dbConn *sql.DB) *Services {
 	permSvc := NewPermsService(permRepo)
 	camSvc := NewCameraManagementService(cameraRepo, segRepo)
 	sssSvc := NewSysSettingService(sssRepo)
+	licSvc := NewLicenseService(licRepo)
 
 	return &Services{
 		Auth:     authSvc,
+		License:  licSvc,
 		Perms:    permSvc,
 		User:     userSvc,
 		Camera:   camSvc,
