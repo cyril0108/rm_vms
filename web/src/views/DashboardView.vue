@@ -40,16 +40,13 @@ const UpdateCameras = function() {
   let ll = logger.lin("[UpdateCameras]")
 
   API.cameras.list()
-  .then(response=>{
+  .then(apires=>{
 
-    let data = response.data;
-    if (typeof data === "object") {
+    let data = apires.data;
+    if (apires.success) {
 
-      // metrics.value = data;
-      // lastUpdate.value = new Date;
-      ll.log("data", data);
-
-      let list = data.data;
+      // ll.log("data", data);
+      let list = data;
       if( list && list.length > 0) {
         list.sort((a,b)=>{ return a.id - b.id })
       }
@@ -58,8 +55,7 @@ const UpdateCameras = function() {
 
     } else {
 
-      ll.log("response", response);
-      ll.log("data type", typeof response.data)
+      ll.error("response", apires);
 
     }
 
@@ -76,18 +72,16 @@ const UpdateData = function() {
   metricsLoader.busy()
 
   API.shmMetrics()
-  .then(response=>{
+  .then(apires=>{
 
-    let data = response.data;
-    if (typeof data === "object" && typeof data.data === "object") {
+    if(apires.success) {
 
-      metrics.value = data.data;
+      metrics.value = apires.data;
       lastUpdate.value = new Date;
 
     } else {
 
-      logger.log("response", response);
-      logger.log("data type", typeof response.data)
+      logger.error("response", apires);
 
     }
 

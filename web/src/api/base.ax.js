@@ -1,7 +1,11 @@
 
 import axios from 'axios'
+import APIResponse from './base.apiresponse';
 
 import { localStore as storage } from '@/utils/storage';
+
+import log from '@/utils/log';
+const logger = log.withPrefix("[api][base.ax]");
 
 const defaultConfig = {
     // baseURL: "/",
@@ -17,10 +21,35 @@ const LoginPath = '/';
 ///========================================================
 ///========================================================
 const axiosCreate = function(config) {
-    return axios.create({
+    const instance = axios.create({
         ...defaultConfig,
         ...config
     })
+
+    instance.interceptors.response.use(
+        function (response) {
+            // Any status code within the 2xx range triggers this.
+            // Wrap the raw Axios response into your APIResponse object.
+            return new APIResponse(response);
+        },
+        function (error) {
+            // Any status code outside the 2xx range triggers this.
+            // If the server responded with an error (e.g., 400, 401, 500), 
+            // error.response will exist.
+            if (error.response) {
+
+              logger.log("got error response", error.response)
+
+                // Wrap the error response as well so your catch blocks get the same object structure
+                return Promise.reject(new APIResponse(error.response));
+            }
+
+            // For network errors (like timeout or CORS) where no response was received
+            return Promise.reject(error);
+        }
+    );
+
+    return instance
 }
 
 const defaultAxios = function() {

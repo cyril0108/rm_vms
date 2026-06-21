@@ -14,13 +14,14 @@ const login = function(username , password) {
     return AX.post(URLAPIPath("web", "login"), {
         username,
         password,
-    }).then(response=>{
+    }).then(apires=>{
 
-        logger.log(response)
-        if(response && response.data && response.data.data) {
+        logger.log(apires)
+        if( apires.success ) {
 
-            let d = response.data.data;
+            let d = apires.data;
             let token = d.token
+
             logger.log(token)
 
             if( token && token.length > 0 ) {
@@ -32,14 +33,26 @@ const login = function(username , password) {
     })
 }
 
+const logout = function() {
+    return AX.post(URLAPIPath("web", "refresh"), {
+        logout: true,
+    }).then(apires=>{
+
+        logger.log(apires)
+        if( apires.success ) {
+            UpdateAX.logout()
+        }
+
+    })
+}
 
 const refresh = function(username , password) {
-    return AX.post(URLAPIPath("web", "refresh"), {}).then(response=>{
+    return AX.post(URLAPIPath("web", "refresh"), {}).then(apires=>{
 
-        logger.log(response)
-        if(response && response.data && response.data.data) {
+        logger.log(apires)
+        if(apires.success) {
 
-            let d = response.data.data;
+            let d = apires.data;
             let token = d.token
             logger.log(token)
 

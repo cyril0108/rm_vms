@@ -52,11 +52,11 @@ const fetchTimeline = function(day) {
   day = APIDayRange(day);
 
   API.timeline(1, day.start, day.end)
-  .then(response=>{
+  .then(apires=>{
 
-    if( typeof response.data === "object" ) {
+    if( apires.success ) {
 
-      let data = response.data.data ?? {}
+      let data = apires.data
 
       ll.log("data", data);
 

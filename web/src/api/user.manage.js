@@ -10,17 +10,17 @@ const logger = log.withPrefix("[api][user.manage]");
 
 const list = function() {
     return AX.get(URLAPIPath("admin", "users"))
-    .then(response=>{
+    // .then(response=>{
 
-        logger.log(response)
-        if(response && response.data && response.data.Data) {
+    //     logger.log(response)
+    //     if(response && response.data && response.data.Data) {
 
-            let d = response.data.Data;
-            logger.log(d)
+    //         let d = response.data.Data;
+    //         logger.log(d)
 
-        }
+    //     }
 
-    })
+    // })
 }
 
 const mgt = {
