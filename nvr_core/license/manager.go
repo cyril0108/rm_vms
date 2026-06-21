@@ -8,6 +8,7 @@ import (
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/db/models"
+
 )
 
 var ll = LOG.Prefix("[manager]")
@@ -56,6 +57,8 @@ func (lm *LicenseManager) AddLicense(lic *models.License) {
 
 	stats := &dto.LicenseStatus{}
 	stats.LoadToken(lic.RawToken, lm.machineID)
+	stats.ID = lic.ID
+	stats.UploadedAt = lic.UploadedAt
 
 	lm.mu.Lock()
 	defer lm.mu.Unlock()

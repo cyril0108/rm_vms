@@ -120,9 +120,12 @@ func (r *licenseRepo) rowsToLicenses(rows *sql.Rows) ([]*models.License, error) 
 			return nil, err
 		}
 
-		// Parse SQLite's default CURRENT_TIMESTAMP format back into a standard Go time.Time
-		parsedTime, _ := time.Parse("2006-01-02 15:04:05", uploadedAt)
-		lic.UploadedAt = parsedTime
+		parsedTime, err := time.Parse("2006-01-02T15:04:05Z", uploadedAt)
+		if err != nil {
+		    LOG.Error("Failed to parse UploadedAt time", "error", err, "input", uploadedAt)
+		} else {
+		    lic.UploadedAt = parsedTime
+		}
 
 		licenses = append(licenses, &lic)
 	}

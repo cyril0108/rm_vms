@@ -25,6 +25,8 @@ func (s *APIServer) HandleGetLicenseList(w http.ResponseWriter, r *http.Request)
 	for _, lic := range list {
 		LIC := &dto.LicenseStatus {}
 		LIC.LoadToken(lic.RawToken, machine)
+		LIC.ID = lic.ID
+		LIC.UploadedAt = lic.UploadedAt
 		result = append(result, LIC)
 	}
 

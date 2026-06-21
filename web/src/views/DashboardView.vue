@@ -48,7 +48,13 @@ const UpdateCameras = function() {
       // metrics.value = data;
       // lastUpdate.value = new Date;
       ll.log("data", data);
-      cameras.value = data.data;
+
+      let list = data.data;
+      if( list && list.length > 0) {
+        list.sort((a,b)=>{ return a.id - b.id })
+      }
+
+      cameras.value = list;
 
     } else {
 

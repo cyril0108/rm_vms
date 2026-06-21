@@ -60,6 +60,7 @@ type Worker struct {
 	dmu        utils.DebugMutex
 	ingester   service.IngestService
 	log        *logger.Logger
+	restartCnt  map[int]int
 }
 
 // NewWorker creates a struct but doesn't start the process yet
@@ -71,6 +72,7 @@ func NewWorker(id int, binaryPath string, ingester service.IngestService) *Worke
 		streamHubs: make(map[int]*stream.Hub),
 		ingester:   ingester,
 		log:        LOG.Lin("worker", id),
+		restartCnt: make(map[int]int),
 	}
 }
 
@@ -88,9 +90,13 @@ func (w *Worker) handleStoppedStream(resp WorkerResponse) {
 	}
 	w.mu.Unlock()
 
+	w.camRestartLogReset(resp.CamID)
+
 	go func() {
 		time.Sleep(8 * time.Second)
-		fmt.Println(LOGSEP+"[Go][Worker] restarting cam:", resp.CamID, resp.Profile)
+		if 	w.camRestartLog(resp.CamID) {
+			fmt.Println(LOGSEP+"[Go][Worker] restarting cam:", resp.CamID, resp.Profile)
+		}
 		w.RestartCam(resp.CamID, resp.Profile)
 	}()
 
@@ -381,7 +387,9 @@ func (w *Worker) StopCamRecording(camID int, profile string) error {
 // Restart a cam that's already assigned to worker
 func (w *Worker) RestartCam(camID int, profile string) error {
 
-	LOG.Info("[RestartCam]", "cam", camID, "profile", profile)
+	if w.camRestartLog(camID) {
+		LOG.Info("[RestartCam]", "cam", camID, "profile", profile)
+	}
 
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -400,7 +408,9 @@ func (w *Worker) RestartCam(camID int, profile string) error {
 		return nil
 	}
 
-	LOG.Info("[RestartCam] restarting profile", "profile", profile)
+	if w.camRestartLog(camID) {
+		LOG.Info("[RestartCam] restarting profile", "profile", profile)
+	}
 
 	return w.StartStreamProfile(camID, profile, sp, cam.Active)
 
@@ -677,4 +687,22 @@ func (w *Worker) recoverWorker(ctx context.Context) {
 	//     fmt.Printf("[Go][Worker %d] Restoring stream for Cam %d...\n", w.ID, cam.ID)
 	//     w.StartCam(cam)
 	// }
+}
+
+func (w *Worker) camRestartLog(camID int) bool {
+
+	cnt := w.restartCnt[camID]
+
+	if cnt > 3 {
+		return false
+	}
+
+	cnt++
+
+	return true
+
+}
+
+func (w *Worker) camRestartLogReset(camID int) {
+	w.restartCnt[camID] = 0
 }
