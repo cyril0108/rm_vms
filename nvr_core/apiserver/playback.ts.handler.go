@@ -26,7 +26,7 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duration, _ := GetDurationTime(r)
+	duration, err := GetDurationTime(r)
 	if duration == 0 && err != nil {
 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)
 		return
@@ -121,4 +121,90 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[playback.ts.handler] FFmpeg error for %s: %v", seg.FilePath, err)
 	}
 
+}
+
+
+// HandleGapFillerTS expects: GET /api/cameras/{cam_id}/play/gap?duration=5000 (or however you define it)
+func (api *APIServer) HandleGapFillerTS(w http.ResponseWriter, r *http.Request) {
+
+	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
+	if(idErr != nil) {
+		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
+		return
+	}
+
+	cam := api.PM.GetCamera(int(camID))
+	if cam == nil {
+		utils.RespondJSONHTTPStatus(w, "No camera data with given ID", http.StatusNotFound)
+		return
+	}
+
+	hasAudio := cam.SubStream.ACodec != 0
+
+	// Get duration for the gap (you can use your existing helper)
+	duration, err := GetDurationTime(r)
+	if duration == 0 || err != nil {
+		utils.RespondJSONHTTPStatus(w, "Invalid or missing duration", http.StatusBadRequest)
+		return
+	}
+
+	// Set the exact same headers so the browser treats it as a normal video segment
+	w.Header().Set("Content-Type", "video/MP2T")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
+
+	// Convert duration to FFmpeg time format using your existing util
+	d := utils.NewFFTime(duration)
+
+	// Build FFmpeg arguments for a synthetic black screen + silent audio
+	ffmpegArgs := []string{
+		"-hide_banner", "-loglevel", "error",
+
+		// --- Inputs ---
+		// Generate pure black video (adjust resolution 's' to match your sub/main profiles if needed)
+		"-f", "lavfi", "-i", "color=c=black:s=1280x720:r=15",
+	}
+
+	if hasAudio {
+		ffmpegArgs = append(ffmpegArgs, "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100") // Input 1: Audio
+	}
+
+	// Append duration and video encoding settings
+	ffmpegArgs = append(ffmpegArgs,
+		"-t", d.TimeString(),
+		"-c:v", "libx264",
+		"-preset", "ultrafast",
+		"-tune", "stillimage",
+		"-pix_fmt", "yuv420p",
+	)
+
+	// Conditionally add audio encoding settings
+	if hasAudio {
+		ffmpegArgs = append(ffmpegArgs,
+			"-c:a", "aac",
+			"-b:a", "64k",
+		)
+	}
+
+	// Append output format and piping
+	ffmpegArgs = append(ffmpegArgs,
+		"-f", "mpegts",
+		"-muxdelay", "0",
+		"pipe:1",
+	)
+
+	// Execute and pipe directly to HTTP response
+	cmd := exec.CommandContext(r.Context(), "ffmpeg", ffmpegArgs...)
+	
+	cmd.Stdout = w
+	cmd.Stderr = os.Stderr // Pipe stderr to catch encoder failures
+
+	if err := cmd.Run(); err != nil {
+		// Context canceled means the client scrubbed away or disconnected
+		if r.Context().Err() != nil {
+			return
+		}
+		log.Printf("[playback.ts.handler] Gap filler FFmpeg error: %v", err)
+	}
 }

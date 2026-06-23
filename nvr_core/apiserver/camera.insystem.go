@@ -78,14 +78,22 @@ func (s *APIServer) ApplyCamerasOnvifRecordInSystemCheck(ctx context.Context, re
 	list := s.CameraInSystemCheck(ctx)
 
 	existingIPs := make(map[string]bool)
+	existingSNs := make(map[string]bool)
 	for _, cam := range list {
 		if cam != nil {
 			existingIPs[cam.IPAddress] = true
+			existingSNs[cam.SerialNumber] = true
 		}
 	}
 
+	// Check SerialNumber when the cam has it. Otherwise
+	// use IP for identification.
 	for i := range results {
-		if existingIPs[results[i].IP] {
+		if sn := results[i].SerialNumber; sn != "" {
+			if existingSNs[sn] {
+				results[i].InSystem = true
+			}
+		} else if existingIPs[results[i].IP] {
 			results[i].InSystem = true
 		}
 	}

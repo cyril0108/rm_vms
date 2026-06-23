@@ -105,6 +105,10 @@ func (m *Manager) GetWorkers() []*Worker {
 	return m.workers
 }
 
+func (m *Manager) GetCamera(camID int) *Camera {
+	return m.cams[camID]
+}
+
 func (m *Manager) AssignNewCamera(newCam *models.Camera) (error, error) {
 	cam := NewCameraRuntime(newCam)
 	return m.AssignCamera(cam)
