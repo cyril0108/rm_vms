@@ -37,7 +37,7 @@ func (api *APIServer) HandleListUsers(w http.ResponseWriter, r *http.Request) {
 	}, "")
 }
 
-// HandleDeactivateUser expects: POST /api/admin/users/create
+// HandleCreateUser expects: POST /api/admin/users/create
 func (api *APIServer) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
@@ -66,6 +66,7 @@ func (api *APIServer) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// HandleUpdateUser expects: PUT /api/admin/users/{id}
 func (api *APIServer) HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
@@ -106,6 +107,40 @@ func (api *APIServer) HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	utils.RespondJSON(w, "", "Role updated successfully")
 }
+
+// HandleDeactivateUser expects: DELETE /api/admin/users/{id}
+func (api *APIServer) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	session, ok := middleware.GetSession(ctx)
+	if !ok {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	targetUserID, err := getPathID(r, "id")
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	if !session.HasPermissionUserNoSelfManage(targetUserID) {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	err = api.Services.User.DeleteUser(ctx, session.UserID, targetUserID)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Important: Remember to instantly revoke all active refresh tokens for this user!
+	_ = api.Services.Auth.LogoutDeactivatedUser(ctx, targetUserID)
+
+	utils.RespondJSON(w, "", "User deactivated successfully")
+}
+
 
 // HandleDeactivateUser expects: DELETE /api/admin/users/{id}
 func (api *APIServer) HandleDeactivateUser(w http.ResponseWriter, r *http.Request) {

@@ -8,11 +8,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+
+	// "net/http/httputil"
 	"strings"
 	"time"
 )
 
-// AuthInterceptor ensures HTTP Basic Auth is attached and manually injects 
+// AuthInterceptor ensures HTTP Basic Auth is attached and manually injects
 // WS-Security XML if the underlying library fails to do so (e.g., blank passwords).
 type AuthInterceptor struct {
 	Proxied  http.RoundTripper
@@ -21,43 +24,65 @@ type AuthInterceptor struct {
 }
 
 func (ai *AuthInterceptor) RoundTrip(req *http.Request) (*http.Response, error) {
-	// 1. Inject HTTP Basic Auth (Notice we removed the Password != "" check!)
+	// Inject HTTP Basic Auth (Notice we allow empty password)
 	// Many cameras require the username even if the password is blank.
 	if ai.Username != "" {
 		req.SetBasicAuth(ai.Username, ai.Password)
 	}
 
-	// 2. Intercept and parse the outgoing XML body
+	// Intercept and parse the outgoing XML body
 	if req.Body != nil && ai.Username != "" {
 		bodyBytes, err := io.ReadAll(req.Body)
 		if err == nil {
 			bodyString := string(bodyBytes)
 
-			// 3. If the library skipped adding the security header, inject it ourselves
-			if !strings.Contains(bodyString, "wsse:Security") {
-				wsseHeader := generateWSSecurity(ai.Username, ai.Password)
+			// Always generate our mathematically correct security block
+			wsseHeader := generateWSSecurity(ai.Username, ai.Password)
+			newHeader := fmt.Sprintf("<soap-env:Header>%s</soap-env:Header>", wsseHeader)
 
-				// The go-use/onvif library outputs <soap-env:Header/> when empty.
-				// We string-replace it with our populated header.
-				bodyString = strings.Replace(
-					bodyString, 
-					"<soap-env:Header/>", 
-					fmt.Sprintf("<soap-env:Header>%s</soap-env:Header>", wsseHeader), 
-					1,
-				)
-
-				// Reassign the modified payload
-				bodyBytes = []byte(bodyString)
+			// Check if the library generated an empty self-closing header
+			if strings.Contains(bodyString, "<soap-env:Header/>") {
+				bodyString = strings.Replace(bodyString, "<soap-env:Header/>", newHeader, 1)
+			} else {
+				// The library generated a broken header. Violently overwrite it.
+				// This regex grabs everything from <soap-env:Header> to </soap-env:Header> 
+				// and replaces the entire block.
+				re := regexp.MustCompile(`(?s)<soap-env:Header>.*?</soap-env:Header>`)
+				bodyString = re.ReplaceAllString(bodyString, newHeader)
 			}
 
-			// 4. Repackage the request body and CRITICALLY update the Content-Length
-			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-			req.ContentLength = int64(len(bodyBytes))
+			// Repackage the request body and update the Content-Length
+			req.Body = io.NopCloser(bytes.NewBuffer([]byte(bodyString)))
+			req.ContentLength = int64(len(bodyString))
 		}
 	}
 
 	// Send the request
 	return ai.Proxied.RoundTrip(req)
+
+	// Dump the outgoing request AFTER we've modified the XML
+		// reqDump, err := httputil.DumpRequestOut(req, true)
+		// if err == nil {
+		// 	fmt.Println("\n========== RAW OUTGOING REQUEST ==========")
+		// 	fmt.Println(string(reqDump))
+		// 	fmt.Println("==========================================")
+		// }
+
+		// // Send the request
+		// resp, err := ai.Proxied.RoundTrip(req)
+		// if err != nil {
+		// 	return resp, err
+		// }
+
+		// // Dump the raw incoming response from the camera
+		// respDump, err := httputil.DumpResponse(resp, true)
+		// if err == nil {
+		// 	fmt.Println("\n========== RAW INCOMING RESPONSE ==========")
+		// 	fmt.Println(string(respDump))
+		// 	fmt.Println("===========================================\n")
+		// }
+
+		// return resp, err
 }
 
 // generateWSSecurity creates the exact XML block needed for ONVIF authentication

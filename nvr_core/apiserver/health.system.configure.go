@@ -35,6 +35,7 @@ func (s *APIServer) HandleAdminInitConfigure(w http.ResponseWriter, r *http.Requ
 		Username: req.Username,
 		Password: req.Password,
 		RoleID: 1,
+		IsActive: true,
 	}
 
 	if err := s.Services.User.CreateUser(ctx, 1, u); err != nil {
