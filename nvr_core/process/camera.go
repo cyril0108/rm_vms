@@ -1,6 +1,9 @@
 package process
 
-import "nvr_core/db/models"
+import (
+	"nvr_core/db/models"
+	"nvr_core/utils"
+)
 
 // StreamProfile represents the state of a specific stream on a specific worker
 type StreamProfile struct {
@@ -48,23 +51,26 @@ func (cam *Camera) GetProfile(profile string) *StreamProfile {
 
 func NewCameraRuntime(c *models.Camera) *Camera {
 
+    live := utils.URLForCameraLiveTSStream(c.ID, utils.SegmentMainProfile)
     cam := &Camera{
         ID: int(c.ID),
         Active: c.IsActive,
-        MainStream: NewStreamProfile(c.StreamURL),
+        MainStream: NewStreamProfile(c.StreamURL, live),
     }
 
     if c.SubStreamURL != "" {
-        cam.SubStream = NewStreamProfile(c.SubStreamURL)
+        live := utils.URLForCameraLiveTSStream(c.ID, utils.SegmentSubProfile)
+        cam.SubStream = NewStreamProfile(c.SubStreamURL, live)
     }
 
     return cam
 }
 
 
-func NewStreamProfile(url string) *StreamProfile {
+func NewStreamProfile(url string, live string) *StreamProfile {
     pf := &StreamProfile{
         Source: url,
+        LiveURL: live,
         WorkerID: -1,
         Status: "",
         ChannelID: -1,

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"nvr_core/logger"
@@ -72,24 +73,15 @@ func GetDurationTime(r *http.Request) (int64, error) {
 func GetMSTimeRange(r *http.Request) (int64, int64, error) {
 
 	// Parse timestamps
-	startStr := r.URL.Query().Get("start")
-	endStr := r.URL.Query().Get("end")
-
-	start, errStart := strconv.ParseInt(startStr, 10, 64)
-	end, errEnd := strconv.ParseInt(endStr, 10, 64)
-
-	if errStart != nil {
-		return start, end, errStart
+	start, err := GetMSFromTime(r, "msstart", "start")
+	if err != nil {
+		return 0, 0, err
 	}
 
-	if errEnd != nil {
-		return start, end, errEnd
+	end, err := GetMSFromTime(r, "msend", "end")
+	if err != nil {
+		return 0, 0, err
 	}
-
-	LOG.Info("[GetMSTimeRange] seconds: ", "s", start, "e", end)
-
-	start = start*1000
-	end = end*1000
 
 	LOG.Info("[GetMSTimeRange] ms: ", "s", start, "e", end)
 
@@ -107,3 +99,8 @@ func GetRequestPort(r *http.Request) (int, error) {
 	return  int(port), err
 
 }
+
+// isValidResolution strictly matches formats like "1280x720" or "3840x2160".
+// It forces the width and height to be between 2 and 4 digits long, starting with a non-zero.
+// This prevents command injection and stops bad actors from requesting absurdly huge resolutions.
+var isValidResolution = regexp.MustCompile(`^[1-9][0-9]{1,3}x[1-9][0-9]{1,3}$`).MatchString

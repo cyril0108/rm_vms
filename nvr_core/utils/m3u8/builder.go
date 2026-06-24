@@ -136,7 +136,7 @@ func (b *M3U8Builder) FeedVODSegmentDuration(seg *models.Segment) {
 
 }
 
-func (b *M3U8Builder) FeedVODGap(camID int64, startTime, duration int64) {
+func (b *M3U8Builder) FeedVODGap(camID, startTime, duration int64, resolution string) {
 
 	seg := &models.Segment{
 		StartTime: startTime,
@@ -147,7 +147,7 @@ func (b *M3U8Builder) FeedVODGap(camID int64, startTime, duration int64) {
 	b.XDiscontinuity()
 	b.ExtINF(seg)
 
-	apiURI := utils.PathForCameraTSGapDurationMSURL(camID, duration)
+	apiURI := utils.PathForCameraTSGapDurationMSURL(camID, duration, resolution)
 	segmentURL := fmt.Sprintf("%s%s\n", b.baseURL, apiURI)
 	b.builder.WriteString(segmentURL)
 

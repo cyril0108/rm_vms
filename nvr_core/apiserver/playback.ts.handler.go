@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -139,14 +140,20 @@ func (api *APIServer) HandleGapFillerTS(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	hasAudio := cam.SubStream.ACodec != 0
-
 	// Get duration for the gap (you can use your existing helper)
 	duration, err := GetDurationTime(r)
 	if duration == 0 || err != nil {
 		utils.RespondJSONHTTPStatus(w, "Invalid or missing duration", http.StatusBadRequest)
 		return
 	}
+
+	resolution := r.URL.Query().Get("res")
+	if resolution == "" || !isValidResolution(resolution) {
+		utils.RespondJSONHTTPStatus(w, "missing resolution or resolution is invalid", http.StatusBadRequest)
+		return
+	}
+
+	hasAudio := cam.SubStream.ACodec != 0
 
 	// Set the exact same headers so the browser treats it as a normal video segment
 	w.Header().Set("Content-Type", "video/MP2T")
@@ -157,13 +164,15 @@ func (api *APIServer) HandleGapFillerTS(w http.ResponseWriter, r *http.Request) 
 	// Convert duration to FFmpeg time format using your existing util
 	d := utils.NewFFTime(duration)
 
+	videoFilter := fmt.Sprintf("color=c=black:s=%s:r=15", resolution)
+
 	// Build FFmpeg arguments for a synthetic black screen + silent audio
 	ffmpegArgs := []string{
 		"-hide_banner", "-loglevel", "error",
 
 		// --- Inputs ---
 		// Generate pure black video (adjust resolution 's' to match your sub/main profiles if needed)
-		"-f", "lavfi", "-i", "color=c=black:s=1280x720:r=15",
+		"-f", "lavfi", "-i", videoFilter,
 	}
 
 	if hasAudio {

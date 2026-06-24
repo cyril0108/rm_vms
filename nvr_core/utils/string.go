@@ -96,8 +96,8 @@ func PathForCameraTSGapDurationURL(camID, duration int64) string {
 	return fmt.Sprintf("/api/cameras/%d/play/gap?duration=%d", camID, duration)
 }
 
-func PathForCameraTSGapDurationMSURL(camID, duration int64) string {
-	return fmt.Sprintf("/api/cameras/%d/play/gap?msduration=%d", camID, duration)
+func PathForCameraTSGapDurationMSURL(camID, duration int64, resolution string) string {
+	return fmt.Sprintf("/api/cameras/%d/play/gap?msduration=%d&res=%s", camID, duration, resolution)
 }
 
 // HandleGetPlaylist expects: GET /api/cameras/{cam_id}/playlist.m3u8?start=1711000000&end=1711003600
@@ -111,8 +111,8 @@ func PathForCameraVODPlaylistURL(camID int64, start int64, end int64) string {
 
 
 // For MPEG-TS live stream
-func URLForCameraLiveTSStream(baseUrl string, camID int64) string {
-	return fmt.Sprintf("%s/live/camera/%d", baseUrl, camID)
+func URLForCameraLiveTSStream(camID int64, profile string) string {
+	return fmt.Sprintf("/live/camera/%d/%s", camID, profile)
 }
 
 // For WebSocket live stream
