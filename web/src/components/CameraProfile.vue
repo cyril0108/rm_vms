@@ -12,6 +12,11 @@
       <span><strong>Status:</strong></span>
       <span>{{ camerasp.status }}</span>
     </div>
+    <div class="d-flex">
+      <a class="btn btn-outline-primary btn-sm w-100" :href="camerasp.live_url">
+        Live Stream URL
+      </a>
+    </div>
   </div>
 </template>
 

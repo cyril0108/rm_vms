@@ -18,16 +18,26 @@ const APIResponse = function(response) {
     const payload = response.data;
     const statusCode = response.status;
 
-    if( typeof payload != "object") {
-        logger.log("receiving abnormal payload.", Object.assign(payload))
-        payload = {}
+    let message, data;
+
+    // Handle block data
+    if (response.config.responseType === 'blob' || response.data instanceof Blob) {
+        logger.log("receiving blob.", typeof payload)
+        data = payload
+        message = "Blob data"
+    } else if( typeof payload == "object") {
+        data = payload.data
+        message = payload.message;
+    } else {
+        logger.log("receiving abnormal payload.", typeof payload)
+        data = payload
+        message = "No ordinary payload:" + typeof payload
     }
 
-    let message = payload.message;
 
     DEFINE(this)
     .static("raw", response)
-    .static("data", payload.data)
+    .static("data", data)
     .static("message", message)
     .static("statusCode", statusCode)
     .property("forbidden", {

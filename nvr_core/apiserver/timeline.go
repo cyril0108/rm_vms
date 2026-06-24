@@ -147,8 +147,6 @@ func (api *APIServer) HandleSegmentSnapshot(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Shift one second so it should be within star/end time range
-	// of sql search condition.
 	timestamp, err := GetSearchAtTime(r)
 	if err != nil {
 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)

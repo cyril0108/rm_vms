@@ -1,26 +1,40 @@
 <template>
   <div class="video-player-view">
+
     <h2>NVR Playback</h2>
-    <input type="number" :value="cameraid" @change="onCameraIdChange">
-    <!-- <input type="date" :value="selectDayStr" @change="onSelectDayChange"> -->
 
-    <VDatePicker
-      v-model="selectedDate"
-      :attributes="calendarAttributes"
-      @did-move="handleDidMove"
-      color="blue"
-    >
-      <template #default="{ togglePopover, inputValue }">
-            <button 
-              class="nvr-date-btn" 
-              @click="togglePopover"
-            >
-              📅 {{ inputValue || 'Select Date' }}
-            </button>
-      </template>
-    </VDatePicker>
+    <div class="row my-1">
 
-    <video src="" class="player-video"></video>
+      <div class="col-1">
+        <input class="form-control" type="number" :value="cameraid" @change="onCameraIdChange">
+      </div>
+      <!-- <input type="date" :value="selectDayStr" @change="onSelectDayChange"> -->
+
+      <VDatePicker
+        v-model="selectedDate"
+        :attributes="calendarAttributes"
+        @did-move="handleDidMove"
+        color="blue"
+      >
+        <template #default="{ togglePopover, inputValue }">
+              <button 
+                class="btn btn-primary posreset col-auto" 
+                @click="togglePopover"
+              >
+                📅 {{ inputValue || 'Select Date' }}
+              </button>
+        </template>
+      </VDatePicker>
+
+    </div>
+
+    <div class="player-video-wrap">
+
+      <!-- <video src="" class=""></video> -->
+      <img :src="previewImage" alt="preview image">
+
+    </div>
+
     <Timeline 
       ref="timelineRef"
       :items="timelineItems" 
@@ -66,6 +80,11 @@ const monthlySummaries = ref([]);
 // });
 
 let cameraid = ref(1);
+let previewImage = ref();
+
+const camID = ()=>{
+  return cameraid.value
+}
 
 /// =========================================
 /// == On Mount
@@ -73,13 +92,15 @@ let cameraid = ref(1);
 
 onMounted(() => {
 
-  const initDate = selectedDate.value;
-
-  log.log("[onMounted]", initDate)
-
-  fetchMonthlyData(initDate.getFullYear(), initDate.getMonth());
+  doFetchMonthlyData();
+  fetchTimeline(selectedDate.value);
 
 });
+
+const doFetchMonthlyData = ()=>{
+  const d = selectedDate.value;
+  fetchMonthlyData(d.getFullYear(), d.getMonth());
+}
 
 
 /// =========================================
@@ -107,7 +128,7 @@ const fetchMonthlyData = async (year, monthIdx) => {
     const to = lastDayOfMonth.getTime() / 1000;
 
     // Calling the Go API we defined in Phase 1
-    const apires = await API.playback.dailySummary(cameraid.value, from, to);
+    const apires = await API.playback.dailySummary(camID(), from, to);
 
 log.log("daily summary", apires.data)
 
@@ -155,7 +176,7 @@ const fetchTimeline = function(day) {
 
   day = APIDayRange(day);
 
-  API.playback.timeline(cameraid.value, day.start, day.end)
+  API.playback.timeline(camID(), day.start, day.end)
   .then(apires=>{
 
     if( apires.success ) {
@@ -174,7 +195,6 @@ const fetchTimeline = function(day) {
 
 }
 
-fetchTimeline(selectedDate.value);
 
 const Timeline2Items = function(apitl) {
 
@@ -252,14 +272,26 @@ const handleUserSeek = (date) => {
   const timestampMs = date.getTime();
   ll.log(`Commanding NVR to seek to: ${timestampMs}`);
 
-  // Example WebSocket Payload:
-  // ws.send(JSON.stringify({ command: 'SEEK', timestamp: timestampMs }));
+  API.playback.snapshot(camID(), timestampMs)
+  .then(apires=>{
+
+    if(apires.success) {
+
+      ll.log("snapshot", typeof apires.data, apires)
+      const blob = apires.data;
+      const imageUrl = URL.createObjectURL(blob);
+      previewImage.value = imageUrl;
+
+    }
+
+  })
+
 
 };
 
 watch(selectedDate, (newDate) => {
   let ll = log.lin("[selectedDate changed]");
-  
+
   // newDate is already a valid Date object provided by VCalendar
   updateTimelineBounds(newDate);
   fetchTimeline(newDate);
@@ -270,6 +302,7 @@ const onCameraIdChange = (e)=> {
   let id = parseInt(e.target.value)
   if(!isNaN(id)) {
     cameraid.value = id
+    doFetchMonthlyData();
     fetchTimeline(selectedDate.value);
   }
 
@@ -286,10 +319,16 @@ const updatePlayheadFromVideoSync = (videoTimestampMs) => {
 </script>
 
 <style>
-  video.player-video {
+  .posreset {
+    position: relative;
+  }
+  .player-video-wrap {
     width: 100%;
-    min-height: 300px;
+    min-height: 500px;
     min-width: 300px;
     border: 1px solid;
+  }
+  .player-video-wrap > img {
+    width: 100%;
   }
 </style>

@@ -14,11 +14,11 @@
       <CameraProfile v-if="camera.main_stream" :camerasp="camera.main_stream"></CameraProfile>
       <CameraProfile v-if="camera.sub_stream" :camerasp="camera.sub_stream"></CameraProfile>
 
-      <div class="mt-auto pt-3">
+<!--       <div class="mt-auto pt-3">
         <button class="btn btn-outline-primary btn-sm w-100">
           View Live Stream
         </button>
-      </div>
+      </div> -->
 
     </div>
 

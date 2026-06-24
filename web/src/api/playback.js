@@ -18,8 +18,18 @@ const dailySummary = function(camID, start, end) {
     return AX.get(URLAPIPath("cameras", camID, "summary")+"?"+QueryParamsFrom({start,end}))
 }
 
+const snapshot = function(camID, mstime) {
+    return AX.get(URLAPIPath("cameras", camID, "snapshot")+"?"+QueryParamsFrom({mstime}),{
+        responseType: 'blob',
+        headers: {
+            Accept: 'image/jpeg',
+        }
+    })
+}
+
 
 export default {
     timeline,
     dailySummary,
+    snapshot,
 };
