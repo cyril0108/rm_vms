@@ -1,5 +1,4 @@
 <script setup>
-import TheWelcome from '../components/TheWelcome.vue'
 import CameraStream from '../components/CameraStream.vue'
 import Player from '../components/Player.vue'
 let page = Player

@@ -179,7 +179,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// Calendar
 	// =============================================
-	mux.HandleFunc("GET /api/cameras/{cam_id}/summary/{start}/{end}", authMid(http.HandlerFunc(api.HandleGetDailySummary)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/summary", authMid(http.HandlerFunc(api.HandleGetDailySummary)))
 
 
 	// =============================================

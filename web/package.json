@@ -12,11 +12,13 @@
     "lint:eslint": "eslint . --fix --cache"
   },
   "dependencies": {
+    "@popperjs/core": "^2.11.8",
     "axios": "^1.15.0",
     "bootstrap": "^5.3.8",
     "date-fns": "^4.1.0",
     "jmuxer": "^2.1.0",
     "sass": "^1.99.0",
+    "v-calendar": "^3.1.2",
     "vis-data": "^8.0.3",
     "vis-timeline": "^8.5.0",
     "vue": "^3.5.29",

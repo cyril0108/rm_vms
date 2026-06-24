@@ -1,7 +1,25 @@
 <template>
   <div class="video-player-view">
     <h2>NVR Playback</h2>
-    <input type="date" :value="selectDayStr" @change="onSelectDayChange">
+    <input type="number" :value="cameraid" @change="onCameraIdChange">
+    <!-- <input type="date" :value="selectDayStr" @change="onSelectDayChange"> -->
+
+    <VDatePicker
+      v-model="selectedDate"
+      :attributes="calendarAttributes"
+      @did-move="handleDidMove"
+      color="blue"
+    >
+      <template #default="{ togglePopover, inputValue }">
+            <button 
+              class="nvr-date-btn" 
+              @click="togglePopover"
+            >
+              📅 {{ inputValue || 'Select Date' }}
+            </button>
+      </template>
+    </VDatePicker>
+
     <video src="" class="player-video"></video>
     <Timeline 
       ref="timelineRef"
@@ -20,7 +38,7 @@ import Logger from '@/utils/log';
 
 const log = Logger.withPrefix("[Player]");
 
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import Timeline from './Timeline.vue';
 
 import TimelineDefaults from '@/data/timeline'
@@ -32,17 +50,103 @@ import {
   APIDayRange,
   WebTimelineBoundaries,
   ToDateStr,
+  FormatDuration,
 } from '@/utils/time'
 
 // Reference to the child component
 const timelineRef = ref(null);
 const currentPlaybackTime = ref(new Date());
 
-let selectDay = ref(new Date);
-const selectDayStr = computed(() => {
-  return ToDateStr(selectDay.value);
+let selectedDate = ref(new Date());
+const monthlySummaries = ref([]);
+
+// let selectDay = ref(new Date);
+// const selectDayStr = computed(() => {
+//   return ToDateStr(selectDay.value);
+// });
+
+let cameraid = ref(1);
+
+/// =========================================
+/// == On Mount
+/// =========================================
+
+onMounted(() => {
+
+  const initDate = selectedDate.value;
+
+  log.log("[onMounted]", initDate)
+
+  fetchMonthlyData(initDate.getFullYear(), initDate.getMonth());
+
 });
 
+
+/// =========================================
+/// == Date Selection
+/// =========================================
+const handleDidMove = async (pages)=> {
+  const page = pages[0]; 
+
+  log.log("[handleDidMove]", page.year, page.month)
+
+  fetchMonthlyData(page.year, page.month - 1);
+}
+
+const fetchMonthlyData = async (year, monthIdx) => {
+
+  try {
+
+    log.log("[fetchMonthlyData]", year, monthIdx)
+
+    // first and last days of the target month
+    const firstDayOfMonth = new Date(year, monthIdx, 1);
+    const lastDayOfMonth = new Date(year, monthIdx + 1, 0);
+
+    const from = firstDayOfMonth.getTime() / 1000;
+    const to = lastDayOfMonth.getTime() / 1000;
+
+    // Calling the Go API we defined in Phase 1
+    const apires = await API.playback.dailySummary(cameraid.value, from, to);
+
+log.log("daily summary", apires.data)
+
+    // Using your unified APIResponse format
+    if (apires.success) {
+      monthlySummaries.value = apires.data; // [{ date: '2026-06-21', total_seconds: 3600 }, ...]
+    }
+
+  } catch (err) {
+    console.error("Failed to fetch calendar data", err);
+  }
+
+};
+
+const calendarAttributes = computed(() => {
+  return monthlySummaries.value.map(dayInfo => {
+    return {
+      key: dayInfo.date,       // Unique key for VCalendar tracking
+      dates: new Date(dayInfo.date), // The specific day to place the attribute on
+
+      // Shows a little dot under the date number
+      dot: {
+        color: 'blue', 
+      },
+
+      // Native VCalendar popover on hover
+      popover: {
+        label: FormatDuration(dayInfo.total_seconds),
+        visibility: 'hover',
+        hideIndicator: true,
+      }
+    };
+  });
+});
+
+
+/// =========================================
+/// == Timeline
+/// =========================================
 
 const fetchTimeline = function(day) {
 
@@ -51,7 +155,7 @@ const fetchTimeline = function(day) {
 
   day = APIDayRange(day);
 
-  API.timeline(1, day.start, day.end)
+  API.playback.timeline(cameraid.value, day.start, day.end)
   .then(apires=>{
 
     if( apires.success ) {
@@ -70,17 +174,12 @@ const fetchTimeline = function(day) {
 
 }
 
-fetchTimeline(selectDay.value);
+fetchTimeline(selectedDate.value);
 
 const Timeline2Items = function(apitl) {
 
-  let ll = log.lin("[Timeline2Items]");
-  ll.log(apitl);
-
   let start = APITime(apitl.start_time).WebTime().Timeline();
   let end = APITime(apitl.end_time).WebTime().Timeline();
-
-  ll.log("start, end", start, end);
 
   return {
     id: apitl.start_time,
@@ -128,8 +227,7 @@ const updateTimelineBounds = function(date) {
   };
 };
 
-const timelineOptions = ref(timelineOptionsByDate(selectDay.value));
-
+const timelineOptions = ref(timelineOptionsByDate(selectedDate.value));
 
 // Handle the user dragging the playhead
 const handleScrubbing = (properties) => {
@@ -159,15 +257,21 @@ const handleUserSeek = (date) => {
 
 };
 
-const onSelectDayChange = (e)=> {
-
-  let ll = log.lin("[onSelectDayChange]");
-
-  const newDate = new Date(`${e.target.value}T00:00:00`);
-  selectDay.value = newDate;
-
+watch(selectedDate, (newDate) => {
+  let ll = log.lin("[selectedDate changed]");
+  
+  // newDate is already a valid Date object provided by VCalendar
   updateTimelineBounds(newDate);
   fetchTimeline(newDate);
+});
+
+const onCameraIdChange = (e)=> {
+
+  let id = parseInt(e.target.value)
+  if(!isNaN(id)) {
+    cameraid.value = id
+    fetchTimeline(selectedDate.value);
+  }
 
 }
 
