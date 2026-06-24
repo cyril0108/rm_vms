@@ -106,8 +106,6 @@ func (b *M3U8Builder) FeedSegment(seg *models.Segment) {
 	b.NL()
 	b.ExtINF(seg)
 
-	// 	// The actual URL VLC will call to get the video bytes.
-	// 	// It points directly to our previously built Playback API!
 	apiURI := utils.PathForCameraPlayMSURL(b.camID, seg.StartTime)
 	segmentURL := fmt.Sprintf("%s%s\n", b.baseURL, apiURI)
 	b.builder.WriteString(segmentURL)
@@ -120,8 +118,6 @@ func (b *M3U8Builder) FeedVODSegment(seg *models.Segment) {
 	b.XDiscontinuity()
 	b.ExtINF(seg)
 
-	// 	// The actual URL VLC will call to get the video bytes.
-	// 	// It points directly to our previously built Playback API!
 	apiURI := utils.PathForCameraTSPlayMSURL(b.camID, seg.StartTime)
 	segmentURL := fmt.Sprintf("%s%s\n", b.baseURL, apiURI)
 	b.builder.WriteString(segmentURL)
@@ -134,9 +130,24 @@ func (b *M3U8Builder) FeedVODSegmentDuration(seg *models.Segment) {
 	b.XDiscontinuity()
 	b.ExtINF(seg)
 
-	// 	// The actual URL VLC will call to get the video bytes.
-	// 	// It points directly to our previously built Playback API!
 	apiURI := utils.PathForCameraTSPlayDurationMSURL(b.camID, seg.StartTime, seg.EndTime-seg.StartTime)
+	segmentURL := fmt.Sprintf("%s%s\n", b.baseURL, apiURI)
+	b.builder.WriteString(segmentURL)
+
+}
+
+func (b *M3U8Builder) FeedVODGap(camID int64, startTime, duration int64) {
+
+	seg := &models.Segment{
+		StartTime: startTime,
+		EndTime: startTime+duration,
+	}
+
+	b.NL()
+	b.XDiscontinuity()
+	b.ExtINF(seg)
+
+	apiURI := utils.PathForCameraTSGapDurationMSURL(camID, duration)
 	segmentURL := fmt.Sprintf("%s%s\n", b.baseURL, apiURI)
 	b.builder.WriteString(segmentURL)
 

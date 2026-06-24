@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"nvr_core/db/models"
 	"nvr_core/db/repository"
 	"nvr_core/utils/m3u8"
 )
@@ -71,13 +72,24 @@ func (s *segmentServiceBase) GenerateVODPlaylist(ctx context.Context, camID int6
 	playlist.XMediaSequence()
 	playlist.XSetTargetDurationFor(segments)
 
+	var lastSeg *models.Segment
+
 	// Append each segment
 	for i, seg := range segments {
 		if i != lstIdx {
 			playlist.FeedVODSegment(seg)
 		} else {
+
+			if lastSeg != nil {
+				if gap := seg.StartTime - lastSeg.EndTime; gap > 0 {
+					playlist.FeedVODGap(seg.CameraID, lastSeg.EndTime, gap)
+				}
+			}
+
 			playlist.FeedVODSegmentDuration(seg)
+
 		}
+		lastSeg = seg
 	}
 
 	// Close the playlist

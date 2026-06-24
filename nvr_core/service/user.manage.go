@@ -19,6 +19,7 @@ type UserManagementService interface {
 	UpdateUserPassword(ctx context.Context, adminID, userID int64, encrypt string) error
 	UpdatePartial(ctx context.Context, adminID, userID int64, updates models.PartialUpdateInterfaces) error
 	DeactivateUser(ctx context.Context, adminID, targetUserID int64) error
+	DeleteUser(ctx context.Context, adminID, targetUserID int64) error
 
 	// Permissions
 	UpdateUserRole(ctx context.Context, adminID, targetUserID, newRoleID int64) error
@@ -110,6 +111,13 @@ func (s *userServiceBase) DeactivateUser(ctx context.Context, adminID, targetUse
 		return fmt.Errorf("cannot deactivate your own account")
 	}
 	return s.userRepo.Deactivate(ctx, targetUserID)
+}
+
+func (s *userServiceBase) DeleteUser(ctx context.Context, adminID, targetUserID int64) error {
+	if adminID == targetUserID {
+		return fmt.Errorf("cannot delete your own account")
+	}
+	return s.userRepo.Delete(ctx, targetUserID)
 }
 
 
