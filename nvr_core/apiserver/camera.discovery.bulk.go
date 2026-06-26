@@ -63,7 +63,7 @@ func (s *APIServer) HandleBulkONVIFScan(w http.ResponseWriter, r *http.Request) 
 	for _, cam := range sweepResults {
 		if cam.Protocol == "onvif" || cam.Protocol == "onvif-verified" {
 			wg.Add(1)
-			
+
 			go func(targetIP string) {
 				defer wg.Done()
 

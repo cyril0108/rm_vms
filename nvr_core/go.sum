@@ -1,3 +1,5 @@
+github.com/0x524a/onvif-go v1.1.4 h1:oAyQO++9pGOfmHsxRs8MV/4scwsWATi2+gJoFck84D8=
+github.com/0x524a/onvif-go v1.1.4/go.mod h1:QRsmatmBZXM5zOHHI4SBaV6X2NdkSU+DXLDDRzM+xS4=
 github.com/asticode/go-astikit v0.30.0 h1:DkBkRQRIxYcknlaU7W7ksNfn4gMFsB0tqMJflxkRsZA=
 github.com/asticode/go-astikit v0.30.0/go.mod h1:h4ly7idim1tNhaVkdVBeXQZEE3L0xblP7fCWbgwipF0=
 github.com/asticode/go-astits v1.15.0 h1:yRyCiUc8Jj4F7clt2GDxHghMpWuFL5rkaLuGUd2/0J4=

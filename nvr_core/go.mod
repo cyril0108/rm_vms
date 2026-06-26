@@ -5,6 +5,7 @@ go 1.25.0
 require github.com/gorilla/websocket v1.5.3
 
 require (
+	github.com/0x524a/onvif-go v1.1.4
 	github.com/asticode/go-astikit v0.30.0 // indirect
 	github.com/asticode/go-astits v1.15.0 // indirect
 	github.com/beevik/etree v1.1.0 // indirect

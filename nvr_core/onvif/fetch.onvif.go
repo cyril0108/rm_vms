@@ -1,27 +1,18 @@
 package onvif
 
 import (
-	"bytes"
+	"context"
 	"fmt"
-	"html"
-	"io"
-	"log"
-	"net/http"
-	"strings"
+	"time"
 
-	"regexp"
-
-	goonvif "github.com/use-go/onvif"
-	"github.com/use-go/onvif/device"
-	"github.com/use-go/onvif/media"
-	xsdonvif "github.com/use-go/onvif/xsd/onvif"
+	"github.com/0x524a/onvif-go"
 
 	"nvr_core/db/models"
 	"nvr_core/logger"
-	"nvr_core/utils"
+
 )
 
-
+// MapToDBCamera remains unchanged
 func (cr *OnvifRecord) MapToDBCamera() *models.Camera {
 	return &models.Camera{
 		Manufacturer:          cr.Manufacturer,
@@ -39,33 +30,8 @@ func (cr *OnvifRecord) MapToDBCamera() *models.Camera {
 }
 
 // FetchCameraONVIFData connects to an ONVIF device and extracts its DB-ready metadata
-// func FetchCameraONVIFData(ip string, username string, password string) (*OnvifRecord, error) {
-// 	return FetchCameraONVIFDataAddesss(address, username, password)
-// }
-
 func FetchCameraONVIFData(ip string, port int, username, password string) (*OnvifRecord, error) {
-
 	address := fmt.Sprintf("%s:%d", ip, port)
-
-	customClient := &http.Client{
-		Transport: &AuthInterceptor{
-			Proxied:  http.DefaultTransport,
-			Username: username,
-			Password: password,
-		},
-	}
-
-	dev, err := goonvif.NewDevice(goonvif.DeviceParams{
-		Xaddr:    address,
-		Username: username,
-		Password: password,
-		HttpClient: customClient,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to ONVIF device: %w", err)
-	}
-
-	// dev.Authenticate(username, password)
 
 	record := &OnvifRecord{
 		IP:       ip,
@@ -73,124 +39,75 @@ func FetchCameraONVIFData(ip string, port int, username, password string) (*Onvi
 		Password: password,
 	}
 
-ll := logger.NewLogger("[]")
-ll.Debug("[AddONVIFCamera] receive", "u", username, "p", password)
+	ll := logger.NewLogger("[]")
+	ll.Debug("[AddONVIFCamera] receive", "u", username, "p", password)
 
-	// Fetch Device Information (Firmware, Serial, etc.)
-	devInfoReq := device.GetDeviceInformation{}
-	resp, err := dev.CallMethod(devInfoReq)
-	if err == nil && resp != nil {
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		record.Manufacturer = extractTag(body, "Manufacturer")
-		record.Model = extractTag(body, "Model")
-		record.Firmware = extractTag(body, "FirmwareVersion")
-		record.SerialNumber = extractTag(body, "SerialNumber")
+	// Establish Context (CRITICAL for NVRs so Goroutines don't hang if camera dies)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// Initialize Modern Client (Handles WS-Security & Digest Auth internally)
+	client, err := onvif.NewClient(
+		address,
+		onvif.WithCredentials(username, password),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize ONVIF client: %w", err)
+	}
+
+	// Fetch Device Information (Strictly Typed)
+	devInfo, err := client.GetDeviceInformation(ctx)
+	if err == nil && devInfo != nil {
+		record.Manufacturer = devInfo.Manufacturer
+		record.Model = devInfo.Model
+		record.Firmware = devInfo.FirmwareVersion
+		record.SerialNumber = devInfo.SerialNumber
 	}
 
 	// Fetch Network Interfaces (For MAC Address)
-	netReq := device.GetNetworkInterfaces{}
-	resp, err = dev.CallMethod(netReq)
-	if err == nil && resp != nil {
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		// ONVIF standard uses HwAddress for MAC
-		record.MACAddress = extractTag(body, "HwAddress")
-		if record.MACAddress == "" {
-			record.MACAddress = extractTag(body, "hwAddress") // Fallback for case sensitivity
+	// Note: Cameras can have multiple NICs, we generally grab the first one.
+	netInterfaces, err := client.GetNetworkInterfaces(ctx)
+	if err == nil && len(netInterfaces) > 0 {
+		record.MACAddress = netInterfaces[0].Info.HwAddress 
+	}
+
+	// Fetch Media Profiles
+	profiles, err := client.GetProfiles(ctx)
+	if err != nil || len(profiles) == 0 {
+		sec, driftErr := CheckCameraTimeDrift(ip) // Assuming this exists elsewhere in your package
+		if driftErr == nil {
+			return record, fmt.Errorf("no media profiles found on device. Camera time drift: %f. err: %v", sec, err)
 		}
+		return record, fmt.Errorf("no media profiles found on device: %w", err)
 	}
 
-	// Fetch Media Profiles (To get the tokens)
-	profilesReq := media.GetProfiles{}
-	resp, err = dev.CallMethod(profilesReq)
-	if err != nil || resp == nil {
-		return record, fmt.Errorf("could not get media profiles: %w", err)
+	ll.Debug("[AddONVIFCamera] Found media profiles", "count", len(profiles))
+
+	// Assign Main Stream (First Profile)
+	mainProfile := profiles[0]
+	record.MainStreamToken = string(mainProfile.Token)
+	
+	// Strongly typed check for PTZ capability instead of raw string searching
+	if mainProfile.PTZConfiguration != nil {
+		record.SupportsPTZ = true
+	}
+	
+	// Fetch Stream URI for Main Stream
+	if stream, err := client.GetStreamURI(ctx, record.MainStreamToken); err == nil && stream != nil {
+		record.MainStream = string(stream.URI)
 	}
 
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
-
-	// If the string "PTZConfiguration" exists anywhere in the profiles XML, 
-	// the camera physically supports PTZ movement.
-	// It's "Configuration", meaing you've config for it
-	record.SupportsPTZ = bytes.Contains(body, []byte("PTZConfiguration"))
-
-	// Extract ALL profile tokens as a slice
-	tokens := extractTokens(body)
-	if len(tokens) == 0 {
-		utils.PrintSimplifiedXML(body)
-		sec, err := CheckCameraTimeDrift(ip)
-		if err == nil {
-			return record, fmt.Errorf("no media profiles found on device. Camera time drift: %f", sec)
+	// Assign Sub Stream (Second Profile, if it exists)
+	if len(profiles) > 1 {
+		subProfile := profiles[1]
+		record.SubStreamToken = string(subProfile.Token)
+		
+		if stream, err := client.GetStreamURI(ctx, record.SubStreamToken); err == nil && stream != nil {
+			record.SubStream = string(stream.URI)
 		}
-		return record, fmt.Errorf("no media profiles found on device")
-	}
-
-	log.Printf("Found media tokens: %v", tokens)
-
-	// Assign Main Stream (Usually the first token)
-	record.MainStreamToken = tokens[0]
-	record.MainStream = fetchStreamUri(dev, record.MainStreamToken)
-
-	// Assign Sub Stream (Usually the second token, if it exists)
-	if len(tokens) > 1 {
-		record.SubStreamToken = tokens[1]
-		record.SubStream = fetchStreamUri(dev, record.SubStreamToken)
 	}
 
 	return record, nil
-}
-
-// fetchStreamUri is a helper to grab the RTSP URL for a specific profile token
-func fetchStreamUri(dev *goonvif.Device, token string) string {
-	uriReq := media.GetStreamUri{
-		StreamSetup: xsdonvif.StreamSetup{
-			Stream: "RTP-Unicast",
-			Transport: xsdonvif.Transport{
-				Protocol: "RTSP",
-			},
-		},
-		ProfileToken: xsdonvif.ReferenceToken(token),
-	}
-
-	resp, err := dev.CallMethod(uriReq)
-	if err == nil && resp != nil {
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		return html.UnescapeString(extractTag(body, "Uri"))
-	}
-	return ""
-}
-
-// extractTag is a lightweight helper to grab values from ONVIF SOAP XML, ignoring namespaces
-func extractTag(xmlData []byte, tag string) string {
-	re := regexp.MustCompile(`<(?:\w+:)?` + tag + `(?:[^>]*)>([^<]+)</(?:\w+:)?` + tag + `>`)
-	match := re.FindSubmatch(xmlData)
-	if len(match) > 1 {
-		return string(match[1])
-	}
-	return ""
-}
-
-// extractTokens parses ALL profile tokens from the GetProfiles response
-// extractTokens parses ONLY the main Profile tokens from the GetProfiles response,
-// actively ignoring sub-configuration tokens (VideoSource, Audio, etc.)
-func extractTokens(xmlData []byte) []string {
-	// This regex looks specifically for the <Profiles> tag (with or without a namespace like trt:)
-	// and extracts ONLY the token attribute attached directly to it.
-	re := regexp.MustCompile(`<(?:\w+:)?Profiles[^>]*\btoken="([^"]+)"`)
-	
-	// -1 means find all matches
-	matches := re.FindAllSubmatch(xmlData, -1) 
-	
-	var tokens []string
-	for _, match := range matches {
-		if len(match) > 1 {
-			tokens = append(tokens, string(match[1]))
-		}
-	}
-	return tokens
 }
 
 // VerifyCredentials performs a lightweight check against the camera's locked
@@ -198,67 +115,27 @@ func extractTokens(xmlData []byte) []string {
 func VerifyCredentials(ip, username, password string) (bool, error) {
 	address := fmt.Sprintf("%s:80", ip)
 
-	// Reuse our bulletproof interceptor to guarantee WS-Security and Basic Auth are sent
-	customClient := &http.Client{
-		Transport: &AuthInterceptor{
-			Proxied:  http.DefaultTransport,
-			Username: username,
-			Password: password,
-		},
-	}
+	// Short timeout just for credential checking
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Initialize the connection
-	dev, err := goonvif.NewDevice(goonvif.DeviceParams{
-		Xaddr:      address,
-		Username:   username,
-		Password:   password,
-		HttpClient: customClient,
-	})
+	client, err := onvif.NewClient(
+		address,
+		onvif.WithCredentials(username, password),
+	)
 	if err != nil {
 		// Network error (camera offline, blocked port, etc.)
 		return false, fmt.Errorf("network error or ONVIF not supported: %w", err)
 	}
 
 	// The Authentication Test
-	// We ask for the profiles. If the credentials are bad, this throws a NotAuthorized error.
-	req := media.GetProfiles{}
-	resp, err := dev.CallMethod(req)
-	
+	// In typed libraries, WS-Security faults, 401s, and 403s are caught and returned as actual Go errors
+	_, err = client.GetProfiles(ctx)
 	if err != nil {
-		// Credentials failed!
-		return false, fmt.Errorf("authentication rejected by camera: %w", err)
-	}
-	if resp == nil {
-		return false, fmt.Errorf("received empty response from camera")
-	}
-
-	defer resp.Body.Close()
-
-	// Standard web servers will return 401 or 403.
-	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-		return false, nil // Valid network request, but credentials failed
-	}
-
-	// Read the body to check for SOAP Faults. 
-	// Many ONVIF cameras return HTTP 200 or 500, but embed the failure in the XML.
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return false, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	bodyStr := string(body)
-
-	// Look for the classic ONVIF authorization error string or a generic SOAP Fault
-	if strings.Contains(bodyStr, "NotAuthorized") || strings.Contains(bodyStr, "Fault>") {
+		// Credentials failed, or the user lacks privileges for the Media service
 		return false, nil 
 	}
 
-	// Final verification (matches your FetchCameraONVIFData logic)
-	// If it doesn't contain "Profiles", it failed to authenticate the media endpoint.
-	if !strings.Contains(bodyStr, "Profiles") {
-		return false, nil
-	}
-
-	// Success! The credentials are valid.
+	// Success! No messy body scraping required.
 	return true, nil
 }
