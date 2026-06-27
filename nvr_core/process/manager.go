@@ -19,6 +19,7 @@ type Manager struct {
 	ctx           context.Context
 	LicManage     *license.LicenseManager
 	workers       []*Worker
+	EstWorker     *EstimationWorker
 	binaryPath    string
 	camMainWorker map[int]int
 	camSubWorker  map[int]int
@@ -47,6 +48,14 @@ func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath st
 		w := NewWorker(i, binaryPath, ingester)
 		mgr.workers[i] = w
 		w.SetStoragePath(cfg.Server.StoragePath)
+	}
+
+	// Create EstimationWorker
+	eWorker := NewWorker(99999999999999, binaryPath, nil)
+	mgr.EstWorker = NewEstimationWorker(eWorker)
+
+	if err := eWorker.Start(ctx, false); err != nil {
+		LOG.Error("[NewManager] failed to start EstimationWorker", "error", err)
 	}
 
 	return mgr
@@ -86,7 +95,7 @@ func (m *Manager) StartAllWorkers() error {
 	for _, w := range m.workers {
 		// fmt.Printf("[Process Manager] Starting Worker %d...\n", w.ID)
 		m.log.Info("Starting Worker", "worker", w.ID)
-		if err := w.Start(m.ctx); err != nil {
+		if err := w.Start(m.ctx, true); err != nil {
 			return err
 		}
 	}

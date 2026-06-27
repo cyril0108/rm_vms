@@ -86,6 +86,8 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/license/all", authMid(http.HandlerFunc(api.HandleGetLicenseList)))
 	mux.HandleFunc("GET /api/license/status", authMid(http.HandlerFunc(api.HandleGetActiveLicenseStatus)))
 
+	mux.HandleFunc("GET /api/estimate/recording", authMid(http.HandlerFunc(api.HandleGetRecordingEstimation)))
+
 
 	// =============================================
 	// Login

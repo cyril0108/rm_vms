@@ -41,6 +41,8 @@ type WorkerResponse struct {
 	EndTime   int64  `json:"end_time,omitempty"`
 	FilePath  string `json:"file_path,omitempty"`
 	SizeBytes int64  `json:"size_bytes,omitempty"`
+
+	EstimatedMB float64 `json:"estimated_mb,omitempty"`
 }
 
 // Worker represents a single C++ subprocess
@@ -183,6 +185,17 @@ func (w *Worker) handleSegmentDone(resp WorkerResponse) {
 	w.submitSegmentEnqueue(seg)
 }
 
+func (w *Worker) handleEstimateStreamSize(resp WorkerResponse) {
+
+	ll := LOG.Prefix("\033[4m[Go][Worker][handleEstimateStreamSize]\033[0m")
+
+	ll.Info("ESS", "size", resp.Size)
+
+
+
+
+}
+
 func (w *Worker) submitSegmentEnqueue(seg *models.Segment) {
 	// Push it to the non-blocking Go channel
 	// (Assuming you added `ingester *ingest.BatchIngester` to your Worker struct)
@@ -228,14 +241,10 @@ func (w *Worker) SetStoragePath(s string) {
 	w.storagePath = s
 }
 
-// func (w *Worker) commandString() string {
-//     return fmt.Sprintf("%s %s", w.BinaryPath, w.storagePath)
-// }
-
 // Start launches the C++ binary and sets up pipes
 // This code will setup pipes and send WorkerID to
 // cpp program, and should not be called twice.
-func (w *Worker) Start(ctx context.Context) error {
+func (w *Worker) Start(ctx context.Context, hookIPC bool) error {
 
 	w.Cmd = exec.CommandContext(ctx, w.BinaryPath, w.storagePath)
 
@@ -260,7 +269,9 @@ func (w *Worker) Start(ctx context.Context) error {
 		return fmt.Errorf("worker %d start failed: %v", w.ID, err)
 	}
 
-	w.connectCMDIPC()
+	if hookIPC {
+		w.connectCMDIPC()
+	}
 	w.SendWorkerID()
 
 	// Launch the monitor in the background.
@@ -388,7 +399,7 @@ func (w *Worker) StopCamRecording(camID int, profile string) error {
 func (w *Worker) RestartCam(camID int, profile string) error {
 
 	if w.camRestartLog(camID) {
-		LOG.Info("[RestartCam]", "cam", camID, "profile", profile)
+		w.log.Info("[RestartCam]", "cam", camID, "profile", profile)
 	}
 
 	w.mu.Lock()
@@ -398,18 +409,18 @@ func (w *Worker) RestartCam(camID int, profile string) error {
 	sp := cam.GetProfile(profile)
 	if sp == nil {
 
-		LOG.Info("[RestartCam] no profile")
+		w.log.Info("[RestartCam] no profile")
 
 		return fmt.Errorf("worker %d: no profile to restart", w.ID)
 	}
 
 	if sp.Status != "stopped" {
-		LOG.Info("[RestartCam] not stopped")
+		w.log.Info("[RestartCam] not stopped")
 		return nil
 	}
 
 	if w.camRestartLog(camID) {
-		LOG.Info("[RestartCam] restarting profile", "profile", profile)
+		w.log.Info("[RestartCam] restarting profile", "profile", profile)
 	}
 
 	return w.StartStreamProfile(camID, profile, sp, cam.Active)
@@ -516,6 +527,9 @@ func (w *Worker) handleCMDResponse(resp WorkerResponse) {
 
 	case "segment_done":
 		w.handleSegmentDone(resp)
+
+	case "ess":
+		w.handleEstimateStreamSize(resp)
 
 	case "shmerr":
 		fallthrough
@@ -660,7 +674,7 @@ func (w *Worker) recoverWorker(ctx context.Context) {
 	}
 
 	// Restart the process
-	if err := w.Start(ctx); err != nil {
+	if err := w.Start(ctx, true); err != nil {
 		fmt.Printf("[Go][Worker %d] Failed to restart: %v\n", w.ID, err)
 		// In a production app, you might want to retry with an exponential backoff here
 		return

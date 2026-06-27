@@ -10,6 +10,8 @@
 #include "Command.h"
 #include "SharedMemory.h"
 
+#include "EstimateStreamSize.h"
+
 const std::shared_ptr<ISharedMemory> SHM = ISharedMemory::CreateInstance();
 
 std::string cameraKey(std::string camID, std::string profile) {
@@ -100,6 +102,26 @@ int main(int argc, char* argv[]) {
                     Log::error("Error starting video ingestion.");
                 }
             }
+
+            if(cmd.Name == "PROBE") {
+                try {
+
+                    std::string idStr = cmd.Args.front();
+                    cmd.Args.pop();
+                    std::string profile = cmd.Args.front();
+                    cmd.Args.pop();
+                    std::string url = cmd.Args.front();
+                    cmd.Args.pop();
+
+                    double eSize = EstimateStreamSizeMBPerMinute(url.c_str());
+                    // Respond to Go
+                    Log::send("{\"status\":\"ess\", \"cam\":" + idStr + ", \"profile\": \"" + profile + "\", \"estimated_mb\":" + std::to_string(eSize) + "}");
+
+                } catch (...) {
+                    Log::error("Error probing stream size.");
+                }
+            }
+
 
             if(cmd.Name == "STOP") {
                 try {
