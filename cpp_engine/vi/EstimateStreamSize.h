@@ -4,3 +4,4 @@
 
 // Estimates the storage footprint of an RTSP stream in Megabytes per minute
 double EstimateStreamSizeMBPerMinute(const char* rtsp_url);
+void HandleProbeCommand(std::string camID, std::string profile, std::string url);

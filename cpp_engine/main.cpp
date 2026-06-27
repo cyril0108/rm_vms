@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <thread>
 
 #include "Log.h"
 #include "VideoIngestion.h"
@@ -113,9 +114,10 @@ int main(int argc, char* argv[]) {
                     std::string url = cmd.Args.front();
                     cmd.Args.pop();
 
-                    double eSize = EstimateStreamSizeMBPerMinute(url.c_str());
-                    // Respond to Go
-                    Log::send("{\"status\":\"ess\", \"cam\":" + idStr + ", \"profile\": \"" + profile + "\", \"estimated_mb\":" + std::to_string(eSize) + "}");
+                    std::thread(HandleProbeCommand, idStr, profile, url).detach();
+                    // double eSize = EstimateStreamSizeMBPerMinute(url.c_str());
+                    // // Respond to Go
+                    // Log::send("{\"status\":\"ess\", \"cam\":" + idStr + ", \"profile\": \"" + profile + "\", \"estimated_mb\":" + std::to_string(eSize) + "}");
 
                 } catch (...) {
                     Log::error("Error probing stream size.");

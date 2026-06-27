@@ -1,10 +1,14 @@
 #include "EstimateStreamSize.h"
 
+#include <thread>
+
 extern "C" {
 #include <libavformat/avformat.h>
 }
 
 #include "Log.h"
+
+std::mutex cout_mutex;
 
 // Helper function to perform a deep packet inspection when headers fail.
 // It physically pulls packets for 'probe_duration_seconds' and weighs them.
@@ -179,4 +183,15 @@ double EstimateStreamSizeMBPerMinute(const char* rtsp_url) {
     av_dict_free(&options);
 
     return final_mb_per_minute;
+}
+
+
+void HandleProbeCommand(std::string camID, std::string profile, std::string url) {
+    // Run the heavy FFmpeg probe
+    double size = EstimateStreamSizeMBPerMinute(url.c_str());
+    
+    // Print the JSON back to Go (Ensure std::cout is thread-safe using a mutex!)
+    std::lock_guard<std::mutex> lock(cout_mutex);
+
+    Log::send("{\"status\":\"ess\", \"cam\":" + camID + ", \"profile\": \"" + profile + "\", \"estimated_mb\":" + std::to_string(size) + "}");
 }
