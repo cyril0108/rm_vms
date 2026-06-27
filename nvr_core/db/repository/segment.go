@@ -119,7 +119,7 @@ func (r *segmentRepo) PruneOldest(ctx context.Context, limit int) ([]string, err
 		WHERE id IN (
 			SELECT id FROM segments ORDER BY start_time ASC LIMIT ?
 		)
-		RETURNING file_path;
+		RETURNING COALESCE(file_path, ''), COALESCE(snapshot_path, '');
 	`
 	rows, err := r.db.QueryContext(ctx, query, limit)
 	if err != nil {

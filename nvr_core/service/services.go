@@ -72,16 +72,13 @@ func StartIngester(ctx context.Context, dbConn *sql.DB) IngestService {
 
 }
 
-func StartRetentionWatcher(ctx context.Context, dbConn *sql.DB, path string) {
+func StartRetentionWatcher(ctx context.Context, dbConn *sql.DB, path string, cameraProvider ActiveCameraProvider) {
 
 	LOG.Info("[StartRetentionWatcher]", "path", path)
 
 	repo := repository.NewSegmentRepository(dbConn)
 
-	retention := RetentionService {
-		path: path,
-		repo: repo,
-	}
+	retention := NewRetentionService(repo, path, cameraProvider)
 
 	go retention.StartDiskWatchdog(ctx)
 

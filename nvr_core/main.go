@@ -67,8 +67,6 @@ func main() {
 	servs := service.NewServices(dbConn)
 	ingester := service.StartIngester(ctx, dbConn)
 
-	service.StartRetentionWatcher(ctx, dbConn, cfg.Server.StoragePath)
-
 
 	//--------------------------
 	// Boot Up Licenses
@@ -96,6 +94,10 @@ func main() {
 	pm.SetLicenseManager(lm)
 
 	go apiserver.Initiate(ctx, cfg, pm, servs)
+
+	service.StartRetentionWatcher(ctx, dbConn, cfg.Server.StoragePath, func() int {
+		return pm.ActiveCameraCount()
+	})
 
 	// Block until the context is canceled (SIGINT/SIGTERM received)
 	<-ctx.Done()

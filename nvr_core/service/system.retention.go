@@ -9,9 +9,23 @@ import (
     "nvr_core/hardware"
 )
 
+type ActiveCameraProvider func() int
+
 type RetentionService struct {
 	path string
 	repo repository.SegmentRepository
+	getActiveCameras ActiveCameraProvider
+}
+
+
+// cameraProvider ActiveCameraProvider
+
+func NewRetentionService(segRepo repository.SegmentRepository, path string, cameraProvider ActiveCameraProvider) RetentionService {
+	return RetentionService{
+		path: path,
+		repo: segRepo,
+		getActiveCameras: cameraProvider,
+	}
 }
 
 // StartDiskWatchdog should run as a goroutine from your main.go
@@ -29,42 +43,43 @@ func (s *RetentionService) StartDiskWatchdog(ctx context.Context) {
 	}
 }
 
-func (s *RetentionService) checkDiskUsage() (bool, error) {
+func (s *RetentionService) checkDiskUsage() (float64, error) {
 
 	usage, err := hardware.GetDiskUsage(s.path)
 
-	LOG.Info("[checkDiskUsage]", "usage", usage)
-
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 
-	perc := (float64(usage.UsedBytes) / float64(usage.TotalBytes)) * 100
+	perc := float64(usage.UsedBytes) / float64(usage.TotalBytes)
 
-	LOG.Info("[checkDiskUsage]", "precentage", perc)
-
-	if perc > 85 {
-		return true, nil
-	}
-
-	return false, nil
+	return perc, nil
 
 }
 
 func (s *RetentionService) enforceDiskWatermark(ctx context.Context) {
-	// Check your physical disk usage here (e.g. using syscall.Statfs)
-	isDiskFull, cdErr := s.checkDiskUsage() 
 
-	if !isDiskFull || cdErr != nil {
+	const HighWaterMark = 0.85
+	const LowWaterMark = 0.80
+
+	// Check your physical disk usage here (e.g. using syscall.Statfs)
+	diskPerc, cdErr := s.checkDiskUsage() 
+
+	if (diskPerc < HighWaterMark) || cdErr != nil {
 		return // Disk is healthy or there is an error reading it, do nothing
 	}
 
-	LOG.Warn("Disk high watermark reached, beginning eviction")
+	// One cameras could have 3 segments (main/sub/snapshot)
+	batchN := s.getActiveCameras() * 3
+
+	LOG.Warn("[enforceDiskWatermark] Disk high watermark reached, beginning eviction", 
+		"precentage", diskPerc,
+		"batchNumber", batchN)
 
 	// The Pruning Loop
-	for isDiskFull {
+	for (diskPerc > LowWaterMark) {
 		// Evict in batches of 100 to prevent long database locks
-		paths, err := s.repo.PruneOldest(ctx, 1)
+		paths, err := s.repo.PruneOldest(ctx, batchN)
 		if err != nil {
 			LOG.Error("Failed to prune database records", "error", err)
 			return
@@ -85,7 +100,7 @@ func (s *RetentionService) enforceDiskWatermark(ctx context.Context) {
 		}
 
 		// Re-evaluate disk space before next iteration
-		isDiskFull, cdErr = s.checkDiskUsage()
+		diskPerc, cdErr = s.checkDiskUsage()
 	}
 
 	if cdErr != nil {
