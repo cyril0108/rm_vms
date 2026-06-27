@@ -67,6 +67,8 @@ func main() {
 	servs := service.NewServices(dbConn)
 	ingester := service.StartIngester(ctx, dbConn)
 
+	service.StartRetentionWatcher(ctx, dbConn, cfg.Server.StoragePath)
+
 
 	//--------------------------
 	// Boot Up Licenses

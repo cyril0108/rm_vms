@@ -23,6 +23,7 @@ type SegmentRepository interface {
 	// Maintenance
 	PruneOldest(ctx context.Context, limit int) ([]string, error)
 	IncrementalVacuum(ctx context.Context, pages int) error
+	GetHourlyBurnRateBytes(ctx context.Context) (uint64, error)
 
 	// Segment search
 	GetLastSegment(ctx context.Context) (*models.Segment, error)
@@ -96,13 +97,13 @@ func (r *segmentRepo) GetLastSegment(ctx context.Context) (*models.Segment, erro
 
 func (r *segmentRepo) HasSegments(ctx context.Context, camID int64) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM segments WHERE camera_id = ?)`
-	
+
 	var exists bool
 	err := r.db.QueryRowContext(ctx, query, camID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
-	
+
 	return exists, nil
 }
 
@@ -139,8 +140,11 @@ func (r *segmentRepo) PruneOldest(ctx context.Context, limit int) ([]string, err
 
 // IncrementalVacuum reclaims disk space from deleted rows.
 func (r *segmentRepo) IncrementalVacuum(ctx context.Context, pages int) error {
-	query := `PRAGMA incremental_vacuum(?);`
-	_, err := r.db.ExecContext(ctx, query, pages)
+	// query := `PRAGMA incremental_vacuum(?);`
+	// PRAGMA statements do not support parameter binding. 
+	// We safely format the integer directly into the query.
+	query := fmt.Sprintf("PRAGMA incremental_vacuum(%d);", pages)
+	_, err := r.db.ExecContext(ctx, query)
 	return err
 }
 

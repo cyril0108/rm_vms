@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var LOG = logger.NewLogger("[nvr_core][service]")
+var LOG = logger.NewLogger("\033[35m[nvr_core][service]\033[0m")
 
 type authServiceBase struct {
 	userRepo    repository.UserRepository

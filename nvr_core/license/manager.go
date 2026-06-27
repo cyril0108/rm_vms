@@ -76,7 +76,7 @@ func (lm *LicenseManager) AddLicense(lic *models.License) {
 
 	} else {
 
-		ll.Info("[AddLicense] invalid license", "license", lic)
+		ll.Info("[AddLicense] invalid license", "license", lic.ID)
 
 	}
 

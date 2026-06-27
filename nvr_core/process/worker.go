@@ -527,7 +527,7 @@ func (w *Worker) handleCMDResponse(resp WorkerResponse) {
 
 func (w *Worker) updateChannelCodecs(resp WorkerResponse) {
 
-    fmt.Printf("\066[33m[Go][Worker %d][updateChannelCodecs] vc:%d ac:%d  \066[0m\n", w.ID, resp.VCodec, resp.ACodec)
+    fmt.Printf("\033[33m[Go][Worker %d][updateChannelCodecs] vc:%d ac:%d  \033[0m\n", w.ID, resp.VCodec, resp.ACodec)
 
     ll := LOG.Prefix("[updateChannelCodecs]").Lin("cam", resp.CamID, "profile", resp.Profile, "shm", resp.ChannelID)
 
