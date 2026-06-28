@@ -155,10 +155,10 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if s.PM.CanAddNewCamera() {
-		utils.RespondErrReachMaxLicense(w)
-		return
-	}
+	// if s.PM.CanAddNewCamera() {
+	// 	utils.RespondErrReachMaxLicense(w)
+	// 	return
+	// }
 
 	var newCamera dto.CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&newCamera); err != nil {
@@ -213,11 +213,10 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if s.PM.CanAddNewCamera() {
-		utils.RespondErrReachMaxLicense(w)
-		return
-	}
-
+	// if s.PM.CanAddNewCamera() {
+	// 	utils.RespondErrReachMaxLicense(w)
+	// 	return
+	// }
 
 	var camReq dto.CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&camReq); err != nil {
