@@ -56,9 +56,22 @@ AVDictionary* configureAVDictionary(AVDictionary* options) {
     // Low delay flag for the codec context (if you were decoding, but safe to set generally)
     av_dict_set(&options, "flags", "low_delay", 0);
 
+    av_dict_set(&options, "user_agent", "NVR_System", 0);
+
     return options;
 
 }
+
+// AVDictionary* setAVDictionaryAuth(AVDictionary* options, user, password) {
+
+//     // av_dict_set(&options, "allowed_media_types", "video", 0); 
+
+//     av_dict_set(&options, "default_protocol_opts", 
+//             ("user=" + user + "&password=" + password).c_str(), 0);
+
+//     return options;
+
+// }
 
 
 /**

@@ -22,7 +22,7 @@ func Startup(ctx context.Context, cfg *utils.Config, ingester service.IngestServ
 
 	// Distribute Cameras
 	for _, cam := range cams {
-		if err, err2 := pm.AssignCamera(NewCameraRuntime(cam)); err != nil || err2 != nil {
+		if err, err2 := pm.AssignCamera(NewCameraRuntime(cam, cfg.Server.MasterKey())); err != nil || err2 != nil {
 			// log.Printf("Failed to assign cam %d: %v", cam.ID, err)
 			ll.Error("Failed to assign camera workers", "cam", cam.ID, "err", err, "err2", err2)
 		}

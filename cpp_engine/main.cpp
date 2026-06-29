@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
 
         Command cmd = parseCommand(line);
 
-        Log::info("Got command " + line);
+        // Log::info("Got command " + line);
 
         if(cmd.Name != "") {
 
@@ -87,8 +87,8 @@ int main(int argc, char* argv[]) {
 
                     std::string key = cameraKey(idStr, profile);
 
-                    Log::info("id, profile, url:" + idStr + " " + profile + " " + url );
-                    Log::info("id, recording:" + idStr + " " + recordStr + "->" + (isRecording ? "true" : "false") );
+                    // Log::info("id, profile, url:" + idStr + " " + profile + " " + url );
+                    // Log::info("id, recording:" + idStr + " " + recordStr + "->" + (isRecording ? "true" : "false") );
 
                     // Respond to Go
                     Log::send("{\"status\":\"starting\", \"cam\":" + idStr + "}");

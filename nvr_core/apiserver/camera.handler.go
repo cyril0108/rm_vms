@@ -177,7 +177,7 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//
-	// s.PM.AssignNewCamera(cam)
+	s.PM.AssignNewCamera(cam)
 
 	theCamera := dto.MapCameraToDetail(*cam)
 
@@ -251,7 +251,7 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// s.PM.AssignNewCamera(newCam)
+	s.PM.AssignNewCamera(newCam)
 
 	w.WriteHeader(http.StatusCreated)
 	if err := utils.RespondJSON(w, dto.MapCameraToDetail(*newCam), ""); err != nil {

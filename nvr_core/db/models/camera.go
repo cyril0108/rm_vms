@@ -1,7 +1,9 @@
 package models
 
 import (
+	"net/url"
 	"strconv"
+
 	"nvr_core/network"
 	"nvr_core/security"
 )
@@ -67,4 +69,50 @@ func (c *Camera) EncryptPassword(plaintext string, masterKey []byte) {
 
 func (c *Camera) DecryptPassword(masterKey []byte) (string, error) {
 	return security.Decrypt(c.PasswordEnc, masterKey)
+}
+
+// Return Auth injected main stream url
+func (c *Camera) AuthMainUrl(masterKey []byte) (string) {
+	url, err := c.injectAuth(c.StreamURL, masterKey)
+	if err != nil {
+		return c.StreamURL
+	}
+	return url
+}
+
+func (c *Camera) AuthSubUrl(masterKey []byte) (string) {
+	url, err := c.injectAuth(c.SubStreamURL, masterKey)
+	if err != nil {
+		return c.StreamURL
+	}
+	return url
+}
+
+func (c *Camera) injectAuth(url string, masterKey []byte) (string, error) {
+
+	pwd, err := c.DecryptPassword(masterKey)
+	if err != nil {
+		return url, err
+	}
+
+	rurl, err := injectCredentials(url, c.Username, pwd)
+
+	if err != nil {
+		return url, err
+	}
+
+	return rurl, nil
+
+}
+
+func injectCredentials(rawURL, username, password string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	// Safely injects and URL-encodes the credentials
+	parsedURL.User = url.UserPassword(username, password)
+
+	return parsedURL.String(), nil
 }

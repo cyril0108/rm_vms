@@ -119,7 +119,7 @@ func (m *Manager) GetCamera(camID int) *Camera {
 }
 
 func (m *Manager) AssignNewCamera(newCam *models.Camera) (error, error) {
-	cam := NewCameraRuntime(newCam)
+	cam := NewCameraRuntime(newCam, m.cfg.Server.MasterKey())
 	return m.AssignCamera(cam)
 }
 

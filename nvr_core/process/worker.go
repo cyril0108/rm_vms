@@ -97,7 +97,7 @@ func (w *Worker) handleStoppedStream(resp WorkerResponse) {
 	go func() {
 		time.Sleep(8 * time.Second)
 		if 	w.camRestartLog(resp.CamID) {
-			fmt.Println(LOGSEP+"[Go][Worker] restarting cam:", resp.CamID, resp.Profile)
+			// fmt.Println(LOGSEP+"[Go][Worker] restarting cam:", resp.CamID, resp.Profile)
 		}
 		w.RestartCam(resp.CamID, resp.Profile)
 	}()
@@ -707,7 +707,7 @@ func (w *Worker) camRestartLog(camID int) bool {
 
 	cnt := w.restartCnt[camID]
 
-	if cnt > 3 {
+	if cnt > 2 {
 		return false
 	}
 

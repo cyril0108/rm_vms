@@ -571,7 +571,7 @@ void VideoIngestion::ingestAudio(AVPacket* packet) {
  */
 int VideoIngestion::openInput() {
 
-    Log::info(camName + "Connecting to: " + url);
+    // Log::info(camName + "Connecting to: " + url);
 
     fmtCtx = avformat_alloc_context();
     if (!fmtCtx) {
@@ -590,7 +590,7 @@ int VideoIngestion::openInput() {
         // Ask FFmpeg to translate the error code
         av_strerror(ret, errbuf, sizeof(errbuf));
 
-        std::cerr << camName << "[FFmpeg Error] Could not open source: " << url << std::endl;
+        std::cerr << camName << "[FFmpeg Error] Could not open source " << std::endl;
         std::cerr << "Reason: " << errbuf << " (Code: " << ret << ")" << std::endl;
 
         // Note: avformat_open_input automatically frees fmtCtx on failure, 
