@@ -19,7 +19,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			credentials	body		dto.LoginRequest	true	"User Login Credentials"
-//	@Success		200			{object}	APIResponse{ Data:dto.LoginResponse }	"Successfully authenticated"
+//	@Success		200			{object}	utils.APIResponse{ dto.LoginResponse }	"Successfully authenticated"
 //	@Failure		400			{string}	string				"Invalid JSON payload"
 //	@Failure		401			{string}	string				"Invalid credentials or account disabled"
 //	@Failure		500			{string}	string				"Internal server error"

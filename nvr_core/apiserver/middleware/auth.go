@@ -139,11 +139,14 @@ func (s SessionData) HasPermissionCameraLive() bool {
 	return s.HasPermission(PERMCameraLive)
 }
 
-func (s SessionData) HasPermissionCameraPlayback() bool {
-	return s.HasPermission(PERMCameraPlayback)
-}
-
 func (s SessionData) HasPermissionCameraPTZ() bool {
 	return s.HasPermission(PERMCameraPtz)
 }
 
+func (s SessionData) HasPermissionCameraPlayback() bool {
+	return s.HasPermission(PERMCameraPlayback)
+}
+
+func (s SessionData) HasPermissionRecordExport() bool {
+	return s.HasPermission(PERMRecordingExport)
+}

@@ -525,6 +525,142 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/export/{cam_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Asynchronously exports video for a specific camera and time range. Returns a task ID for status polling and downloading.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Export"
+                ],
+                "summary": "Initiate a video export task",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Camera ID",
+                        "name": "cam_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Start Unix timestamp (milliseconds)",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "End Unix timestamp (milliseconds)",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Stream profile (e.g., main, sub)",
+                        "name": "profile",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns task_id and status (pending)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid camera ID or timestamps",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Missing export permissions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/export/{task_id}/download": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads the compiled .mp4 file for a completed export task.",
+                "tags": [
+                    "Export"
+                ],
+                "summary": "Download exported video",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Export Task ID (UUID)",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The exported MP4 video file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing task ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Missing export permissions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Export task not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Export is not ready for download",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "410": {
+                        "description": "Exported file has expired or been deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/login": {
             "post": {
                 "description": "Authenticates a user by username and password. Returns a short-lived JWT access token, a long-lived refresh token, and a list of user permissions.",
@@ -553,7 +689,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully authenticated",
                         "schema": {
-                            "$ref": "#/definitions/dto.LoginResponse"
+                            "$ref": "#/definitions/utils.APIResponse"
                         }
                     },
                     "400": {
@@ -618,7 +754,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves a list of all permissions that can be assigned to users or roles. Requires MANAGE_USERS permission.",
+                "description": "Retrieves a list of all permissions that can be assigned to users or roles. Requires user_manage permission.",
                 "consumes": [
                     "application/json"
                 ],
@@ -719,7 +855,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieves a list of all roles defined in the system. Requires MANAGE_USERS permission.",
+                "description": "Retrieves a list of all roles defined in the system. Requires user_manage permission.",
                 "consumes": [
                     "application/json"
                 ],
@@ -815,7 +951,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Overwrites a user's direct permission grants. Cannot be used to modify one's own permissions. Requires MANAGE_USERS permission.",
+                "description": "Overwrites a user's direct permission grants. Cannot be used to modify one's own permissions. Requires user_manage permission.",
                 "consumes": [
                     "application/json"
                 ],
@@ -920,6 +1056,58 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Invalid credentials or account disabled",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/web/refresh": {
+            "post": {
+                "description": "Exchanges a valid refresh token for a new short-lived JWT access token and updated permissions.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh Access Token",
+                "parameters": [
+                    {
+                        "description": "Refresh Token Payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully refreshed",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or expired refresh token",
                         "schema": {
                             "type": "string"
                         }
@@ -1073,6 +1261,29 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/dto.LoginUser"
+                }
+            }
+        },
+        "dto.LoginUser": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -1420,11 +1631,14 @@ const docTemplate = `{
                 "channel_id": {
                     "type": "integer"
                 },
-                "status": {
-                    "description": "e.g., \"offline\", \"streaming\", \"failed\"",
+                "live_url": {
                     "type": "string"
                 },
-                "url": {
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "e.g., \"offline\", \"streaming\", \"failed\"",
                     "type": "string"
                 },
                 "vcodec": {
@@ -1433,6 +1647,15 @@ const docTemplate = `{
                 "worker_id": {
                     "description": "Moved here! Can be different for main/sub",
                     "type": "integer"
+                }
+            }
+        },
+        "utils.APIResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "message": {
+                    "type": "string"
                 }
             }
         }

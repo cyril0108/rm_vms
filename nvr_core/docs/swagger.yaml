@@ -94,6 +94,21 @@ definitions:
         type: string
       token:
         type: string
+      user:
+        $ref: '#/definitions/dto.LoginUser'
+    type: object
+  dto.LoginUser:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      role_id:
+        type: integer
+      user_id:
+        type: integer
+      username:
+        type: string
     type: object
   dto.RefreshRequest:
     properties:
@@ -320,16 +335,24 @@ definitions:
         type: integer
       channel_id:
         type: integer
+      live_url:
+        type: string
+      source:
+        type: string
       status:
         description: e.g., "offline", "streaming", "failed"
-        type: string
-      url:
         type: string
       vcodec:
         type: integer
       worker_id:
         description: Moved here! Can be different for main/sub
         type: integer
+    type: object
+  utils.APIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
     type: object
 host: localhost:9080
 info:
@@ -681,6 +704,95 @@ paths:
       summary: Get database camera list
       tags:
       - Cameras
+  /api/export/{cam_id}:
+    get:
+      consumes:
+      - application/json
+      description: Asynchronously exports video for a specific camera and time range.
+        Returns a task ID for status polling and downloading.
+      parameters:
+      - description: Camera ID
+        in: path
+        name: cam_id
+        required: true
+        type: integer
+      - description: Start Unix timestamp (milliseconds)
+        in: query
+        name: start
+        required: true
+        type: integer
+      - description: End Unix timestamp (milliseconds)
+        in: query
+        name: end
+        required: true
+        type: integer
+      - description: Stream profile (e.g., main, sub)
+        in: query
+        name: profile
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns task_id and status (pending)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid camera ID or timestamps
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden - Missing export permissions
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Initiate a video export task
+      tags:
+      - Export
+  /api/export/{task_id}/download:
+    get:
+      description: Downloads the compiled .mp4 file for a completed export task.
+      parameters:
+      - description: Export Task ID (UUID)
+        in: path
+        name: task_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: The exported MP4 video file
+          schema:
+            type: file
+        "400":
+          description: Missing task ID
+          schema:
+            type: string
+        "403":
+          description: Forbidden - Missing export permissions
+          schema:
+            type: string
+        "404":
+          description: Export task not found
+          schema:
+            type: string
+        "409":
+          description: Export is not ready for download
+          schema:
+            type: string
+        "410":
+          description: Exported file has expired or been deleted
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Download exported video
+      tags:
+      - Export
   /api/login:
     post:
       consumes:
@@ -700,7 +812,7 @@ paths:
         "200":
           description: Successfully authenticated
           schema:
-            $ref: '#/definitions/dto.LoginResponse'
+            $ref: '#/definitions/utils.APIResponse'
         "400":
           description: Invalid JSON payload
           schema:
@@ -744,7 +856,7 @@ paths:
       consumes:
       - application/json
       description: Retrieves a list of all permissions that can be assigned to users
-        or roles. Requires MANAGE_USERS permission.
+        or roles. Requires user_manage permission.
       produces:
       - application/json
       responses:
@@ -810,7 +922,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves a list of all roles defined in the system. Requires MANAGE_USERS
+      description: Retrieves a list of all roles defined in the system. Requires user_manage
         permission.
       produces:
       - application/json
@@ -874,7 +986,7 @@ paths:
       consumes:
       - application/json
       description: Overwrites a user's direct permission grants. Cannot be used to
-        modify one's own permissions. Requires MANAGE_USERS permission.
+        modify one's own permissions. Requires user_manage permission.
       parameters:
       - description: Target User ID
         in: path
@@ -950,6 +1062,41 @@ paths:
           schema:
             type: string
       summary: User login
+      tags:
+      - auth
+  /api/web/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchanges a valid refresh token for a new short-lived JWT access
+        token and updated permissions.
+      parameters:
+      - description: Refresh Token Payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully refreshed
+          schema:
+            $ref: '#/definitions/dto.RefreshResponse'
+        "400":
+          description: Invalid JSON payload
+          schema:
+            type: string
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Refresh Access Token
       tags:
       - auth
 swagger: "2.0"

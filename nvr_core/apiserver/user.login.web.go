@@ -109,7 +109,7 @@ func (api *APIServer) HandleWebLogin(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{string}	string				"Invalid JSON payload"
 //	@Failure		401		{string}	string				"Invalid or expired refresh token"
 //	@Failure		500		{string}	string				"Internal server error"
-//	@Router			/api/refresh [post]
+//	@Router			/api/web/refresh [post]
 func (api *APIServer) HandleWebRefreshOrLogout(w http.ResponseWriter, r *http.Request) {
 
 	// Extract the refresh token directly from the Secure Cookie

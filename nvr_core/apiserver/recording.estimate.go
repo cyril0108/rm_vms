@@ -55,7 +55,7 @@ func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *htt
 
 	}
 
-	var estimates *dto.RecordingEstimates
+	estimates := &dto.RecordingEstimates{}
 
 	estMB, err := api.calculateTotalBandwidth(streams)
 	if err != nil {

@@ -1,6 +1,5 @@
 package dto
 
-
 // ===========================
 // Recording Estimates
 // ===========================
@@ -9,5 +8,3 @@ type RecordingEstimates struct {
 	AvailableMB    float64  `json:"mb_available"`
 	RecordingTime  float64  `json:"recording_time"`
 }
-
-

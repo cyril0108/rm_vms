@@ -137,6 +137,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/scan/{ip}", (http.HandlerFunc(api.HandleCameraProbe)))
 	mux.HandleFunc("POST /api/scan/{ip}/onvif", (http.HandlerFunc(api.HandleFetchCameraONVIF)))
 
+
 	// =============================================
 	// Camera stream
 	// =============================================
@@ -167,7 +168,6 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("POST /api/cameras/{cam_id}/stop", authMid(http.HandlerFunc(api.DeactivateCamera)))
 	mux.HandleFunc("POST /api/cameras/{cam_id}/start", authMid(http.HandlerFunc(api.ActivateCamera)))
 
-	// Becareful with this
 	mux.HandleFunc("DELETE /api/cameras/{cam_id}", authMid(http.HandlerFunc(api.DeleteCamera)))
 
 
@@ -200,6 +200,15 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// mux.HandleFunc("GET /api/cameras/{cam_id}/playlist/ts.m3u8", authMid(http.HandlerFunc(api.HandleGetTSPlaylist)))
 	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist.m3u8", api.HandleGetPlaylist)
 	mux.HandleFunc("GET /api/cameras/{cam_id}/playlist/ts.m3u8", api.HandleGetTSPlaylist)
+
+
+	// =============================================
+	// Export
+	// =============================================
+	mux.HandleFunc("GET /api/export/{cam_id}", authMid(http.HandlerFunc(api.HandleExportRequest)))
+	mux.HandleFunc("GET /api/export/{task_id}/download", authMid(http.HandlerFunc(api.HandleDownloadExport)))
+
+
 
 	// =============================================
 	// Serve Web

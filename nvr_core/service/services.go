@@ -20,6 +20,8 @@ type Services struct {
 	Playlist   PlaylistService
 	System     SystemService
 	SysSetting SystemSettingService
+	Export     ExportService
+	ExportTM   *ExportTaskManager
 }
 
 
@@ -44,6 +46,8 @@ func NewServices(dbConn *sql.DB) *Services {
 	camSvc := NewCameraManagementService(cameraRepo, segRepo)
 	sssSvc := NewSysSettingService(sssRepo)
 	licSvc := NewLicenseService(licRepo)
+	exportSvc := NewExportService(segRepo)
+	exportTMSvc := NewExportTaskManager()
 
 	return &Services{
 		Auth:     authSvc,
@@ -56,6 +60,8 @@ func NewServices(dbConn *sql.DB) *Services {
 		Playlist: playlistSvc,
 		System:   systemSvc,
 		SysSetting: sssSvc,
+		Export: exportSvc,
+		ExportTM: exportTMSvc,
 	}
 }
 
