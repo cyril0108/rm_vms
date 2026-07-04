@@ -7,6 +7,7 @@ import (
 
     "nvr_core/db/repository"
     "nvr_core/hardware"
+    "nvr_core/utils"
 )
 
 type ActiveCameraProvider func() int
@@ -17,6 +18,8 @@ type RetentionService struct {
 	getActiveCameras ActiveCameraProvider
 }
 
+const HighWaterMark = utils.HighWaterMark
+const LowWaterMark = utils.LowWaterMark
 
 // cameraProvider ActiveCameraProvider
 
@@ -58,9 +61,6 @@ func (s *RetentionService) checkDiskUsage() (float64, error) {
 }
 
 func (s *RetentionService) enforceDiskWatermark(ctx context.Context) {
-
-	const HighWaterMark = 0.85
-	const LowWaterMark = 0.80
 
 	// Check your physical disk usage here (e.g. using syscall.Statfs)
 	diskPerc, cdErr := s.checkDiskUsage() 

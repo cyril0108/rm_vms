@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"nvr_core/apiserver/dto"
+	"nvr_core/hardware"
 	"nvr_core/utils"
 	"sync"
 	"time"
@@ -53,6 +55,8 @@ func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *htt
 
 	}
 
+	var estimates *dto.RecordingEstimates
+
 	estMB, err := api.calculateTotalBandwidth(streams)
 	if err != nil {
 
@@ -61,7 +65,27 @@ func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *htt
 
 	}
 
-	utils.RespondJSON(w, estMB, "success")
+	estimates.MBPerMinute = estMB
+
+	disk, err := hardware.GetDiskUsage(api.CFG.Server.StoragePath)
+	if err != nil {
+
+		utils.RespondJSONHTTPStatus(w, "Failed to get disk usage", http.StatusInternalServerError)
+		return
+
+	}
+
+	availMB := float64(disk.AvailableBytes) / (1024*1024)
+	availMB = availMB * utils.LowWaterMark
+	estimates.AvailableMB = availMB
+
+	if estMB > 0 {
+		estimates.RecordingTime = availMB / estMB
+	} else {
+		estimates.RecordingTime = 0.0 
+	}
+
+	utils.RespondJSON(w, estimates, "success")
 
 }
 
