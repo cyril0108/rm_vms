@@ -20,7 +20,7 @@ func (s *APIServer) HandleAdminInitConfigure(w http.ResponseWriter, r *http.Requ
 		return;
 	}
 
-	var req dto.LoginRequest
+	var req dto.SystemConfigureRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.RespondErrInvalidPayload(w)
 		return
@@ -42,6 +42,16 @@ func (s *APIServer) HandleAdminInitConfigure(w http.ResponseWriter, r *http.Requ
 		LOG.Error("Error when creating admin", "err", err)
 		utils.RespondJSONHTTPStatus(w, "Failed to configure admin", http.StatusInternalServerError)
 		return
+	}
+
+	if req.ServerName != "" {
+
+		if err := s.Services.SysSetting.SetServerName(ctx, req.ServerName); err != nil {
+			LOG.Error("Error when setting server name", "err", err)
+			utils.RespondJSONHTTPStatus(w, "Error when setting server name", http.StatusInternalServerError)
+			return
+		}
+
 	}
 
 	utils.RespondJSON(w, "", "success")

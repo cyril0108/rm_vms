@@ -77,11 +77,18 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /debug/db", authMid(http.HandlerFunc(api.GetDebugInfo)))
 
 	// =============================================
+	// Server Set
+	// =============================================
+	mux.HandleFunc("PUT /api/config/servername", api.HandleSetServerName)
+
+
+	// =============================================
 	// Hardware and License
 	// =============================================
 	// Return machine id and server name
 	mux.HandleFunc("GET /api/machine", authMid(http.HandlerFunc(api.HandleGetMachineInfo)))
 	mux.HandleFunc("POST /api/license", authMid(http.HandlerFunc(api.HandleReceiveLicense)))
+	mux.HandleFunc("POST /api/license/key", authMid(http.HandlerFunc(api.HandleReceiveLicenseKey)))
 
 	mux.HandleFunc("GET /api/license/all", authMid(http.HandlerFunc(api.HandleGetLicenseList)))
 	mux.HandleFunc("GET /api/license/status", authMid(http.HandlerFunc(api.HandleGetActiveLicenseStatus)))
@@ -105,6 +112,8 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// User Management
 	// =============================================
 	mux.HandleFunc("GET /api/admin/users", authMid(http.HandlerFunc(api.HandleListUsers)))
+
+	mux.HandleFunc("GET /api/users/me", authMid(http.HandlerFunc(api.HandleGetLoginUser)))
 
 	mux.HandleFunc("GET /api/admin/permissions", authMid(http.HandlerFunc(api.HandleGetAllPermissions)))
 	mux.HandleFunc("GET /api/admin/roles", authMid(http.HandlerFunc(api.HandleGetAllRoles)))

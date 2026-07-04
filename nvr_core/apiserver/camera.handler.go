@@ -170,10 +170,13 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 	cam := newCamera.MapToDBCamera()
 	cam.EncryptPassword(newCamera.Password, s.CFG.Server.MasterKey())
 	if _, err := s.Services.Camera.AddCamera(ctx, cam); err != nil {
+
 		errstr := fmt.Sprintf("Failed to add camera: %v", err)
 		log.Print(errstr)
 		utils.RespondJSONHTTPStatus(w, errstr, http.StatusBadRequest)
+
 		return
+
 	}
 
 	//
@@ -376,17 +379,14 @@ func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if(camID <= 3 && camID>0) {
-	// 	utils.RespondJSONHTTPStatus(w, "[dev] testing camera id should not be deleted.", http.StatusBadRequest)
-	// 	return
-	// }
-
 	ctx := r.Context()
 	if err := s.Services.Camera.DeleteCamera(ctx, camID); err != nil {
 		log.Printf("Failed to delete camera: %v", err)
 		utils.RespondJSONHTTPStatus(w, "Failed to delete camera", http.StatusInternalServerError)
 		return
 	}
+
+	s.PM.RemoveCamera(int(camID))
 
 	if err := utils.RespondJSON(w, "", "deleted"); err != nil {
 		log.Printf("Error encoding delete camera response: %v", err)

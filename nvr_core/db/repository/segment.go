@@ -129,11 +129,18 @@ func (r *segmentRepo) PruneOldest(ctx context.Context, limit int) ([]string, err
 
 	var paths []string
 	for rows.Next() {
-		var path string
-		if err := rows.Scan(&path); err != nil {
+		var filePath, snapPath string
+		if err := rows.Scan(&filePath, &snapPath); err != nil {
 			return nil, err
 		}
-		paths = append(paths, path)
+
+		// Only append valid, non-empty paths to our deletion list
+		if filePath != "" {
+			paths = append(paths, filePath)
+		}
+		if snapPath != "" {
+			paths = append(paths, snapPath)
+		}
 	}
 	return paths, rows.Err()
 }

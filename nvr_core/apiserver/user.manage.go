@@ -11,6 +11,26 @@ import (
 	"nvr_core/utils"
 )
 
+func (api *APIServer) HandleGetLoginUser(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionUserManage() { // Strictly enforce permissions
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	user, err := api.Services.User.GetByID(api.Context, session.UserID)
+
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, "failed to get user data", http.StatusInternalServerError)
+		return
+	}
+
+	utils.RespondJSON(w, user, "success")
+
+}
+
+
 // HandleListUsers expects: GET /api/admin/users?page=1&limit=20
 func (api *APIServer) HandleListUsers(w http.ResponseWriter, r *http.Request) {
 

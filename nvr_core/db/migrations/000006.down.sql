@@ -1,0 +1,2 @@
+ALTER TABLE licenses DROP COLUMN key;
+ALTER TABLE cameras DROP COLUMN deleted;
