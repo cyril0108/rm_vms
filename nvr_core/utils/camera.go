@@ -1,17 +1,19 @@
 package utils
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
 
+	"nvr_core/hardware"
 	"nvr_core/security"
 )
 
-
 // Generate creates a deterministic UUIDv5 based on hardware MAC or RTSP URL.
 func GenerateCameraUUID(macAddress string, rtspURL string) string {
+
 	// Primary Strategy: Use the Hardware MAC Address (ONVIF Cameras)
 	if macAddress != "" {
 		cleanMAC := normalizeMAC(macAddress)
@@ -22,8 +24,9 @@ func GenerateCameraUUID(macAddress string, rtspURL string) string {
 
 	// Fallback Strategy: Use the sanitized RTSP URL (Manual/RTSP-only Cameras)
 	if rtspURL != "" {
+		machineID := hardware.GetPersistentMachineID()
 		cleanURL := sanitizeURL(rtspURL)
-		id := security.HashUUID(cleanURL)
+		id := security.HashUUID(fmt.Sprintf("%s|%s", machineID, cleanURL))
 		return id.String()
 	}
 
