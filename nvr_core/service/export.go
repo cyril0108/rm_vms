@@ -90,6 +90,8 @@ func (s *segmentServiceBase) ExportTimeRange(ctx context.Context, rootPath strin
 	reqStart := params.Start
 	reqEnd   := params.End
 
+	params.TM.UpdateTaskStatus(taskID, utils.TaskStatusRunning)
+
 	// Fetch and Sort Segments (Database Responsibility)
 	segments, err := s.repo.GetProfileSegmentsByRange(ctx, camID, profile, reqStart, reqEnd)
 	if err != nil {
@@ -173,6 +175,7 @@ func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, 
 	// Base arguments required for all exports
 	ffmpegArgs := []string{
 		"-y", 
+		"-nostdin", // Prevents background TTY/Stdin from pausing the program
 		"-f", "concat",
 		"-safe", "0",
 		"-i", concatFilePath,
@@ -218,7 +221,7 @@ func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, 
 				secs, _ := strconv.ParseFloat(matches[3], 64)
 
 				currentSec := (hours * 3600) + (mins * 60) + secs
-				
+
 				// Calculate percentage
 				progress := (currentSec / totalDurationSec) * 100.0
 				if progress > 100 {
@@ -238,7 +241,7 @@ func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, 
 		}
 	}
 
-	if err := cmd.Run(); err != nil {
+	if err := cmd.Wait(); err != nil {
 		return fmt.Errorf("ffmpeg execution failed: %v", err)
 	}
 

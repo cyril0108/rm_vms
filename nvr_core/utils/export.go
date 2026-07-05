@@ -10,10 +10,11 @@ import (
 type TaskStatus string
 
 const (
-	TaskStatusPending   TaskStatus = "pending"
-	TaskStatusRunning   TaskStatus = "running"
-	TaskStatusCompleted TaskStatus = "completed"
-	TaskStatusFailed    TaskStatus = "failed"
+	TaskStatusPending    TaskStatus = "pending"
+	TaskStatusRunning    TaskStatus = "running"
+	TaskStatusFinalizing TaskStatus = "finalizing"
+	TaskStatusCompleted  TaskStatus = "completed"
+	TaskStatusFailed     TaskStatus = "failed"
 )
 
 // SupportedExportFormats is the single source of truth for NVR video export formats and their MIME types.

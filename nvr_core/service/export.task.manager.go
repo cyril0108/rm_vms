@@ -49,6 +49,19 @@ func (m *ExportTaskManager) UpdateTaskProgress(id string, progr float64) {
 	defer m.mu.Unlock()
 	if task, exists := m.tasks[id]; exists {
 		task.Progress = progr
+
+		// Give the frontend explicit feedback during the silent +faststart second pass
+		if progr >= 99.0 && task.Status == utils.TaskStatusPending {
+			task.Status = utils.TaskStatusFinalizing
+		}
+	}
+}
+
+func (m *ExportTaskManager) UpdateTaskStatus(id string, status utils.TaskStatus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if task, exists := m.tasks[id]; exists {
+		task.Status = status
 	}
 }
 
