@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"nvr_core/apiserver/middleware"
+	"nvr_core/service"
 	"nvr_core/utils"
 )
 
@@ -48,10 +49,17 @@ func (api *APIServer) HandleExportRequest(w http.ResponseWriter, r *http.Request
 
 	profile := GetQueryProfile(r)
 
+	format := r.URL.Query().Get("format")
+	if format == "" {
+		format = "mp4"
+	}
+
+
 	TM := api.Services.ExportTM
 
 	// Generate ID and register the task synchronously
 	task := TM.CreateTask()
+	task.MIME = utils.GetVideoMimeType(format)
 
 	// Spin up the background worker
 	go func(taskID string) {
@@ -61,8 +69,16 @@ func (api *APIServer) HandleExportRequest(w http.ResponseWriter, r *http.Request
 		rootPath := api.CFG.Server.StoragePath
 
 		// Run the FFmpeg logic we built earlier
-		outputPath, err := api.Services.Export.ExportTimeRange(context.Background(), rootPath, camID, profile, start, end)
-		
+		outputPath, err := api.Services.Export.ExportTimeRange(context.Background(), rootPath, service.ExportParams{
+			TM: api.Services.ExportTM,
+			TaskID: taskID,
+			CamID: camID,
+			Profile: profile,
+			Format: format,
+			Start: start,
+			End: end,
+		})
+
 		if err != nil {
 			TM.UpdateTaskFailed(taskID, err.Error())
 			return
@@ -83,6 +99,45 @@ func (api *APIServer) HandleExportRequest(w http.ResponseWriter, r *http.Request
 
 }
 
+// HandleExportTaskStatus godoc
+// @Summary      Get export task status
+// @Description  Get the status and progress of the exporting task.
+// @Tags         Export
+// @Security     BearerAuth
+// @Param        task_id  path      string  true  "Export Task ID (UUID)"
+// @Success      200      {file}    file    "The exported video file"
+// @Failure      400      {string}  string  "Missing task ID"
+// @Failure      403      {string}  string  "Forbidden - Missing export permissions"
+// @Failure      404      {string}  string  "Export task not found"
+// @Failure      410      {string}  string  "Exported file has expired or been deleted"
+// @Router       /api/export/{task_id}/status [get]
+func (api *APIServer) HandleExportTaskStatus(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionRecordExport() { // Strictly enforce permissions
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	// Extract the TaskID from the URL parameters
+	taskID := r.PathValue("task_id")
+
+	if taskID == "" {
+		http.Error(w, "Missing task ID", http.StatusBadRequest)
+		return
+	}
+
+	// Look up the task securely in server memory
+	task, exists := api.Services.ExportTM.GetTask(taskID)
+	if !exists {
+		http.Error(w, "Export task not found", http.StatusNotFound)
+		return
+	}
+
+	utils.RespondJSON(w, task, string(task.Status))
+
+}
+
 
 // HandleDownloadExport godoc
 // @Summary      Download exported video
@@ -90,7 +145,7 @@ func (api *APIServer) HandleExportRequest(w http.ResponseWriter, r *http.Request
 // @Tags         Export
 // @Security     BearerAuth
 // @Param        task_id  path      string  true  "Export Task ID (UUID)"
-// @Success      200      {file}    file    "The exported MP4 video file"
+// @Success      200      {file}    file    "The exported video file"
 // @Failure      400      {string}  string  "Missing task ID"
 // @Failure      403      {string}  string  "Forbidden - Missing export permissions"
 // @Failure      404      {string}  string  "Export task not found"
@@ -108,7 +163,6 @@ func (api *APIServer) HandleDownloadExport(w http.ResponseWriter, r *http.Reques
 
 	// Extract the TaskID from the URL parameters
 	taskID := r.PathValue("task_id")
-	// taskID := r.URL.Query().Get("taskID") // Fallback if using standard library
 
 	if taskID == "" {
 		http.Error(w, "Missing task ID", http.StatusBadRequest)
@@ -135,7 +189,7 @@ func (api *APIServer) HandleDownloadExport(w http.ResponseWriter, r *http.Reques
 
 	// Force the browser to download the file rather than play it in-browser
 	w.Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(task.OutputPath))
-	w.Header().Set("Content-Type", "video/mp4")
+	w.Header().Set("Content-Type", task.MIME)
 
 	// Safely serve the file. 
 	// http.ServeFile automatically handles range requests (for pausing/resuming downloads)

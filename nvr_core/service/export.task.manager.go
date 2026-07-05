@@ -9,11 +9,13 @@ import (
 
 
 type ExportTask struct {
-	ID         string     `json:"id"`
-	Status     utils.TaskStatus `json:"status"`
-	OutputPath string     `json:"-"`
-	ErrorMsg   string     `json:"error_msg,omitempty"` // Populated if failed
-	CreatedAt  time.Time  `json:"created_at"`
+	ID          string     `json:"id"`
+	Status      utils.TaskStatus `json:"status"`
+	Progress    float64    `json:"progress"`
+	MIME        string     `json:"-"`
+	OutputPath  string     `json:"-"`
+	ErrorMsg    string     `json:"error_msg,omitempty"` // Populated if failed
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 type ExportTaskManager struct {
@@ -41,6 +43,15 @@ func (m *ExportTaskManager) CreateTask() *ExportTask {
 
 	return task
 }
+
+func (m *ExportTaskManager) UpdateTaskProgress(id string, progr float64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if task, exists := m.tasks[id]; exists {
+		task.Progress = progr
+	}
+}
+
 
 func (m *ExportTaskManager) UpdateTaskSuccess(id, filePath string) {
 	m.mu.Lock()

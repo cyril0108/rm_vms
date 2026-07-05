@@ -206,6 +206,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// Export
 	// =============================================
 	mux.HandleFunc("GET /api/export/{cam_id}", authMid(http.HandlerFunc(api.HandleExportRequest)))
+	mux.HandleFunc("GET /api/export/{task_id}/status", authMid(http.HandlerFunc(api.HandleExportTaskStatus)))
 	mux.HandleFunc("GET /api/export/{task_id}/download", authMid(http.HandlerFunc(api.HandleDownloadExport)))
 
 

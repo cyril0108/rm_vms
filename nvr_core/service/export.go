@@ -1,100 +1,41 @@
 package service
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"nvr_core/db/repository"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
-	// "nvr_core/db/models"
+
+	"nvr_core/db/models"
+	"nvr_core/db/repository"
+	"nvr_core/utils"
 )
 
+type ExportParams struct {
+	TM       *ExportTaskManager `json:"-"`
+	TaskID  string    `json:"task_id"`
+	CamID    int64    `json:"cam_id"`
+	Profile  string   `json:"profile"`
+	Format   string   `json:"format"`
+	Start    int64    `json:"start"`
+	End      int64    `json:"end"`
+}
+
+
 type ExportService interface {
-	ExportTimeRange(ctx context.Context, rootPath string, camID int64, profile string, reqStart, reqEnd int64) (string, error)
+	ExportTimeRange(ctx context.Context, rootPath string, params ExportParams) (string, error)
 }
 
 func NewExportService(repo repository.SegmentRepository) ExportService {
 	return &segmentServiceBase{repo: repo}
 }
-
-
-func (s *segmentServiceBase) ExportTimeRange(ctx context.Context, rootPath string, camID int64, profile string, reqStart, reqEnd int64) (string, error) {
-
-	// Fetch segments intersecting the requested time range
-	segments, err := s.repo.GetProfileSegmentsByRange(ctx, camID, profile, reqStart, reqEnd)
-	if err != nil {
-		return "", err
-	}
-	if len(segments) == 0 {
-		return "", fmt.Errorf("no recordings found in the specified time range")
-	}
-
-	// Sort segments chronologically
-	sort.Slice(segments, func(i, j int) bool {
-		return segments[i].StartTime < segments[j].StartTime
-	})
-
-	// Prepare the FFmpeg concat text file
-	concatFilePath := filepath.Join(os.TempDir(), fmt.Sprintf("concat_%d.txt", reqStart))
-	file, err := os.Create(concatFilePath)
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(concatFilePath) // Clean up instruction file after FFmpeg runs
-	defer file.Close()
-
-	// Generate the instructions
-	for i, seg := range segments {
-		// Write the file path (must be safely escaped if paths have spaces, but standard paths are fine)
-		fmt.Fprintf(file, "file '%s'\n", seg.FilePath)
-
-		// First segment: Trim the beginning if the user requested a start time halfway through
-		if i == 0 && reqStart > seg.StartTime {
-			offsetSeconds := float64(reqStart-seg.StartTime) / 1000.0
-			fmt.Fprintf(file, "inpoint %.3f\n", offsetSeconds)
-		}
-
-		// Last segment: Trim the end if the user requested an end time halfway through
-		if i == len(segments)-1 && reqEnd < seg.EndTime {
-			durationSeconds := float64(reqEnd-seg.StartTime) / 1000.0
-			fmt.Fprintf(file, "outpoint %.3f\n", durationSeconds)
-		}
-	}
-	file.Sync()
-
-	// Execute FFmpeg
-	// Define the output file path (e.g., in a dedicated public/exports directory)
-	exportDir := filepath.Join(rootPath, "export")
-	// 0755: Owner can read/write/execute. Group/Others can read/execute.
-	if err := os.MkdirAll(exportDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create export directory at %s: %v", exportDir, err)
-	}
-	outputPath := filepath.Join(exportDir, fmt.Sprintf("export_cam%d_%d.mp4", camID, reqStart))
-
-	// -f concat: Use the concat demuxer
-	// -safe 0: Allow absolute file paths in the text file
-	// -c copy: STREAM COPY (No CPU re-encoding)
-	// -movflags +faststart: Moves MOOV atom to the front so the exported MP4 can stream instantly over HTTP
-	cmd := exec.CommandContext(ctx, "ffmpeg",
-		"-y", // Overwrite output
-		"-f", "concat",
-		"-safe", "0",
-		"-i", concatFilePath,
-		"-c", "copy",
-		"-movflags", "+faststart",
-		outputPath,
-	)
-
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("ffmpeg export failed: %v", err)
-	}
-
-	return outputPath, nil
-}
-
 
 // StartExportCleanupWatchdog runs in the background and deletes old exports
 func StartExportCleanupWatchdog(rootPath string, retention time.Duration) {
@@ -132,4 +73,198 @@ func StartExportCleanupWatchdog(rootPath string, retention time.Duration) {
 			}
 		}
 	}()
+}
+
+func (s *segmentServiceBase) ExportTimeRange(ctx context.Context, rootPath string, params ExportParams) (string, error) {
+
+	format := params.Format
+
+	// Validate Format
+	if err := utils.ValidateExportFormat(format); err != nil {
+		return "", err
+	}
+
+	taskID   := params.TaskID
+	camID    := params.CamID
+	profile  := params.Profile
+	reqStart := params.Start
+	reqEnd   := params.End
+
+	// Fetch and Sort Segments (Database Responsibility)
+	segments, err := s.repo.GetProfileSegmentsByRange(ctx, camID, profile, reqStart, reqEnd)
+	if err != nil {
+		return "", err
+	}
+	if len(segments) == 0 {
+		return "", fmt.Errorf("no recordings found in the specified time range")
+	}
+
+	sort.Slice(segments, func(i, j int) bool {
+		return segments[i].StartTime < segments[j].StartTime
+	})
+
+	// Build the Concat File (Math & File I/O Responsibility)
+	concatFilePath, err := s.buildConcatFile(segments, reqStart, reqEnd)
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(concatFilePath) // Ensure cleanup regardless of success/failure
+
+	// Ensure Export Directory Exists
+	exportDir := filepath.Join(rootPath, "export")
+	if err := os.MkdirAll(exportDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create export directory: %v", err)
+	}
+
+	// Execute FFmpeg (Subprocess & Codec Responsibility)
+	outputPath := filepath.Join(exportDir, fmt.Sprintf("export_cam%d_%d.%s", camID, reqStart, format))
+
+	// Calculate the total duration in seconds for the progress math
+	totalDurationSec := float64(params.End - params.Start) / 1000.0
+
+	// Define the Callback: This is the ONLY place that talks to the Task Manager
+	progressCallback := func(progress float64) {
+		if params.TM != nil {
+			params.TM.UpdateTaskProgress(taskID, progress)
+		}
+	}
+
+	if err := s.executeFFmpeg(ctx, concatFilePath, outputPath, format, totalDurationSec, progressCallback); err != nil {
+		return "", err
+	}
+
+	return outputPath, nil
+}
+
+
+func (s *segmentServiceBase) buildConcatFile(segments []*models.Segment, reqStart, reqEnd int64) (string, error) {
+	concatFilePath := filepath.Join(os.TempDir(), fmt.Sprintf("concat_tasks_%d.txt", reqStart))
+	file, err := os.Create(concatFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create concat file: %v", err)
+	}
+	defer file.Close()
+
+	for i, seg := range segments {
+		fmt.Fprintf(file, "file '%s'\n", seg.FilePath)
+
+		// First segment: Trim the beginning
+		if i == 0 && reqStart > seg.StartTime {
+			offsetSeconds := float64(reqStart-seg.StartTime) / 1000.0
+			fmt.Fprintf(file, "inpoint %.3f\n", offsetSeconds)
+		}
+
+		// Last segment: Trim the end
+		if i == len(segments)-1 && reqEnd < seg.EndTime {
+			durationSeconds := float64(reqEnd-seg.StartTime) / 1000.0
+			fmt.Fprintf(file, "outpoint %.3f\n", durationSeconds)
+		}
+	}
+	
+	file.Sync()
+	return concatFilePath, nil
+}
+
+// Pre-compile the regex to find "time=HH:MM:SS.ms" in FFmpeg output
+var timeRegex = regexp.MustCompile(`time=([0-9]{2}):([0-9]{2}):([0-9]{2}\.[0-9]+)`)
+
+func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, outputPath, format string, totalDurationSec float64, onProgress func(float64)) error {
+
+	// Base arguments required for all exports
+	ffmpegArgs := []string{
+		"-y", 
+		"-f", "concat",
+		"-safe", "0",
+		"-i", concatFilePath,
+	}
+
+	// Inject dynamic codec strategies (Copy vs Transcode)
+	ffmpegArgs = append(ffmpegArgs, s.getCodecStrategy(format)...)
+
+	// Finalize with the output path
+	ffmpegArgs = append(ffmpegArgs, outputPath)
+
+	cmd := exec.CommandContext(ctx, "ffmpeg", ffmpegArgs...)
+
+	/// =====================================
+	/// Monitor ffmpeg progress
+	/// =====================================
+	// Create a pipe to read FFmpeg's stderr (where it prints progress)
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("could not create stderr pipe: %v", err)
+	}
+
+	// Start the command asynchronously
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("ffmpeg failed to start: %v", err)
+	}
+
+	// Parse the output in real-time
+	scanner := bufio.NewScanner(stderr)
+	// FFmpeg uses carriage returns (\r) instead of newlines (\n) for progress updates
+	scanner.Split(bufio.ScanWords) 
+
+	var lastProgress int = -1
+
+	for scanner.Scan() {
+		text := scanner.Text()
+
+		if strings.HasPrefix(text, "time=") {
+			matches := timeRegex.FindStringSubmatch(text)
+			if len(matches) == 4 {
+				hours, _ := strconv.ParseFloat(matches[1], 64)
+				mins, _ := strconv.ParseFloat(matches[2], 64)
+				secs, _ := strconv.ParseFloat(matches[3], 64)
+
+				currentSec := (hours * 3600) + (mins * 60) + secs
+				
+				// Calculate percentage
+				progress := (currentSec / totalDurationSec) * 100.0
+				if progress > 100 {
+					progress = 100
+				}
+
+				// Throttle updates: Only trigger the callback if the whole integer % changes
+				// This protects your TaskManager Mutex from being hammered 100x a second
+				currentInt := int(progress)
+				if currentInt > lastProgress {
+					lastProgress = currentInt
+					if onProgress != nil {
+						onProgress(progress) // Fire the callback
+					}
+				}
+			}
+		}
+	}
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("ffmpeg execution failed: %v", err)
+	}
+
+	return nil
+}
+
+// getCodecStrategy determines if the stream requires re-encoding
+func (s *segmentServiceBase) getCodecStrategy(format string) []string {
+	// AVI is a legacy container. We force a transcode to x264 to ensure 
+	// compatibility, utilizing the "superfast" preset so we don't melt the NVR's CPU.
+	if format == "avi" {
+		return []string{
+			"-c:v", "libx264", 
+			"-preset", "superfast", // Crucial for NVR performance
+			"-crf", "23",           // Standard visual quality
+			"-c:a", "aac",          // Transcode audio safely
+		}
+	}
+
+	// Modern formats (MP4, MKV, MOV) get the blazing fast Stream Copy
+	args := []string{"-c", "copy"}
+	
+	// Apply Faststart only to ISO base media formats
+	if format == "mp4" || format == "mov" {
+		args = append(args, "-movflags", "+faststart")
+	}
+
+	return args
 }

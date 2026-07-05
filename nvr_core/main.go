@@ -95,10 +95,17 @@ func main() {
 
 	go apiserver.Initiate(ctx, cfg, pm, servs)
 
+	/// =====================================
+	/// === Initial clean up and watchers ===
 	service.StartRetentionWatcher(ctx, dbConn, cfg.Server.StoragePath, func() int {
 		return pm.ActiveCameraCount()
 	})
 
+	service.CleanExportsOnBoot(cfg.Server.StoragePath)
+	service.StartExportCleanupWatchdog(cfg.Server.StoragePath, 12 * time.Hour)
+
+
+	/// ============================================================
 	// Block until the context is canceled (SIGINT/SIGTERM received)
 	<-ctx.Done()
 

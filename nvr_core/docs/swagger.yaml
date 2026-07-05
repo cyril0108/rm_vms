@@ -765,7 +765,7 @@ paths:
         type: string
       responses:
         "200":
-          description: The exported MP4 video file
+          description: The exported video file
           schema:
             type: file
         "400":
@@ -791,6 +791,41 @@ paths:
       security:
       - BearerAuth: []
       summary: Download exported video
+      tags:
+      - Export
+  /api/export/{task_id}/status:
+    get:
+      description: Get the status and progress of the exporting task.
+      parameters:
+      - description: Export Task ID (UUID)
+        in: path
+        name: task_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: The exported video file
+          schema:
+            type: file
+        "400":
+          description: Missing task ID
+          schema:
+            type: string
+        "403":
+          description: Forbidden - Missing export permissions
+          schema:
+            type: string
+        "404":
+          description: Export task not found
+          schema:
+            type: string
+        "410":
+          description: Exported file has expired or been deleted
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get export task status
       tags:
       - Export
   /api/login:

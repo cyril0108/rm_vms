@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"nvr_core/db/repository"
+	"os"
+	"path/filepath"
 )
 
 // Services acts as a dependency injection container for the API layer.
@@ -77,6 +79,20 @@ func StartIngester(ctx context.Context, dbConn *sql.DB) IngestService {
 	return ingester
 
 }
+
+// Run this exactly once when initializing your service
+func CleanExportsOnBoot(rootPath string) error {
+	exportDir := filepath.Join(rootPath, "export")
+
+	// os.RemoveAll is extremely fast and handles non-existent directories gracefully
+	if err := os.RemoveAll(exportDir); err != nil {
+		return err
+	}
+
+	// Recreate the empty directory so it's ready for new tasks
+	return os.MkdirAll(exportDir, 0755)
+}
+
 
 func StartRetentionWatcher(ctx context.Context, dbConn *sql.DB, path string, cameraProvider ActiveCameraProvider) {
 

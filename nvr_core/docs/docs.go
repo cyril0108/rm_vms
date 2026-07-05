@@ -623,7 +623,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "The exported MP4 video file",
+                        "description": "The exported video file",
                         "schema": {
                             "type": "file"
                         }
@@ -648,6 +648,61 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Export is not ready for download",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "410": {
+                        "description": "Exported file has expired or been deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/export/{task_id}/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the status and progress of the exporting task.",
+                "tags": [
+                    "Export"
+                ],
+                "summary": "Get export task status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Export Task ID (UUID)",
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The exported video file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing task ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Missing export permissions",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Export task not found",
                         "schema": {
                             "type": "string"
                         }

@@ -77,7 +77,7 @@ func RunMigrations(ctx context.Context, db *sql.DB) error {
 
 	// Execute all pending "Up" migrations
 	err = migrator.Up()
-	
+
 	// 'ErrNoChange' just means the database is already fully up-to-date
 	if err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("migration failed: %w", err)
