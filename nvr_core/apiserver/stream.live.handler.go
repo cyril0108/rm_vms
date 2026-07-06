@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	// "nvr_core/apiserver/middleware"
 	"nvr_core/stream"
 	"nvr_core/utils"
 )
@@ -15,6 +16,14 @@ import (
 // =====================================================================
 
 func (api *APIServer) HandleLiveTransmuxTS(w http.ResponseWriter, r *http.Request) {
+
+	// session, ok := middleware.GetSession(r.Context())
+	// if !ok || !session.HasPermissionCameraLive() {
+	// 	utils.RespondErrForbidden(w)
+	// 	return
+	// }
+
+
 	// --- HTTP/Connection Setup ---
 	rc := http.NewResponseController(w)
 	if err := rc.SetWriteDeadline(time.Time{}); err != nil {

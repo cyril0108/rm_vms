@@ -15,6 +15,12 @@ import (
 // HandlePlayVideo expects: GET /api/cameras/{id}/play/ts?profile=sub&time=1711000050
 func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 
+	// session, ok := middleware.GetSession(r.Context())
+	// if !ok || !session.HasPermissionCameraPlayback() {
+	// 	utils.RespondErrForbidden(w)
+	// 	return
+	// }
+
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
 		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
@@ -84,28 +90,7 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 		"pipe:1",                             
 	)
 
-	// Using the r.Context() ensures FFmpeg dies if the client disconnects
-	// cmd := exec.CommandContext(r.Context(), "ffmpeg",
-	// 	"-hide_banner", "-loglevel", "error", // Suppress noisy logs
-	// 	"-i", filePath,                       // Input the MKV
-	// 	"-c:v", "copy",                       // Zero-CPU Video Copy
-	// 	"-an",                                // Drop incompatible audio (Change to "-c:a aac" if you want audio)
-	// 	"-f", "mpegts",                       // Force MPEG-TS format
-	// 	"pipe:1",                             // Output to stdout instead of a file
-	// )
-
 	cmd := exec.CommandContext(r.Context(), "ffmpeg", ffmpegArgs...)
-	// cmd := exec.CommandContext(r.Context(), "ffmpeg",
-	// 		"-hide_banner", "-loglevel", "error", 
-	// 		"-i", seg.FilePath,                       
-	// 		"-c:v", "copy",                       
-	// 		"-bsf:v", "h264_mp4toannexb",         
-	// 		"-c:a", "aac", // Replace -an with this if Safari stays black
-	// 		"-b:a", "64k",
-	// 		"-f", "mpegts",                       
-	// 		"-muxdelay", "0",                     // Removes pipe buffering latency
-	// 		"pipe:1",                             
-	// 	)
 
 	// Connect FFmpeg's stdout directly to the HTTP Response Writer
 	cmd.Stdout = w
@@ -127,6 +112,13 @@ func (api *APIServer) HandleTransmuxTS(w http.ResponseWriter, r *http.Request) {
 
 // HandleGapFillerTS expects: GET /api/cameras/{cam_id}/play/gap?duration=5000 (or however you define it)
 func (api *APIServer) HandleGapFillerTS(w http.ResponseWriter, r *http.Request) {
+
+	// session, ok := middleware.GetSession(r.Context())
+	// if !ok || !session.HasPermissionCameraPlayback() {
+	// 	utils.RespondErrForbidden(w)
+	// 	return
+	// }
+
 
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {

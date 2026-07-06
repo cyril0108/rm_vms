@@ -11,18 +11,18 @@ import (
 // HandlePlayVideo expects: GET /api/cameras/{id}/play?profile=sub&time=1711000050
 func (api *APIServer) HandlePlayVideo(w http.ResponseWriter, r *http.Request) {
 
+	// session, ok := middleware.GetSession(r.Context())
+	// if !ok || !session.HasPermissionCameraPlayback() {
+	// 	utils.RespondErrForbidden(w)
+	// 	return
+	// }
+
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
 		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)
 		return
 	}
 
-	// timeStr := r.URL.Query().Get("time")
-	// timestamp, err := strconv.ParseInt(timeStr, 10, 64)
-	// if err != nil {
-	// 	utils.RespondJSONHTTPStatus(w, "Invalid timestamp", http.StatusBadRequest)
-	// 	return
-	// }
 	timestamp, err := GetSearchAtTime(r)
 	if err != nil {
 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusBadRequest)

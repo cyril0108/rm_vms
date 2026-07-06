@@ -11,6 +11,13 @@ import (
 
 // HandleGetPlaylist expects: GET /api/cameras/{cam_id}/playlist.m3u8?profile=sub&start=1711000000&end=1711003600
 func (api *APIServer) HandleGetPlaylist(w http.ResponseWriter, r *http.Request) {
+
+	// session, ok := middleware.GetSession(r.Context())
+	// if !ok || !session.HasPermissionCameraPlayback() {
+	// 	utils.RespondErrForbidden(w)
+	// 	return
+	// }
+
 	camID, idErr := utils.Str2CamID(r.PathValue("cam_id"))
 	if(idErr != nil) {
 		utils.RespondJSONHTTPStatus(w, "Invalid cam id", http.StatusBadRequest)

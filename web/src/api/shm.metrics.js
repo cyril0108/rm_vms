@@ -1,12 +1,12 @@
 
 import {
     AX,
-    URLHostPath,
+    URLAPIPath,
 } from "./base"
 
 
 const shmMetrics = function() {
-    return AX.get(URLHostPath("health", "shm", "metrics"))
+    return AX.get(URLAPIPath("shmmetrics"))
 }
 
 

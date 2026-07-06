@@ -10,7 +10,6 @@ import (
 )
 
 // HandleAdminInitConfigure
-//
 func (s *APIServer) HandleAdminInitConfigure(w http.ResponseWriter, r *http.Request) {
 
 	ctx := s.Context

@@ -73,7 +73,6 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 
 
 	// Debug Info
-	mux.HandleFunc("GET /health/shm/metrics", authMid(http.HandlerFunc(api.HandleGetSHMMetrics)))
 	mux.HandleFunc("GET /debug/db", authMid(http.HandlerFunc(api.GetDebugInfo)))
 
 	// =============================================
@@ -94,6 +93,10 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/license/status", authMid(http.HandlerFunc(api.HandleGetActiveLicenseStatus)))
 
 	mux.HandleFunc("GET /api/estimate/recording", authMid(http.HandlerFunc(api.HandleGetRecordingEstimation)))
+
+	mux.HandleFunc("GET /api/shmmetrics", authMid(http.HandlerFunc(api.HandleGetSHMMetrics)))
+	mux.HandleFunc("GET /api/usage", authMid(http.HandlerFunc(api.HandleGetSystemMetrics)))
+	mux.HandleFunc("GET /api/network", authMid(http.HandlerFunc(api.HandleGetNetworkInfo)))
 
 
 	// =============================================

@@ -1,19 +1,23 @@
 package apiserver
 
 import (
-	// "context"
-	// "encoding/json"
 	"log"
 	"net/http"
 
-	// "sync"
-	// "time"
+	// "nvr_core/apiserver/middleware"
 	"nvr_core/stream"
 	"nvr_core/utils"
 )
 
 // GetCameras safely iterates over the sync.Map
 func (s *APIServer) GetStream(w http.ResponseWriter, r *http.Request) {
+
+	// session, ok := middleware.GetSession(r.Context())
+	// if !ok || !session.HasPermissionUserManage() {
+	// 	utils.RespondErrForbidden(w)
+	// 	return
+	// }
+
 
 	id, idErr := utils.Str2Int(r.PathValue("cam_id"))
 	if(idErr != nil) {
