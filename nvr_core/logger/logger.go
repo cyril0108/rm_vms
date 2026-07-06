@@ -20,6 +20,7 @@ func NewLogger(pre string, v ...any) *Logger {
 
 func (l *Logger) Lin(v ...any) *Logger {
 	return &Logger{
+		prefix: l.prefix,
 		lin: l.lin.With(v...),
 	}
 }

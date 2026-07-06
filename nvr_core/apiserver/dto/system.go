@@ -1,6 +1,15 @@
 package dto
 
+import "nvr_core/hardware"
 
+/// === Request
+type SystemSettingRequest struct {
+	Key         string `json:"key"`
+	Value       string `json:"value"`
+}
+
+
+/// === Response
 type SystemDebugInfo struct {
 	Status string `json:"status"`
 	TotalSegments int `json:"total_segments"`
@@ -19,7 +28,8 @@ type SystemMachineInfo struct {
 	ServerName    string `json:"server_name"`
 }
 
-type SystemSettingRequest struct {
-	Key         string `json:"key"`
-	Value       string `json:"value"`
+
+type SystemUsageMetrics struct {
+	hardware.SystemMetrics
+	PrimaryNIC             string `json:"primary_nic"`
 }

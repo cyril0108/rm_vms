@@ -168,8 +168,7 @@ int VideoIngestion::startIngestion() {
 
 void VideoIngestion::stopIngestion() {
 
-    Log::info(camName + " Stop requested by orchestrator...");
-
+    // Log::info(camName + " Stop requested by orchestrator...");
     stopSignal = true;
 
 }
@@ -679,7 +678,7 @@ int VideoIngestion::cleanup() {
     // De-initialize network
     avformat_network_deinit();
 
-    Log::info(camName + " Thread Exited cleanly.");
+    // Log::info(camName + " Thread Exited cleanly.");
     Log::send("{\"status\":\"stopped\", " + camJsonPartial + "}");
 
     return -1; // Or return 0 depending on how your worker thread monitors exits

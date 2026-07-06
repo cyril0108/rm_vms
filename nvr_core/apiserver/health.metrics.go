@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"net/http"
+	"nvr_core/apiserver/dto"
 	"nvr_core/apiserver/middleware"
 	"nvr_core/hardware"
 	"nvr_core/network"
@@ -63,8 +64,13 @@ func (api *APIServer) HandleGetSystemMetrics(w http.ResponseWriter, r *http.Requ
 
 	tw := hardware.NewTelemetryWatchdog(api.CFG.Server.StoragePath, nic)
 
-	allMetrics := tw.PollSystemMetrics()
+	var allMetrics = tw.PollSystemMetrics()
+	res := dto.SystemUsageMetrics{
+		SystemMetrics: allMetrics,
+		PrimaryNIC: nic,
+	}
+
 
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	utils.RespondJSON(w, allMetrics, "")
+	utils.RespondJSON(w, res, "")
 }

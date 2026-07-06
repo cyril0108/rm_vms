@@ -24,6 +24,10 @@ type Camera struct {
     SubStream  *StreamProfile `json:"sub_stream"`
 }
 
+func (cam *Camera) NoSubStream() bool {
+    return cam.SubStream == nil
+}
+
 func (cam *Camera) GetProfile(profile string) *StreamProfile {
     var pro *StreamProfile;
 

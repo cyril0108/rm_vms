@@ -29,7 +29,7 @@ func (fm *FrameMetadata) LoadFrom(metaBytes []byte) (error) {
 	fm.Magic     = binary.LittleEndian.Uint32(metaBytes[0:4])
 	fm.FrameSize = binary.LittleEndian.Uint32(metaBytes[4:8])
 	fm.EpochMs   = binary.LittleEndian.Uint64(metaBytes[8:16])
-			
+
 	// Cast uint64 to int64 for the timestamps
 	fm.PTS       = int64(binary.LittleEndian.Uint64(metaBytes[16:24]))
 	fm.DTS       = int64(binary.LittleEndian.Uint64(metaBytes[24:32]))

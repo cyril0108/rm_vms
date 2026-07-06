@@ -92,10 +92,10 @@ func (w *Worker) handleStoppedStream(resp WorkerResponse) {
 	}
 	w.mu.Unlock()
 
-	w.camRestartLogReset(resp.CamID)
+	// w.camRestartLogReset(resp.CamID)
 
 	go func() {
-		time.Sleep(8 * time.Second)
+		time.Sleep(w.camRestartTime(resp.CamID))
 		if 	w.camRestartLog(resp.CamID) {
 			// fmt.Println(LOGSEP+"[Go][Worker] restarting cam:", resp.CamID, resp.Profile)
 		}
@@ -119,14 +119,17 @@ func (w *Worker) updateCameraStatus(resp WorkerResponse) {
 		pf.Status = resp.Status
 	}
 
+	if resp.Status == "streaming" || resp.Status == "recording" {
+		w.camRestartLogReset(resp.CamID)
+	}
+
 }
 
 func (w *Worker) updateCameraSHMChannel(resp WorkerResponse) {
 
-	fmt.Println(LOGSEP+"[Go][Worker] update SHM Channel cam:", resp.CamID, resp.ChannelID)
-
-	// Do not update here
-	// w.updateCameraStatus(resp)
+	if w.camRestartLog(resp.CamID) {
+		w.log.Info(LOGSEP+"update SHM Channel", "cam", resp.CamID, "ch", resp.ChannelID)
+	}
 
 	w.mu.Lock()
 	cam := w.cameras[resp.CamID]
@@ -136,7 +139,7 @@ func (w *Worker) updateCameraSHMChannel(resp WorkerResponse) {
 
 	// Update SHM stream reader
 	if w.shmReader == nil {
-		fmt.Println("[Go][Worker] no shm reader for worker:", w.ID)
+		w.log.Error("no shm reader")
 		return
 	}
 
@@ -185,14 +188,14 @@ func (w *Worker) handleSegmentDone(resp WorkerResponse) {
 	w.submitSegmentEnqueue(seg)
 }
 
+// We do not handle estimate result here.
+// NVR uses a dedicated EstimationWorker that spins up a woker
+// and intercept the I/O. If we see a log coming from this code,
+// then there is a problem.
 func (w *Worker) handleEstimateStreamSize(resp WorkerResponse) {
 
 	ll := LOG.Prefix("\033[4m[Go][Worker][handleEstimateStreamSize]\033[0m")
-
-	ll.Info("ESS", "size", resp.Size)
-
-
-
+	ll.Info("(We should not see this log, the estimated size message is not handled) ESS", "size", resp.EstimatedMB)
 
 }
 
@@ -202,7 +205,9 @@ func (w *Worker) submitSegmentEnqueue(seg *models.Segment) {
 	if w.ingester != nil {
 		w.ingester.Enqueue(seg)
 	} else {
-		fmt.Printf("\033[33m[Go][Worker %d] Warning: DB Ingester not configured, dropping segment metadata.\033[0m\n", w.ID)
+
+		w.log.Warn("Warning: DB Ingester not configured, dropping segment metadata.")
+
 	}
 }
 
@@ -283,14 +288,10 @@ func (w *Worker) Start(ctx context.Context, hookIPC bool) error {
 
 // SendCommand is a thread-safe way to write to the worker
 func (w *Worker) SendCommand(cmd string) error {
-	// w.mu.Lock()
-	// defer w.mu.Unlock()
 
 	if w.Stdin == nil {
 		return fmt.Errorf("worker %d is not running", w.ID)
 	}
-
-	LOG.Info("[SendCommand] sending command", "cmd", cmd)
 
 	// Add newline because C++ uses std::getline
 	_, err := io.WriteString(w.Stdin, cmd+"\n")
@@ -545,8 +546,6 @@ func (w *Worker) updateChannelCodecs(resp WorkerResponse) {
 
     ll := LOG.Prefix("[updateChannelCodecs]").Lin("cam", resp.CamID, "profile", resp.Profile, "shm", resp.ChannelID)
 
-    ll.Info("")
-
     w.mu.Lock()
     cam := w.cameras[resp.CamID]
     p := cam.GetProfile(resp.Profile)
@@ -583,8 +582,21 @@ func (w *Worker) connectCMDIPC() {
 	go func() {
 		scanner := bufio.NewScanner(w.Stderr)
 		for scanner.Scan() {
-			// Print C++ logs in Red color
-			fmt.Printf("\033[31m%s\033[0m\n", scanner.Text())
+			text := scanner.Text()
+			var resp WorkerResponse
+			if err := json.Unmarshal([]byte(text), &resp); err == nil {
+
+				// Print direct for now, we are hoping to have
+				// JSON formatted err message
+				// Print C++ logs in Red color
+				fmt.Printf("\033[31m%s\033[0m\n", text)
+
+			} else {
+
+				// Print C++ logs in Red color
+				fmt.Printf("\033[31m%s\033[0m\n", text)
+
+			}
 		}
 	}()
 
@@ -627,16 +639,16 @@ func (w *Worker) monitorProcess(ctx context.Context) {
 
 	// Check if this was an intentional shutdown from the Go Manager
 	if ctx.Err() != nil {
-		fmt.Printf("[Go][Worker %d] Shut down gracefully.\n", w.ID)
+		w.log.Info("Shut down gracefully.")
 		return
 	}
 
 	// If we reach here, the C++ process died unexpectedly!
 	if err != nil {
 		// Log in red for visibility
-		fmt.Printf("\033[31m[Go][Worker %d] CRASH DETECTED: %v\033[0m\n", w.ID, err)
+		w.log.Info("\033[31m CRASH DETECTED: %v\033[0m", "error", err)
 	} else {
-		fmt.Printf("\033[31m[Go][Worker %d] Exited unexpectedly with code 0.\033[0m\n", w.ID)
+		w.log.Info("\033[31m Exited unexpectedly with code 0.\033[0m")
 	}
 
 	w.recoverWorker(ctx)
@@ -645,7 +657,7 @@ func (w *Worker) monitorProcess(ctx context.Context) {
 
 // recoverWorker attempts to restart the C++ binary and restore its previous state
 func (w *Worker) recoverWorker(ctx context.Context) {
-	fmt.Printf("[Go][Worker %d] Attempting to restart in 3 seconds...\n", w.ID)
+	w.log.Info("Attempting to restart in 3 seconds...")
 
 	// Add a small backoff delay. If the C++ worker is crashing instantly on startup
 	// (e.g., due to a bad config), this prevents an infinite CPU-burning crash loop.
@@ -675,7 +687,7 @@ func (w *Worker) recoverWorker(ctx context.Context) {
 
 	// Restart the process
 	if err := w.Start(ctx, true); err != nil {
-		fmt.Printf("[Go][Worker %d] Failed to restart: %v\n", w.ID, err)
+		w.log.Error("Failed to restart", "error", err)
 		// In a production app, you might want to retry with an exponential backoff here
 		return
 	}
@@ -703,15 +715,23 @@ func (w *Worker) recoverWorker(ctx context.Context) {
 	// }
 }
 
+func (w *Worker) camRestartTime(camID int) time.Duration {
+	cnt := w.restartCnt[camID]
+	if cnt < 100 {
+		return 8 * time.Second
+	}
+	return time.Duration(cnt) * time.Second
+}
+
 func (w *Worker) camRestartLog(camID int) bool {
 
 	cnt := w.restartCnt[camID]
 
-	if cnt > 2 {
+	w.restartCnt[camID] = cnt+1
+
+	if cnt > 8 {
 		return false
 	}
-
-	cnt++
 
 	return true
 

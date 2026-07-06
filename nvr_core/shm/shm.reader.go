@@ -118,7 +118,7 @@ func (r *ReaderSHM) readChannelLoop(stop *atomic.Bool, channelID int, rb *RingBu
 
 	defer r.wg.Done() // Ensure counter decrements when loop exits safely
 
-	log.Printf("[Go][shm][readChannelLoop] Started reading loop for %s Channel %d\n", r.workerName, channelID)
+	// log.Printf("[Go][shm][readChannelLoop] Started reading loop for %s Channel %d\n", r.workerName, channelID)
 
 	for {
 
@@ -191,7 +191,7 @@ func (r *ReaderSHM) GetWorkerMetrics() *WorkerMetrics {
 // Close safely stops all polling goroutines and unmaps the shared memory
 func (r *ReaderSHM) Close() {
 	log.Printf("[shm.reader] Closing SHM Reader for %s\n", r.workerName)
-	
+
 	// Signal all readChannelLoop goroutines to exit
 	for _, stopper := range r.channelStopper {
 		stopper.Store(true)
