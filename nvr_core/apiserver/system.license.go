@@ -10,6 +10,15 @@ import (
 )
 
 
+/// Send License Key 
+func (s *APIServer) HandleReceiveLicenseKey(w http.ResponseWriter, r *http.Request) {
+
+// sss
+
+
+	utils.RespondJSONHTTPStatus(w, "Need Implementation.", http.StatusNotImplemented)
+
+}
 
 func (s *APIServer) HandleGetLicenseList(w http.ResponseWriter, r *http.Request) {
 

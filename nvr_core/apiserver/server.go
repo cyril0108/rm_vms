@@ -78,7 +78,7 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// =============================================
 	// Server Set
 	// =============================================
-	mux.HandleFunc("PUT /api/config/servername", api.HandleSetServerName)
+	mux.HandleFunc("PUT /api/config/servername", authMid(http.HandlerFunc(api.HandleSetServerName)))
 
 
 	// =============================================

@@ -60,7 +60,10 @@ func (api *APIServer) HandleGetSystemMetrics(w http.ResponseWriter, r *http.Requ
 	}
 
 	nic := network.GetPrimaryNIC()
-	allMetrics := hardware.NewTelemetryWatchdog(api.CFG.Server.StoragePath, nic)
+
+	tw := hardware.NewTelemetryWatchdog(api.CFG.Server.StoragePath, nic)
+
+	allMetrics := tw.PollSystemMetrics()
 
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	utils.RespondJSON(w, allMetrics, "")
