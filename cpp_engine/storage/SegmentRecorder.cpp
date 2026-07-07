@@ -26,6 +26,9 @@ bool SegmentRecorder::StartSegment(const std::string& filename, AVStream* inVide
     startVideoTime = AV_NOPTS_VALUE;
     startAudioTime = AV_NOPTS_VALUE;
 
+    videoJumpOffset = 0;
+    audioJumpOffset = 0;
+
     avformat_alloc_output_context2(&outFormatCtx, nullptr, "matroska", filename.c_str());
     if (!outFormatCtx) return false;
 
@@ -78,6 +81,7 @@ void SegmentRecorder::WritePacket(AVPacket* packet) {
     AVStream* outStream = nullptr;
     AVRational inputTimeBase;
     int64_t* lastDTS = nullptr;
+    int64_t* jumpOffset = nullptr;
 
     // Route the packet and grab the correct timebase
     if (packet->stream_index == inVideoStreamIndex) {
@@ -86,6 +90,7 @@ void SegmentRecorder::WritePacket(AVPacket* packet) {
         inputTimeBase = videoInputTimeBase;
         packet->stream_index = outVideoStreamIndex; // Re-map to MP4 index
         lastDTS = &lastVideoDTS;
+        jumpOffset = &videoJumpOffset;
 
     } else if (inAudioStreamIndex != -1 && packet->stream_index == inAudioStreamIndex) {
 
@@ -93,6 +98,7 @@ void SegmentRecorder::WritePacket(AVPacket* packet) {
         inputTimeBase = audioInputTimeBase;
         packet->stream_index = outAudioStreamIndex; // Re-map to MP4 index
         lastDTS = &lastAudioDTS;
+        jumpOffset = &audioJumpOffset;
 
     } else {
         // Unknown stream (e.g., metadata). Safely ignore.
@@ -114,7 +120,7 @@ void SegmentRecorder::WritePacket(AVPacket* packet) {
     // ==========================================================
     // PTS/DTS Sanitization
     // ==========================================================
-    sanitizeTimestamps(packet, lastDTS);
+    sanitizeTimestamps(packet, lastDTS, jumpOffset);
 
     if (packet->stream_index == outVideoStreamIndex) {
         if (firstVideoPTS == AV_NOPTS_VALUE) {
@@ -191,13 +197,56 @@ bool SegmentRecorder::normalizeTimeline(AVPacket* packet) {
 }
 
 
-void SegmentRecorder::sanitizeTimestamps(AVPacket* packet, int64_t* lastDTS) {
-    if (*lastDTS != AV_NOPTS_VALUE && packet->dts <= *lastDTS) {
-        // Calculate the exact offset needed to make this strictly increasing (+1)
-        int64_t offset = *lastDTS - packet->dts + 1;
+void SegmentRecorder::sanitizeTimestamps(AVPacket* packet, int64_t* lastDTS, int64_t* jumpOffset) {
 
-        packet->dts += offset;
-        packet->pts += offset; 
+    AVStream* outStream = outFormatCtx->streams[packet->stream_index];
+
+    // Subtract any accumulated massive-jump offsets first
+    packet->dts -= *jumpOffset;
+    if (packet->pts != AV_NOPTS_VALUE) {
+        packet->pts -= *jumpOffset;
+    }
+
+    if (*lastDTS != AV_NOPTS_VALUE) {
+
+        if( packet->dts <= *lastDTS ) {
+            // This fixed backwards jumps or overlapping frames
+            // Calculate the exact offset needed to make this strictly increasing (+1)
+            int64_t offset = *lastDTS - packet->dts + 1;
+
+            packet->dts += offset;
+            packet->pts += offset; 
+        } else {
+
+            // Check for massive forward jumps
+            int64_t currentDelta = packet->dts - *lastDTS;
+
+            // Define a max allowed gap (e.g., 2 seconds). av_q2d makes this timebase-agnostic.
+            int64_t maxAllowedDelta = (int64_t)(2.0 / av_q2d(outStream->time_base));
+
+            if (currentDelta > maxAllowedDelta) {
+                // The clock jumped to the future. 
+                // Set a fallback gap so the frames don't literally overlap (~33ms)
+                int64_t fallbackDelta = (int64_t)(0.033 / av_q2d(outStream->time_base)); 
+
+                // Calculate how much extra "dead time" we need to snip
+                int64_t excessiveOffset = currentDelta - fallbackDelta;
+
+                // Add this to our permanent offset tracker
+                *jumpOffset += excessiveOffset;
+
+                // Snip it out of the current packet
+                packet->dts -= excessiveOffset;
+                if (packet->pts != AV_NOPTS_VALUE) {
+                    packet->pts -= excessiveOffset;
+                }
+
+                Log::info("Massive time jump detected. Snipped offset.");
+
+            }
+
+        }
+
     }
 
     // Update the tracker for the next packet

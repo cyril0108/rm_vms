@@ -41,8 +41,12 @@ private:
     // Adjusts packets to start at 0. Returns false if the packet should be dropped.
     bool normalizeTimeline(AVPacket* packet); 
 
+    // For timestamp reset/jump issue
+    int64_t videoJumpOffset = 0;
+    int64_t audioJumpOffset = 0;
+
     // Forces timestamps to be strictly increasing
-    void sanitizeTimestamps(AVPacket* packet, int64_t* lastDTS);
+    void sanitizeTimestamps(AVPacket* packet, int64_t* lastDTS, int64_t* jumpOffset);
 
 public:
     SegmentRecorder() = default;
