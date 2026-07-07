@@ -174,13 +174,23 @@ func (w *Worker) handleSegmentDone(resp WorkerResponse) {
 		SizeBytes: resp.SizeBytes,
 	}
 
-	if seg.IsSubProfile() {
+	w.mu.Lock()
+	cam, exists := w.cameras[resp.CamID]
+	w.mu.Unlock()
+
+	// Determine if this segment should generate a snapshot
+	needsSnapshot := seg.IsSubProfile()
+
+	// We need to create snapshot if it's the main profile of a camera with no sub-stream
+	if !needsSnapshot && exists && cam.NoSubStream() && utils.IsMainProfile(resp.Profile) > 0 {
+		needsSnapshot = true
+	}
+
+	if needsSnapshot {
 		if snap, err := utils.GenerateSnapshot(w.storagePath, seg); err == nil {
 
 			ss := seg.MakeSnapshotProfile(snap)
 			w.submitSegmentEnqueue(ss)
-
-			// LOG.Info("[handleSegmentDone]", "snapshot", snap, "seg", ss)
 
 		}
 	}
@@ -211,7 +221,9 @@ func (w *Worker) submitSegmentEnqueue(seg *models.Segment) {
 	}
 }
 
-// ==================================
+// ============================================================================
+// == Worker Life Cycle
+// ============================================================================
 
 func (w *Worker) StreamHubForCam(camId int, profile string) *stream.Hub {
 	cam := w.cameras[camId]
@@ -337,6 +349,18 @@ func (w *Worker) StartStreamProfile(camID int, profile string, sp *StreamProfile
 
 }
 
+// Stop should remove the camera 
+func (w *Worker) StopCam(camID int, profile string) error {
+
+    w.mu.Lock()
+    defer w.mu.Unlock()
+
+    delete(w.cameras, camID)
+
+    return w.StopStreamProfile(camID, profile)
+
+}
+
 func (w *Worker) StopStreamProfile(camID int, profile string) error {
 
 	command := fmt.Sprintf("STOP %d %s", camID, profile)
@@ -428,25 +452,6 @@ func (w *Worker) RestartCam(camID int, profile string) error {
 
 }
 
-// Stop should remove the camera from
-// func (w *Worker) StopCam(camID int, profile string) error {
-
-//     w.mu.Lock()
-//     defer w.mu.Unlock()
-
-//     cam := w.cameras[camID]
-//     sp := cam.GetProfile(profile)
-//     if sp == nil {
-//         return fmt.Errorf("worker %d: no profile to restart", w.ID)
-//     }
-
-//     if sp.Status != "stopped" {
-//         return nil
-//     }
-
-//     return w.StopStreamProfile(camID, profile)
-
-// }
 
 // Stop cleanly closes the pipe and waits
 func (w *Worker) Stop() {

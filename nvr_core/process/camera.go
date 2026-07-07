@@ -44,15 +44,7 @@ func (cam *Camera) GetProfile(profile string) *StreamProfile {
     return pro
 }
 
-// func NewCamera(camID int, url string, subUrl string) *Camera {
-//     cam := &Camera{
-//         ID: camID,
-//         MainStream: *NewStreamProfile(url),
-//         SubStream: *NewStreamProfile(subUrl),
-//     }
-//     return cam
-// }
-
+// Return *process.Camera as our runtime camera status tracker
 func NewCameraRuntime(c *models.Camera, masterKey []byte) *Camera {
 
     live := utils.URLForCameraLiveTSStream(c.ID, utils.SegmentMainProfile)

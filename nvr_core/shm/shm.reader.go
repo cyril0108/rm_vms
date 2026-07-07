@@ -98,7 +98,7 @@ func (r *ReaderSHM) StartChannel(camID int, channelID int, existingHub *stream.H
 	r.channelStopper[channelID] = stopper
 
 	r.wg.Add(1)
-	go r.readChannelLoop(stopper, channelID, rb, hub)
+	go r.readChannelLoop(stopper, rb, hub)
 
 	return hub
 
@@ -114,7 +114,7 @@ func (r *ReaderSHM) StopChannel(camID int, channelID int) {
 }
 
 // readChannelLoop continuously polls a specific RingBuffer for new frames
-func (r *ReaderSHM) readChannelLoop(stop *atomic.Bool, channelID int, rb *RingBuffer, bc *stream.Hub) {
+func (r *ReaderSHM) readChannelLoop(stop *atomic.Bool, rb *RingBuffer, bc *stream.Hub) {
 
 	defer r.wg.Done() // Ensure counter decrements when loop exits safely
 

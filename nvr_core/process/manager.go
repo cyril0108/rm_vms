@@ -31,6 +31,12 @@ type Manager struct {
 
 // NewManager initializes the pool (e.g., count=4)
 func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath string, ingester service.IngestService) *Manager {
+
+	// The assignment logic will fail if 
+	if count < 2 {
+		count = 2
+	}
+
 	mgr := &Manager{
 		ctx: ctx,
 		cfg: cfg,
@@ -189,14 +195,14 @@ func (m *Manager) RemoveCamera(camID int) {
 	if err != nil {
 		LOG.Error("[RemoveCamera] Failed to find main stream worker", "cam", camID, "error", err)
 	} else {
-		mw.StopStreamProfile(camID, utils.SegmentMainProfile)
+		mw.StopCam(camID, utils.SegmentMainProfile)
 	}
 
 	sw, err := m.CameraWorker(camID, utils.SegmentSubProfile)
 	if err != nil {
 		LOG.Error("[RemoveCamera] Failed to find sub stream worker", "cam", camID, "error", err)
 	} else {
-		sw.StopStreamProfile(camID, utils.SegmentMainProfile)
+		sw.StopCam(camID, utils.SegmentMainProfile)
 	}
 
 }
