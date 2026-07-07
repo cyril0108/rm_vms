@@ -134,7 +134,7 @@ log.log("daily summary", apires.data)
 
     // Using your unified APIResponse format
     if (apires.success) {
-      monthlySummaries.value = apires.data; // [{ date: '2026-06-21', total_seconds: 3600 }, ...]
+      monthlySummaries.value = apires.data || []; // [{ date: '2026-06-21', total_seconds: 3600 }, ...]
     }
 
   } catch (err) {
