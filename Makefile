@@ -33,7 +33,7 @@ RM := rm -rf
 CP := cp
 
 # -- Targets --
-.PHONY: all help clean build-cpp build-go docker-build docker-run export docker dockers
+.PHONY: all help clean build-cpp build-go docker-build docker-run export gitcommitbin docker dockersave
 
 .DEFAULT_GOAL := help
 help: ## Show this help message
@@ -75,6 +75,9 @@ clean: ## Clean Build Artifacts
 
 vue: ## Build Vue
 	cd $(VUE_DIR) && npm run build
+
+gitcommitbin: ## Git commit the bin
+	git commit --message "Commit bin $(VERSION)"
 
 # Build Docker image
 docker: ## Build Docker image
