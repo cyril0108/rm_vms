@@ -24,6 +24,7 @@ type SegmentRepository interface {
 	PruneOldest(ctx context.Context, limit int) ([]string, error)
 	IncrementalVacuum(ctx context.Context, pages int) error
 	GetHourlyBurnRateBytes(ctx context.Context) (uint64, error)
+	UpdateSegmentEndTime(ctx context.Context, id, endTime int64) (error)
 
 	// Segment search
 	GetLastSegment(ctx context.Context) (*models.Segment, error)
@@ -43,6 +44,7 @@ type SegmentRepository interface {
 	// DB/file sanity check
 	GetAllFilePaths(ctx context.Context) (map[string]struct{}, error)
 	DeleteByFilePaths(ctx context.Context, paths []string) error
+	GetAbnormalDurationSegments(ctx context.Context) ([]*models.Segment, error)
 }
 
 type segmentRepo struct {
@@ -62,6 +64,17 @@ func (r *segmentRepo) Insert(ctx context.Context, seg *models.Segment) error {
 		return err
 	}
 	seg.ID, _ = result.LastInsertId()
+	return nil
+}
+
+func (r *segmentRepo) UpdateSegmentEndTime(ctx context.Context, id, endTime int64) (error) {
+	query := `Update segments set end_time = ? WHERE id = ?`
+
+	_, err := r.db.ExecContext(ctx, query, endTime, id)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

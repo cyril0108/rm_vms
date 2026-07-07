@@ -3,9 +3,40 @@ package repository
 import (
 	"context"
 	"fmt"
+	"nvr_core/db/models"
 	"strings"
-
 )
+
+/**
+ * Segment Sanity Check
+ */
+
+const AbnormalDurationThreshold = 2*60*1000
+
+// GetAllFilePaths returns a Hash Set of all file paths currently tracked in the DB.
+func (r *segmentRepo) GetAbnormalDurationSegments(ctx context.Context) ([]*models.Segment, error) {
+	query := `SELECT id, camera_id, profile, start_time, end_time, file_path, size_bytes 
+		FROM segments 
+		WHERE (end_time - start_time) > ?
+		ORDER BY start_time DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, AbnormalDurationThreshold)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query file paths: %w", err)
+	}
+	defer rows.Close()
+
+	var segments []*models.Segment
+	for rows.Next() {
+		var seg models.Segment
+		if err := rows.Scan(&seg.ID, &seg.CameraID, &seg.Profile, &seg.StartTime, &seg.EndTime, &seg.FilePath, &seg.SizeBytes); err != nil {
+			return nil, err
+		}
+		segments = append(segments, &seg)
+	}
+	return segments, rows.Err()
+}
+
 
 /**
  * DB/file sanity check

@@ -24,6 +24,7 @@ type Services struct {
 	SysSetting SystemSettingService
 	Export     ExportService
 	ExportTM   *ExportTaskManager
+	Maintain   MaintainService
 }
 
 
@@ -50,6 +51,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	licSvc := NewLicenseService(licRepo)
 	exportSvc := NewExportService(segRepo)
 	exportTMSvc := NewExportTaskManager()
+	maintainSvc := NewMaintainService(segRepo)
 
 	return &Services{
 		Auth:     authSvc,
@@ -64,6 +66,7 @@ func NewServices(dbConn *sql.DB) *Services {
 		SysSetting: sssSvc,
 		Export: exportSvc,
 		ExportTM: exportTMSvc,
+		Maintain: maintainSvc,
 	}
 }
 

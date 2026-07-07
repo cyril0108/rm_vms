@@ -48,3 +48,7 @@ type sysSettingServiceBase struct {
 type licenseServiceBase struct {
 	repo repository.LicenseRepository
 }
+
+type maintainServiceBase struct {
+	repo repository.SegmentRepository
+}

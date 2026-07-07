@@ -100,6 +100,13 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 
 
 	// =============================================
+	// Maintenance
+	// =============================================
+	mux.HandleFunc("GET /api/maintain/segments", authMid(http.HandlerFunc(api.GetAbnormalSegments)))
+	mux.HandleFunc("PUT /api/maintain/segments", authMid(http.HandlerFunc(api.FixAbnormalSegments)))
+
+
+	// =============================================
 	// Login
 	// =============================================
 	mux.HandleFunc("POST /api/login", api.HandleLogin)
