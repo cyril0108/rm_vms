@@ -51,7 +51,7 @@ func (m *ExportTaskManager) UpdateTaskProgress(id string, progr float64) {
 		task.Progress = progr
 
 		// Give the frontend explicit feedback during the silent +faststart second pass
-		if progr >= 99.0 && task.Status == utils.TaskStatusPending {
+		if progr >= 99.0 && task.Status == utils.TaskStatusRunning {
 			task.Status = utils.TaskStatusFinalizing
 		}
 	}
