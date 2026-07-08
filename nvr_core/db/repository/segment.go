@@ -9,6 +9,7 @@ import (
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/db/models"
+	"nvr_core/utils"
 )
 
 /**
@@ -45,6 +46,7 @@ type SegmentRepository interface {
 	GetAllFilePaths(ctx context.Context) (map[string]struct{}, error)
 	DeleteByFilePaths(ctx context.Context, paths []string) error
 	GetAbnormalDurationSegments(ctx context.Context) ([]*models.Segment, error)
+	GetSnapshotSegment(ctx context.Context, seg *models.Segment) (*models.Segment, error)
 }
 
 type segmentRepo struct {
@@ -76,6 +78,46 @@ func (r *segmentRepo) UpdateSegmentEndTime(ctx context.Context, id, endTime int6
 	}
 
 	return nil
+}
+
+func (r *segmentRepo) GetSnapshotSegment(ctx context.Context, srcSeg *models.Segment) (*models.Segment, error) {
+
+	query := `
+		SELECT id, camera_id, profile, start_time, end_time, file_path, snapshot_path, size_bytes 
+		FROM segments 
+		WHERE
+			camera_id = ?
+			AND
+			Profile = ?
+			AND
+			start_time = ?
+			AND
+			end_time = ?
+		ORDER BY start_time DESC 
+		LIMIT 1
+	`
+
+	var seg models.Segment
+	err := r.db.QueryRowContext(ctx, query, srcSeg.CameraID, utils.SegmentSnapshotProfile, srcSeg.StartTime, srcSeg.EndTime).Scan(
+		&seg.ID,
+		&seg.CameraID,
+		&seg.Profile,
+		&seg.StartTime,
+		&seg.EndTime,
+		&seg.FilePath,
+		&seg.SnapshotPath,
+		&seg.SizeBytes,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // Return nil gracefully if the database is completely empty
+		}
+		return nil, err
+	}
+
+	return &seg, nil
+
 }
 
 func (r *segmentRepo) GetLastSegment(ctx context.Context) (*models.Segment, error) {
