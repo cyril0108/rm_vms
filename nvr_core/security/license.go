@@ -40,7 +40,8 @@ func LoadPublicKey() (*rsa.PublicKey, error) {
 	return publicKey, nil
 }
 
-func GetLicenseInfo(tokenString string) (jwt.MapClaims, error) {
+func GetLicenseInfo(tokenString string) (*jwt.Token, error) {
+
 	publicKey, err := LoadPublicKey()
 	if err != nil {
 		// If the key can't load, the system cannot validate licenses safely
@@ -54,6 +55,14 @@ func GetLicenseInfo(tokenString string) (jwt.MapClaims, error) {
 		}
 		return publicKey, nil
 	})
+
+	return token, nil
+
+}
+
+func GetValidLicenseInfo(tokenString string) (jwt.MapClaims, error) {
+
+	token, err := GetLicenseInfo(tokenString)
 
 	if err != nil || !token.Valid {
 		LOG.Info("token invalid", "token", token, "err", err)

@@ -43,17 +43,21 @@ type LicenseStatus struct {
 	Errors     []string  `json:"errs"`
 }
 
-func (ls *LicenseStatus) LoadToken(token string, machine_id string) {
+func (ls *LicenseStatus) LoadToken(tokenStr string, machine_id string) {
 
 	isValid := true
 
-	ls.Token = token
-	claims, err := security.GetLicenseInfo(token)
+	ls.Token = tokenStr
+	token, err := security.GetLicenseInfo(tokenStr)
 	if err != nil {
 		ls.Errors = append(ls.Errors, err.Error())
 		isValid = false
 	}
+	if !token.Valid {
+		isValid = false
+	}
 
+	claims, _ := token.Claims.(jwt.MapClaims)
 	if claims != nil {
 		ls.LoadClaims(&claims)
 	} else {

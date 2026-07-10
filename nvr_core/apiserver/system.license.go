@@ -51,17 +51,17 @@ func (s *APIServer) HandleReceiveLicenseKey(w http.ResponseWriter, r *http.Reque
 
 	jwt := res.Response.JWT
 
-	claims, err := security.GetLicenseInfo(jwt)
+	token, err := security.GetLicenseInfo(jwt)
 	if err != nil {
 
 		kl.Error("Failed to decode license data", "error", err)
 
 	} else {
 
-		kl.Info("license decode success", "claims", claims)
+		kl.Info("license decode success", "claims", token)
 
 	}
-	utils.RespondJSON(w, claims, "Test successful")
+	utils.RespondJSON(w, token.Claims, "Test successful")
 
 
 	// ctx = r.Context()

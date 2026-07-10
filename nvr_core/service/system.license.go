@@ -52,7 +52,8 @@ func (s *licenseServiceBase) ProcessLicenses(ctx context.Context, licenses[]stri
 
 	for _, lic := range licenses {
 
-		claims, err := security.GetLicenseInfo(lic)
+		// Claims will be empty if the license is invalid.
+		claims, err := security.GetValidLicenseInfo(lic)
 		if err != nil {
 
 			result.Rejected = append(result.Rejected, &dto.LicenseResult{
