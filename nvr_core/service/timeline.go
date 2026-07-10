@@ -141,7 +141,7 @@ func segmentsToTimeline(segments []*models.Segment) ([]dto.TimelineBlock, error)
 	for i := 1; i < limit; i++ {
 		seg := segments[i]
 
-// If this segment starts within the tolerance window of the current block's end...
+		// If this segment starts within the tolerance window of the current block's end...
 		if seg.StartTime <= (currentBlock.EndTime + gapToleranceSeconds) {
 			// Extend the current block
 			if seg.EndTime > currentBlock.EndTime {

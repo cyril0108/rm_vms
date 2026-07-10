@@ -1,22 +1,84 @@
 package apiserver
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/hardware"
+	"nvr_core/security"
 	"nvr_core/utils"
 )
 
-
-/// Send License Key 
+/// Send License Key
 func (s *APIServer) HandleReceiveLicenseKey(w http.ResponseWriter, r *http.Request) {
 
-// sss
+	log := LOG.Prefix("[HandleReceiveLicenseKey]")
+
+	var licReq dto.LicenseRequest
+	if err := json.NewDecoder(r.Body).Decode(&licReq); err != nil {
+		utils.RespondErrInvalidPayload(w)
+		return
+	}
+
+	if licReq.Key == "" {
+		utils.RespondErrInvalidPayload(w)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	defer cancel()
+
+	kl := log.Lin("lic_key", licReq.Key)
+
+	res, err := s.PM.LicManage.API.GetLicense(ctx, licReq.Key)
+
+	if err != nil {
+		kl.Info("failed to get license data", "error", err)
+		// Return bad gateway for now
+		utils.RespondJSONHTTPStatus(w, "Failed to get license data", http.StatusBadGateway)
+		return
+	}
+
+	if res.Code != 0 || res.Error != "" {
+		kl.Info("License API respond with error", "code", res.Code, "error", res.Error)
+		// Return bad gateway for now
+		utils.RespondJSONHTTPStatus(w, res.Error, http.StatusBadGateway)
+		return
+	}
+
+	jwt := res.Response.JWT
+
+	claims, err := security.GetLicenseInfo(jwt)
+	if err != nil {
+
+		kl.Error("Failed to decode license data", "error", err)
+
+	} else {
+
+		kl.Info("license decode success", "claims", claims)
+
+	}
+	utils.RespondJSON(w, claims, "Test successful")
 
 
-	utils.RespondJSONHTTPStatus(w, "Need Implementation.", http.StatusNotImplemented)
+	// ctx = r.Context()
+	// result, licenses := s.Services.License.ProcessLicenses(ctx, []string{ jwt })
+
+	// if len(licenses) > 0 {
+
+	// 	for _, lic := range licenses {
+
+	// 		// license should have ID after successful creation.
+	// 		s.PM.LicManage.AddLicense(lic)
+
+	// 	}
+
+	// }
+
+	// utils.RespondJSON(w, result, "")
 
 }
 

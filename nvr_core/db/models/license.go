@@ -9,6 +9,7 @@ import (
 // SystemLicense represents a database record in the system_licenses table.
 type License struct {
 	ID         int64     `json:"id" db:"id"`
+	Key        string    `json:"key" db:"key"`
 	RawToken   string    `json:"-" db:"raw_token"` // Hide from JSON responses to the frontend
 	Iss        string    `json:"iss" db:"iss"`
 	Aud        string    `json:"aud" db:"aud"`
@@ -29,6 +30,9 @@ func (lic *License) LoadClaims(claims *jwt.MapClaims) {
 	c := *claims
 
 	// Safely assert strings
+	if key, ok := c["key"].(string); ok {
+		lic.Key = key
+	}
 	if iss, ok := c["iss"].(string); ok {
 		lic.Iss = iss
 	}

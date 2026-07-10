@@ -58,11 +58,12 @@ func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath st
 
 	// Create EstimationWorker
 	eWorker := NewWorker(99999999999999, binaryPath, nil)
-	mgr.EstWorker = NewEstimationWorker(eWorker)
 
+	// Start without hooking IPC
 	if err := eWorker.Start(ctx, false); err != nil {
 		LOG.Error("[NewManager] failed to start EstimationWorker", "error", err)
 	}
+	mgr.EstWorker = NewEstimationWorker(eWorker)
 
 	return mgr
 }

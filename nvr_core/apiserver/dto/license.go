@@ -8,7 +8,8 @@ import (
 )
 
 type LicenseRequest struct {
-	Licenses   []string `json:"licenses"`
+	Key       string   `json:"key"`
+	Licenses  []string `json:"licenses"`
 }
 
 type LicenseResponse struct {

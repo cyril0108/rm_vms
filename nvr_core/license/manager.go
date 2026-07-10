@@ -8,7 +8,7 @@ import (
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/db/models"
-
+	licAPI "nvr_core/reqapi/license"
 )
 
 var ll = LOG.Prefix("[manager]")
@@ -21,13 +21,18 @@ type LicenseManager struct {
 	maxCamera int
 	licStats  map[int64]*dto.LicenseStatus
 	Status    []*dto.LicenseStatus
+
+	API       *licAPI.Service
 }
 
 func NewLicenseManager() *LicenseManager {
+
 	return &LicenseManager{
 		timers: make(map[int64]*time.Timer),
 		licStats: make(map[int64]*dto.LicenseStatus),
+		API: NewLicenseAPI(),
 	}
+
 }
 
 // ============================

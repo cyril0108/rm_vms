@@ -5,9 +5,10 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"nvr_core/logger"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"nvr_core/logger"
 )
 
 var LOG = logger.NewLogger("[license]")

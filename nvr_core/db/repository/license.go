@@ -31,12 +31,13 @@ func NewLicenseRepository(db *sql.DB) LicenseRepository {
 // Create inserts a newly uploaded, cryptographically verified license into the database.
 func (r *licenseRepo) Create(ctx context.Context, lic *models.License) error {
 	query := `
-		INSERT INTO licenses (raw_token, iss, aud, kind, machine_id, max_devices, issued_at, expires_at) 
+		INSERT INTO licenses (raw_token, key, iss, aud, kind, machine_id, max_devices, issued_at, expires_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	result, err := r.db.ExecContext(ctx, query,
 		lic.RawToken,
+		lic.Key,
 		lic.Iss,
 		lic.Aud,
 		lic.Kind,
@@ -62,7 +63,7 @@ func (r *licenseRepo) Create(ctx context.Context, lic *models.License) error {
 // This is used by the Go Manager on startup to enforce rules, and by the UI to list active licenses.
 func (r *licenseRepo) GetAll(ctx context.Context) ([]*models.License, error) {
 	query := `
-		SELECT id, raw_token, iss, aud, kind, machine_id, max_devices, issued_at, expires_at, uploaded_at
+		SELECT id, raw_token, key, iss, aud, kind, machine_id, max_devices, issued_at, expires_at, uploaded_at
 		FROM licenses
 		ORDER BY uploaded_at DESC
 	`
@@ -78,7 +79,7 @@ func (r *licenseRepo) GetAll(ctx context.Context) ([]*models.License, error) {
 
 func (r *licenseRepo) GetValidLicenses(ctx context.Context) ([]*models.License, error) {
 	query := `
-		SELECT id, raw_token, iss, aud, kind, machine_id, max_devices, issued_at, expires_at, uploaded_at
+		SELECT id, raw_token, key, iss, aud, kind, machine_id, max_devices, issued_at, expires_at, uploaded_at
 		FROM licenses
 		WHERE expires_at > ?
 		ORDER BY uploaded_at DESC
@@ -107,6 +108,7 @@ func (r *licenseRepo) rowsToLicenses(rows *sql.Rows) ([]*models.License, error) 
 		err := rows.Scan(
 			&lic.ID,
 			&lic.RawToken,
+			&lic.Key,
 			&lic.Iss,
 			&lic.Aud,
 			&lic.Kind,
