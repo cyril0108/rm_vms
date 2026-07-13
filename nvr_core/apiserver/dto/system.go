@@ -26,6 +26,7 @@ type SystemHealthInfo struct {
 type SystemMachineInfo struct {
 	MachineID     string `json:"machine_id"`
 	ServerName    string `json:"server_name"`
+	Version       string `json:"version"`
 }
 
 

@@ -4,7 +4,7 @@
 
 # Docker Build Name
 DOCKER_IMAGE_NAME = vmsnvr
-VERSION = 0.1.20
+VERSION = 0.1.21
 GIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null)
 BUILD_TIME ?= $(shell date '+%Y-%m-%dT%H:%M:%S' 2>/dev/null)
 
@@ -23,7 +23,7 @@ VUE_DIR := web
 
 # -- Build Flags --
 # -s disables symbol table, -w disables DWARF generation. Shrinks binary by ~25%
-GO_LDFLAGS := -ldflags="-s -w -X 'main.Version=$(VERSION)' -X 'main.CommitSHA=$(GIT_HASH)' -X 'main.BuildTime=$(BUILD_TIME)'"
+GO_LDFLAGS := -ldflags="-s -w -X 'nvr_core/buildinfo.Version=$(VERSION)' -X 'nvr_core/buildinfo.CommitSHA=$(GIT_HASH)' -X 'nvr_core/buildinfo.BuildTime=$(BUILD_TIME)'"
 
 # -- Tools --
 GO := go

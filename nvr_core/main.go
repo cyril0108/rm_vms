@@ -12,15 +12,10 @@ import (
 	"nvr_core/process"
 	"nvr_core/service"
 	"nvr_core/utils"
+	"nvr_core/buildinfo"
 )
 
-// Version Info with default values
-// Should be set by GO_LDFLAGS
-var (
-    Version   = "dev"
-    CommitSHA = "none"
-    BuildTime = "unknown"
-)
+
 
 // @title           NVR Core API
 // @version         0.1
@@ -39,7 +34,7 @@ func main() {
 	ll.Info("=======================================================================")
 	ll = ll.Prefix("[Go]")
 
-	ll.Info("", "ver", Version, "commit", CommitSHA, "build_time", BuildTime)
+	ll.Info("", "ver", buildinfo.Version, "commit", buildinfo.CommitSHA, "build_time", buildinfo.BuildTime)
 
 	ll.Info("Loading config...")
 

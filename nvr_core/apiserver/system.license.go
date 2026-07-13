@@ -8,7 +8,7 @@ import (
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/hardware"
-	"nvr_core/security"
+	// "nvr_core/security"
 	"nvr_core/utils"
 )
 
@@ -51,34 +51,34 @@ func (s *APIServer) HandleReceiveLicenseKey(w http.ResponseWriter, r *http.Reque
 
 	jwt := res.Response.JWT
 
-	token, err := security.GetLicenseInfo(jwt)
-	if err != nil {
+	// token, err := security.GetLicenseInfo(jwt)
+	// if err != nil {
 
-		kl.Error("Failed to decode license data", "error", err)
+	// 	kl.Error("Failed to decode license data", "error", err)
 
-	} else {
+	// } else {
 
-		kl.Info("license decode success", "claims", token)
-
-	}
-	utils.RespondJSON(w, token.Claims, "Test successful")
-
-
-	// ctx = r.Context()
-	// result, licenses := s.Services.License.ProcessLicenses(ctx, []string{ jwt })
-
-	// if len(licenses) > 0 {
-
-	// 	for _, lic := range licenses {
-
-	// 		// license should have ID after successful creation.
-	// 		s.PM.LicManage.AddLicense(lic)
-
-	// 	}
+	// 	kl.Info("license decode success", "claims", token)
 
 	// }
+	// utils.RespondJSON(w, token.Claims, "Test successful")
 
-	// utils.RespondJSON(w, result, "")
+
+	ctx = r.Context()
+	result, licenses := s.Services.License.ProcessLicenses(ctx, []string{ jwt })
+
+	if len(licenses) > 0 {
+
+		for _, lic := range licenses {
+
+			// license should have ID after successful creation.
+			s.PM.LicManage.AddLicense(lic)
+
+		}
+
+	}
+
+	utils.RespondJSON(w, result, "")
 
 }
 

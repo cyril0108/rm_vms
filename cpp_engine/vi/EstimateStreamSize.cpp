@@ -51,13 +51,13 @@ double DeepProbeStreamSize(AVFormatContext* fmt_ctx, int probe_duration_seconds)
         return 0.0; // Stream is dead or empty
     }
 
-    // 1. Calculate Bytes per second based on our physical sample
+    // Calculate Bytes per second based on our physical sample
     double bytes_per_second = static_cast<double>(total_bytes_read) / probe_duration_seconds;
-    
-    // 2. Add 5% container/network overhead tax
+
+    // Add 5% container/network overhead tax
     bytes_per_second = bytes_per_second * 1.05;
 
-    // 3. Convert to Megabytes per minute
+    // Convert to Megabytes per minute
     double bytes_per_minute = bytes_per_second * 60.0;
     double megabytes_per_minute = bytes_per_minute / (1024.0 * 1024.0);
 
@@ -124,7 +124,7 @@ double EstimateByResolutionAndFPS(AVFormatContext* fmt_ctx) {
 double EstimateStreamSizeMBPerMinute(const char* rtsp_url) {
     AVFormatContext* fmt_ctx = nullptr;
     AVDictionary* options = nullptr;
-    
+
     // NVR Best Practice: Force TCP for RTSP to prevent UDP packet loss
     // during the probing phase, which can cause avformat_find_stream_info to hang.
     av_dict_set(&options, "rtsp_transport", "tcp", 0);
@@ -189,7 +189,7 @@ double EstimateStreamSizeMBPerMinute(const char* rtsp_url) {
 void HandleProbeCommand(std::string camID, std::string profile, std::string url) {
     // Run the heavy FFmpeg probe
     double size = EstimateStreamSizeMBPerMinute(url.c_str());
-    
+
     // Print the JSON back to Go (Ensure std::cout is thread-safe using a mutex!)
     std::lock_guard<std::mutex> lock(cout_mutex);
 

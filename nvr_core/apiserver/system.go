@@ -5,6 +5,7 @@ import (
 
 	"nvr_core/apiserver/dto"
 	"nvr_core/apiserver/middleware"
+	"nvr_core/buildinfo"
 	"nvr_core/hardware"
 	"nvr_core/utils"
 )
@@ -23,6 +24,8 @@ func (s *APIServer) HandleGetMachineInfo(w http.ResponseWriter, r *http.Request)
 	}
 
 	info.ServerName = name
+
+	info.Version = buildinfo.Version
 
 	utils.RespondJSON(w, info, "success")
 	return
