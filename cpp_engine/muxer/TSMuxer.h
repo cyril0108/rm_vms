@@ -22,6 +22,17 @@ public:
     bool muxAudioPacket(AVPacket* pkt);
 
 private:
+
+    // Anchor points for Zero-Indexing
+    int64_t firstVideoDTS = AV_NOPTS_VALUE;
+    int64_t firstVideoPTS = AV_NOPTS_VALUE;
+    int64_t firstAudioDTS = AV_NOPTS_VALUE;
+    int64_t firstAudioPTS = AV_NOPTS_VALUE;
+
+    // track the permanent offset
+    int64_t videoDtsOffset = 0;
+    int64_t audioDtsOffset = 0;
+
     std::shared_ptr<ISharedMemory> shm;
     int shmChannelID;
 
@@ -48,7 +59,7 @@ private:
     int64_t totalCallbacksTriggered = 0;
     int64_t totalBytesMuxed = 0;
 
-    void enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker);
+    void enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker, int64_t& offsetTracker);
 
     // The magic callback that intercepts FFmpeg's disk writes
     static int shmWriteCallback(void* opaque, uint8_t* buf, int buf_size);

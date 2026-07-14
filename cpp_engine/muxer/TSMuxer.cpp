@@ -1,5 +1,6 @@
 #include "TSMuxer.h"
 #include "utils/Time.h"
+#include "AVDictionary.h"
 
 TSMuxer::TSMuxer(std::shared_ptr<ISharedMemory> shm, int shmChannelID)
     : shm(shm), shmChannelID(shmChannelID) {}
@@ -47,8 +48,12 @@ bool TSMuxer::init(AVCodecParameters* vPar, AVRational vTb,
         outAudioStreamIndex = outStream->index;
     }
 
+
+    // Create an options dictionary for the TS Muxer
+    AVDictionary* muxerOptions = configureTSMuxerAVDictionary(nullptr);
+
     // Write the MPEG-TS Header (Generates PAT and PMT automatically!)
-    if (avformat_write_header(outCtx, nullptr) < 0) {
+    if (avformat_write_header(outCtx, &muxerOptions) < 0) {
         Log::error("[TSMuxer] Failed to write TS header.");
         return false;
     }
@@ -77,19 +82,34 @@ bool TSMuxer::muxVideoPacket(AVPacket* pkt, bool isKey) {
     clone->stream_index = outVideoStreamIndex;
     av_packet_rescale_ts(clone, inVideoTimeBase, outCtx->streams[outVideoStreamIndex]->time_base);
 
+    // 1. Safeguard: If DTS is missing but PTS exists, copy it (Crucial for H.264 B-frames)
+    if (clone->dts == AV_NOPTS_VALUE && clone->pts != AV_NOPTS_VALUE) {
+        clone->dts = clone->pts;
+    }
+
+    // 2. Anchor the Video to Zero
+    if (clone->dts != AV_NOPTS_VALUE) {
+        if (firstVideoDTS == AV_NOPTS_VALUE) firstVideoDTS = clone->dts;
+        clone->dts -= firstVideoDTS;
+    }
+    if (clone->pts != AV_NOPTS_VALUE) {
+        if (firstVideoPTS == AV_NOPTS_VALUE) firstVideoPTS = clone->pts;
+        clone->pts -= firstVideoPTS;
+    }
+
     // --- Delegate to the shared guard ---
-    enforceMonotonicity(clone, lastVideoDTS);
+    enforceMonotonicity(clone, lastVideoDTS, videoDtsOffset);
 
     // 
-    int ret = av_interleaved_write_frame(outCtx, clone);
+    // int ret = av_interleaved_write_frame(outCtx, clone);
 
     // Write immediately to bypass the interleaving cache
-    // int ret = av_write_frame(outCtx, clone);
+    int ret = av_write_frame(outCtx, clone);
 
-    // // Force FFmpeg to empty its 4KB buffer into SHM instantly
-    // if (outCtx->pb) {
-    //     avio_flush(outCtx->pb);
-    // }
+    // Force FFmpeg to empty its 4KB buffer into SHM instantly
+    if (outCtx->pb) {
+        avio_flush(outCtx->pb);
+    }
 
     av_packet_free(&clone);
     return ret >= 0;
@@ -105,8 +125,23 @@ bool TSMuxer::muxAudioPacket(AVPacket* pkt) {
     clone->stream_index = outAudioStreamIndex;
     av_packet_rescale_ts(clone, inAudioTimeBase, outCtx->streams[outAudioStreamIndex]->time_base);
 
+    // 1. Safeguard: Audio over RTSP almost never has a DTS. Lock it to PTS.
+    if (clone->dts == AV_NOPTS_VALUE && clone->pts != AV_NOPTS_VALUE) {
+        clone->dts = clone->pts;
+    }
+
+    // 2. Anchor the Audio to Zero
+    if (clone->dts != AV_NOPTS_VALUE) {
+        if (firstAudioDTS == AV_NOPTS_VALUE) firstAudioDTS = clone->dts;
+        clone->dts -= firstAudioDTS;
+    }
+    if (clone->pts != AV_NOPTS_VALUE) {
+        if (firstAudioPTS == AV_NOPTS_VALUE) firstAudioPTS = clone->pts;
+        clone->pts -= firstAudioPTS;
+    }
+
     // --- Delegate to the shared guard ---
-    enforceMonotonicity(clone, lastAudioDTS);
+    enforceMonotonicity(clone, lastAudioDTS, lastAudioDTS);
 
     //
     int ret = av_interleaved_write_frame(outCtx, clone);
@@ -124,17 +159,56 @@ bool TSMuxer::muxAudioPacket(AVPacket* pkt) {
 }
 
 
-void TSMuxer::enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker) {
+void TSMuxer::enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker, int64_t& offsetTracker) {
     if (pkt->dts != AV_NOPTS_VALUE) {
-        if (lastDTSTracker != AV_NOPTS_VALUE && pkt->dts <= lastDTSTracker) {
-            // Bump the timestamp forward by exactly 1 tick
-            int64_t shift = lastDTSTracker - pkt->dts + 1;
-            pkt->dts += shift;
-            if (pkt->pts != AV_NOPTS_VALUE) {
-                pkt->pts += shift; // Keep PTS/DTS distance mathematically equal
-            }
+
+        // Strip away any accumulated offset from previous NTP glitches
+        pkt->dts -= offsetTracker;
+        if (pkt->pts != AV_NOPTS_VALUE) {
+            pkt->pts -= offsetTracker;
         }
+
+        // if (lastDTSTracker != AV_NOPTS_VALUE && pkt->dts <= lastDTSTracker) {
+        if (lastDTSTracker != AV_NOPTS_VALUE) {
+            int64_t delta = pkt->dts - lastDTSTracker;
+
+            // Handle Backward Jumps (original logic)
+            if (delta <= 0) {
+                // Bump the timestamp forward by exactly 1 tick
+                int64_t shift = (-delta) + 1;
+                pkt->dts += shift;
+                if (pkt->pts != AV_NOPTS_VALUE) {
+                    pkt->pts += shift; // Keep PTS/DTS distance mathematically equal
+                }
+            }
+
+            // Handle Massive Forward Jumps (e.g., Camera Clock Glitches)
+            // 180,000 ticks at 90kHz = exactly 2 seconds.
+            else if (delta > 180000) { 
+
+                // The stream just jumped multiple seconds or days into the future!
+                // Calculate the massive gap, leaving a standard ~30fps frame gap (3000 ticks) for safety.
+                int64_t massiveGap = delta - 3000; 
+                
+                // Add this huge void to our permanent offset tracker
+                offsetTracker += massiveGap;
+
+                // Pull the current packet's timestamps back to reality
+                pkt->dts -= massiveGap;
+                if (pkt->pts != AV_NOPTS_VALUE) {
+                    pkt->pts -= massiveGap;
+                }
+
+                // Optional: Log it so you know which camera has a bad internal clock
+                Log::info("[TSMuxer] Caught massive timestamp forward jump! Snapping back.");
+
+            }
+
+
+        }
+
         lastDTSTracker = pkt->dts;
+
     }
 }
 

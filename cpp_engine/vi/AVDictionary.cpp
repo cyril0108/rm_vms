@@ -4,10 +4,21 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
+AVDictionary* configureTSMuxerAVDictionary(AVDictionary* options) {
+
+    av_dict_set(&options, "flush_pes", "1", 0); // Flush PES packets immediately
+    av_dict_set(&options, "mpegts_flags", "resend_headers", 0); // Helps clients lock on faster
+
+    return options;
+
+}
+
 // Standard AVDictionary setups for NVR recording efficiency
 AVDictionary* configureAVDictionary(AVDictionary* options) {
 
     // --- NETWORK STABILITY ---
+
+    // av_dict_set(&options, "strict", "experimental", 0);
 
     // Force TCP. 
     // UDP (default) causes gray artifacts when packets drop. 
@@ -38,12 +49,13 @@ AVDictionary* configureAVDictionary(AVDictionary* options) {
     // Default is ~5MB. FFmpeg reads this much data just to guess the format.
     // 64 cams * 5MB = 320MB of RAM spiked just to connect.
     // Reduce to 32KB (usually enough for H.264 RTSP headers).
-    av_dict_set(&options, "probesize", "64768", 0); 
+    // av_dict_set(&options, "probesize", "64768", 0); 
+    av_dict_set(&options, "probesize", "5000000", 0);      // 5 MB (default is 50MB)
 
     // Analyze Duration (in microseconds).
     // How long to watch the stream to detect frame rate/resolution.
     // Default is 5 seconds. Reduce to 0.5 or 1 second.
-    av_dict_set(&options, "analyzeduration", "2000000", 0); 
+    av_dict_set(&options, "analyzeduration", "500000", 0); // 0.5 seconds (default is 5,000,000)
 
 
     // ---  LATENCY REDUCTION ---
