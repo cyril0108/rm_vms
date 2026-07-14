@@ -81,15 +81,25 @@ func (s *licenseServiceBase) ProcessLicenses(ctx context.Context, licenses[]stri
 					r.Error = err.Error()
 				}
 
-				result.Accepted = append(result.Accepted, r)
-
-
 				if err := s.CreateLicense(ctx, lice); err != nil {
+
+					if repository.IsUniqueConstraintViolation(err) {
+
+						r.Error = repository.ErrLicenseConflict.Error()
+						result.Rejected = append(result.Rejected, r)
+
+					} else {
+
+						r.Error = err.Error()
+						result.Rejected = append(result.Rejected, r)
+
+					}
 
 					ll.Error("Error when add license to database", "error", err)
 
 				} else {
 
+					result.Accepted = append(result.Accepted, r)
 					acceptedLics = append(acceptedLics, lice)
 
 				}

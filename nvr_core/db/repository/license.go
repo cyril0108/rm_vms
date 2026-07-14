@@ -9,7 +9,10 @@ import (
 	"nvr_core/db/models" // Adjust this import based on where your License struct lives
 )
 
-var ErrLicenseNotFound = errors.New("license not found")
+var (
+	ErrLicenseNotFound = errors.New("license not found")
+	ErrLicenseConflict = errors.New("license already exists")
+)
 
 // LicenseRepository defines the database operations for system licenses
 type LicenseRepository interface {
@@ -32,7 +35,7 @@ func NewLicenseRepository(db *sql.DB) LicenseRepository {
 func (r *licenseRepo) Create(ctx context.Context, lic *models.License) error {
 	query := `
 		INSERT INTO licenses (raw_token, key, iss, aud, kind, machine_id, max_devices, issued_at, expires_at) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	result, err := r.db.ExecContext(ctx, query,

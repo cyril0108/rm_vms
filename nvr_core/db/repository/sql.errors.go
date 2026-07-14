@@ -28,3 +28,7 @@ func isUniqueConstraintViolation(err error) bool {
 
 	return false
 }
+
+func IsUniqueConstraintViolation(err error) bool {
+	return isUniqueConstraintViolation(err)
+}

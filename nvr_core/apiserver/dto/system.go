@@ -21,6 +21,7 @@ type SystemDebugInfo struct {
 type SystemHealthInfo struct {
 	Health     string `json:"health"`
 	Configured bool   `json:"configured"`
+	Version    string `json:"version"`
 }
 
 type SystemMachineInfo struct {
