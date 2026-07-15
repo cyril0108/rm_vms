@@ -11,7 +11,7 @@ var LOG = logger.NewLogger("[nvr_core][db][repository]")
 
 // Format:
 // JoinSetFieldsClause("UPDATE table SET", updates)
-func JoinSetFieldsClause(queryPrefix string, updates models.PartialUpdateInterfaces) (string, []interface{}) {
+func JoinSetFieldsClause(queryPrefix string, updates models.PartialUpdateInterfaces, withUpdateAt bool) (string, []interface{}) {
 
 	var args []interface{}
 	var setClauses []string
@@ -22,9 +22,11 @@ func JoinSetFieldsClause(queryPrefix string, updates models.PartialUpdateInterfa
 		args = append(args, val)
 	}
 
-	// Always enforce the updated_at timestamp
-	setClauses = append(setClauses, "updated_at = ?")
-	args = append(args, time.Now().Unix())
+	if withUpdateAt {
+		// Always enforce the updated_at timestamp
+		setClauses = append(setClauses, "updated_at = ?")
+		args = append(args, time.Now().Unix())
+	}
 
 	// Stitch the query together safely
 	return queryPrefix + strings.Join(setClauses, ", "), args

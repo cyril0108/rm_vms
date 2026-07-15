@@ -344,7 +344,7 @@ func (r *cameraRepo) SetActivate(ctx context.Context, id int64, active int) erro
 }
 
 func (r *cameraRepo) Delete(ctx context.Context, id int64) error {
-	query := `UPDATE cameras SET (is_active, deleted, updated_at) VALUES (0,0,?) WHERE id = ?`
+	query := `UPDATE cameras SET is_active = 0, deleted = 1, updated_at = ? WHERE id = ?`
 
 	result, err := r.db.ExecContext(ctx, query, time.Now().Unix(), id)
 	if err != nil {
@@ -371,7 +371,7 @@ func (r *cameraRepo) UpdatePartial(ctx context.Context, id int64, updates models
 	}
 
 	// Stitch the query together safely
-	query, args := JoinSetFieldsClause("UPDATE cameras SET ", updates)
+	query, args := JoinSetFieldsClause("UPDATE cameras SET ", updates, true)
 	query = query + " WHERE deleted=0 AND id = ?"
 	args = append(args, id)
 

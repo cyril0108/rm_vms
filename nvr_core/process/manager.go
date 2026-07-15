@@ -192,19 +192,30 @@ func (m *Manager) camWorkerIDs(camID int) (int, int) {
 
 func (m *Manager) RemoveCamera(camID int) {
 
+
 	mw, err := m.CameraWorker(camID, utils.SegmentMainProfile)
 	if err != nil {
 		LOG.Error("[RemoveCamera] Failed to find main stream worker", "cam", camID, "error", err)
 	} else {
-		mw.StopCam(camID, utils.SegmentMainProfile)
+		if mw != nil {
+			LOG.Info("Removing camera main from worker", "cam", camID, "worker", mw.ID)
+			mw.StopCam(camID, utils.SegmentMainProfile)
+		}
 	}
 
 	sw, err := m.CameraWorker(camID, utils.SegmentSubProfile)
 	if err != nil {
 		LOG.Error("[RemoveCamera] Failed to find sub stream worker", "cam", camID, "error", err)
 	} else {
-		sw.StopCam(camID, utils.SegmentMainProfile)
+		if sw != nil {
+			LOG.Info("Removing camera sub from worker", "cam", camID, "worker", sw.ID)
+			sw.StopCam(camID, utils.SegmentMainProfile)
+		}
 	}
+
+	m.mu.Lock()
+	delete(m.cams, camID)
+	m.mu.Unlock()
 
 }
 

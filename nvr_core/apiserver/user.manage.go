@@ -116,7 +116,8 @@ func (api *APIServer) HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	maps := payload.MapToPartialInterface()
 	err = api.Services.User.UpdatePartial(ctx, session.UserID, targetUserID, maps)
 	if err != nil {
-		utils.RespondJSONHTTPStatus(w, "Failed to update role", http.StatusInternalServerError)
+		LOG.Info("Failed to update user", "err", err)
+		utils.RespondJSONHTTPStatus(w, "Failed to update user", http.StatusInternalServerError)
 		return
 	}
 
@@ -125,7 +126,7 @@ func (api *APIServer) HandleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		api.Services.Auth.UpdateUserStatusForPermissionChange(targetUserID)
 	}
 
-	utils.RespondJSON(w, "", "Role updated successfully")
+	utils.RespondJSON(w, "", "User updated successfully")
 }
 
 // HandleDeactivateUser expects: DELETE /api/admin/users/{id}
@@ -158,7 +159,7 @@ func (api *APIServer) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	// Important: Remember to instantly revoke all active refresh tokens for this user!
 	_ = api.Services.Auth.LogoutDeactivatedUser(ctx, targetUserID)
 
-	utils.RespondJSON(w, "", "User deactivated successfully")
+	utils.RespondJSON(w, "", "User is deleted")
 }
 
 
@@ -225,14 +226,14 @@ func (api *APIServer) HandleUpdateUserPassword(w http.ResponseWriter, r *http.Re
 
 	err = api.Services.User.UpdateUserPassword(ctx, session.UserID, targetUserID, payload.Password)
 	if err != nil {
-		utils.RespondJSONHTTPStatus(w, "Failed to update role", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to update user password", http.StatusInternalServerError)
 		return
 	}
 
 	// Instantly expire their current session so they are forced to refresh and get their new permissions
 	api.Services.Auth.UpdateUserStatusForPermissionChange(targetUserID)
 
-	utils.RespondJSON(w, "", "Role updated successfully")
+	utils.RespondJSON(w, "", "User updated successfully")
 }
 
 // HandleUpdateUserRole expects: PUT /api/admin/users/{id}/role
@@ -273,5 +274,5 @@ func (api *APIServer) HandleUpdateUserRole(w http.ResponseWriter, r *http.Reques
 	// Instantly expire their current session so they are forced to refresh and get their new permissions
 	api.Services.Auth.UpdateUserStatusForPermissionChange(targetUserID)
 
-	utils.RespondJSON(w, "", "Role updated successfully")
+	utils.RespondJSON(w, "", "User role updated successfully")
 }

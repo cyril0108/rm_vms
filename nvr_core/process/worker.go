@@ -423,14 +423,18 @@ func (w *Worker) StopCamRecording(camID int, profile string) error {
 // Restart a cam that's already assigned to worker
 func (w *Worker) RestartCam(camID int, profile string) error {
 
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	cam, exists := w.cameras[camID]
+	if !exists {
+		return nil
+	}
+
 	if w.camRestartLog(camID) {
 		w.log.Info("[RestartCam]", "cam", camID, "profile", profile)
 	}
 
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	cam := w.cameras[camID]
 	sp := cam.GetProfile(profile)
 	if sp == nil {
 
