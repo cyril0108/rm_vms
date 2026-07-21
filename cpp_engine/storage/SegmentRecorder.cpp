@@ -131,7 +131,7 @@ void SegmentRecorder::WritePacket(AVPacket* packet) {
 
     // Interleave and write (FFmpeg handles the internal buffering to keep A/V in sync)
     if (av_interleaved_write_frame(outFormatCtx, packet) < 0) {
-        Log::error("Error writing interleaved packet to file.");
+        Log::error("[SegmentRecorder] Error writing interleaved packet to file.");
     }
 }
 
@@ -241,7 +241,7 @@ void SegmentRecorder::sanitizeTimestamps(AVPacket* packet, int64_t* lastDTS, int
                     packet->pts -= excessiveOffset;
                 }
 
-                Log::info("Massive time jump detected. Snipped offset.");
+                Log::info("[SegmentRecorder] Massive time jump detected. Snipped offset.");
 
             }
 

@@ -382,7 +382,7 @@ func (s *APIServer) DeleteCamera(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if err := s.Services.Camera.DeleteCamera(ctx, camID); err != nil {
 		log.Printf("Failed to delete camera: %v", err)
-		utils.RespondJSONHTTPStatus(w, "Failed to delete camera", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "Failed to delete camera:"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

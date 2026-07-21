@@ -238,6 +238,10 @@ func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, 
 					}
 				}
 			}
+		// } else {
+
+		// 	LOG.Info("[executeFFmpeg]", "msg", text)
+
 		}
 	}
 

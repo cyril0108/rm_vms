@@ -187,11 +187,13 @@ func (api *APIServer) HandleDownloadExport(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	utils.DisableHTTPTimeouts(w)
+
 	// Force the browser to download the file rather than play it in-browser
 	w.Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(task.OutputPath))
 	w.Header().Set("Content-Type", task.MIME)
 
-	// Safely serve the file. 
+	// Safely serve the file.
 	// http.ServeFile automatically handles range requests (for pausing/resuming downloads)
 	http.ServeFile(w, r, task.OutputPath)
 }

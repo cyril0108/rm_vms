@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "Log.h"
+#include "FFmpegLogger.h"
 #include "VideoIngestion.h"
 
 #include "Command.h"
@@ -24,6 +25,8 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting NVR Worker v" << NVR_VERSION 
                   << " (Commit: " << NVR_GIT_HASH 
                   << " | Built: " << NVR_BUILD_TIME << ")" << std::endl;
+
+    setupCustomFFmpegLogging();
 
     // Optimize I/O
     std::ios_base::sync_with_stdio(false);

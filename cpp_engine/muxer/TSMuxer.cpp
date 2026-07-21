@@ -1,9 +1,10 @@
 #include "TSMuxer.h"
 #include "utils/Time.h"
 #include "AVDictionary.h"
+#include "FFmpegLogger.h"
 
-TSMuxer::TSMuxer(std::shared_ptr<ISharedMemory> shm, int shmChannelID)
-    : shm(shm), shmChannelID(shmChannelID) {}
+TSMuxer::TSMuxer(std::shared_ptr<ISharedMemory> shm, int shmChannelID, std::string prefix)
+    : shm(shm), shmChannelID(shmChannelID), logPrefix(prefix) {}
 
 TSMuxer::~TSMuxer() {
     if (outCtx) {
@@ -18,6 +19,7 @@ TSMuxer::~TSMuxer() {
 
 bool TSMuxer::init(AVCodecParameters* vPar, AVRational vTb, 
                    AVCodecParameters* aPar, AVRational aTb) {
+    currentThreadLogPrefix = logPrefix;
 
     inVideoTimeBase = vTb;
     inAudioTimeBase = aTb;
@@ -64,6 +66,8 @@ bool TSMuxer::init(AVCodecParameters* vPar, AVRational vTb,
 bool TSMuxer::muxVideoPacket(AVPacket* pkt, bool isKey) {
     if (!outCtx || outVideoStreamIndex < 0) return false;
 
+    currentThreadLogPrefix = logPrefix;
+
     isKeyFrame = isKey;
 
     // // Increment our incoming frame tracker
@@ -82,12 +86,12 @@ bool TSMuxer::muxVideoPacket(AVPacket* pkt, bool isKey) {
     clone->stream_index = outVideoStreamIndex;
     av_packet_rescale_ts(clone, inVideoTimeBase, outCtx->streams[outVideoStreamIndex]->time_base);
 
-    // 1. Safeguard: If DTS is missing but PTS exists, copy it (Crucial for H.264 B-frames)
+    // Safeguard: If DTS is missing but PTS exists, copy it (Crucial for H.264 B-frames)
     if (clone->dts == AV_NOPTS_VALUE && clone->pts != AV_NOPTS_VALUE) {
         clone->dts = clone->pts;
     }
 
-    // 2. Anchor the Video to Zero
+    // Anchor the Video to Zero
     if (clone->dts != AV_NOPTS_VALUE) {
         if (firstVideoDTS == AV_NOPTS_VALUE) firstVideoDTS = clone->dts;
         clone->dts -= firstVideoDTS;
@@ -100,7 +104,6 @@ bool TSMuxer::muxVideoPacket(AVPacket* pkt, bool isKey) {
     // --- Delegate to the shared guard ---
     enforceMonotonicity(clone, lastVideoDTS, videoDtsOffset);
 
-    // 
     // int ret = av_interleaved_write_frame(outCtx, clone);
 
     // Write immediately to bypass the interleaving cache
@@ -117,6 +120,7 @@ bool TSMuxer::muxVideoPacket(AVPacket* pkt, bool isKey) {
 
 bool TSMuxer::muxAudioPacket(AVPacket* pkt) {
     if (!outCtx || outAudioStreamIndex < 0) return false;
+    currentThreadLogPrefix = logPrefix;
 
     AVPacket* clone = av_packet_alloc();
     av_packet_ref(clone, pkt);
@@ -125,12 +129,12 @@ bool TSMuxer::muxAudioPacket(AVPacket* pkt) {
     clone->stream_index = outAudioStreamIndex;
     av_packet_rescale_ts(clone, inAudioTimeBase, outCtx->streams[outAudioStreamIndex]->time_base);
 
-    // 1. Safeguard: Audio over RTSP almost never has a DTS. Lock it to PTS.
+    // Safeguard: Audio over RTSP almost never has a DTS. Lock it to PTS.
     if (clone->dts == AV_NOPTS_VALUE && clone->pts != AV_NOPTS_VALUE) {
         clone->dts = clone->pts;
     }
 
-    // 2. Anchor the Audio to Zero
+    // Anchor the Audio to Zero
     if (clone->dts != AV_NOPTS_VALUE) {
         if (firstAudioDTS == AV_NOPTS_VALUE) firstAudioDTS = clone->dts;
         clone->dts -= firstAudioDTS;
@@ -160,6 +164,7 @@ bool TSMuxer::muxAudioPacket(AVPacket* pkt) {
 
 
 void TSMuxer::enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker, int64_t& offsetTracker) {
+    currentThreadLogPrefix = logPrefix;
     if (pkt->dts != AV_NOPTS_VALUE) {
 
         // Strip away any accumulated offset from previous NTP glitches
@@ -189,7 +194,7 @@ void TSMuxer::enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker, int64_
                 // The stream just jumped multiple seconds or days into the future!
                 // Calculate the massive gap, leaving a standard ~30fps frame gap (3000 ticks) for safety.
                 int64_t massiveGap = delta - 3000; 
-                
+
                 // Add this huge void to our permanent offset tracker
                 offsetTracker += massiveGap;
 
@@ -200,7 +205,7 @@ void TSMuxer::enforceMonotonicity(AVPacket* pkt, int64_t& lastDTSTracker, int64_
                 }
 
                 // Optional: Log it so you know which camera has a bad internal clock
-                Log::info("[TSMuxer] Caught massive timestamp forward jump! Snapping back.");
+                // Log::info("[TSMuxer] Caught massive timestamp forward jump! Snapping back.");
 
             }
 

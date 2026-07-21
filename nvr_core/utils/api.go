@@ -3,7 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 )
 
 
@@ -19,6 +21,23 @@ var (
 	ErrorReachMaxLicense = errors.New("Reached max license number")
 )
 
+// DisableHTTPTimeouts removes the read and write deadlines for the current HTTP response.
+// This is strictly required for endpoints that stream large files (like video exports or DB backups)
+// to prevent the global http.Server timeouts from killing the connection prematurely.
+func DisableHTTPTimeouts(w http.ResponseWriter) error {
+	rc := http.NewResponseController(w)
+
+	// Passing a zero-value time.Time{} disables the timeout
+	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+		return fmt.Errorf("failed to disable write deadline: %w", err)
+	}
+	
+	if err := rc.SetReadDeadline(time.Time{}); err != nil {
+		return fmt.Errorf("failed to disable read deadline: %w", err)
+	}
+
+	return nil
+}
 
 // Source - https://stackoverflow.com/a/62734272
 // Posted by kinshuk4

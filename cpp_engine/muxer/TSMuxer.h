@@ -10,7 +10,7 @@ extern "C" {
 
 class TSMuxer {
 public:
-    TSMuxer(std::shared_ptr<ISharedMemory> shm, int shmChannelID);
+    TSMuxer(std::shared_ptr<ISharedMemory> shm, int shmChannelID, std::string prefix);
     ~TSMuxer();
 
     // Initializes the muxer using explicit parameters and timebases
@@ -22,6 +22,8 @@ public:
     bool muxAudioPacket(AVPacket* pkt);
 
 private:
+
+    std::string logPrefix;
 
     // Anchor points for Zero-Indexing
     int64_t firstVideoDTS = AV_NOPTS_VALUE;

@@ -94,7 +94,7 @@ AVDictionary* configureAVDictionary(AVDictionary* options) {
  */
 void logUnusedOptions(AVDictionary* dict, const std::string& tag) {
     AVDictionaryEntry* t = nullptr;
-    
+
     // Iterate over all remaining entries in the dictionary
     while ((t = av_dict_get(dict, "", t, AV_DICT_IGNORE_SUFFIX))) {
         Log::error("[Warning][" + tag + "] Unused Option: Key='" + t->key + "', Value='" + t->value + "'");

@@ -49,14 +49,14 @@ func (s *cameraServiceBase) UpdateCamera(ctx context.Context, id int64, cam mode
 }
 
 func (s *cameraServiceBase) DeleteCamera(ctx context.Context, id int64) error {
-	hasSegments, err := s.segRepo.HasSegments(ctx, id)
-	if err != nil {
-		return err // Database error during check
-	}
+	// hasSegments, err := s.segRepo.HasSegments(ctx, id)
+	// if err != nil {
+	// 	return err // Database error during check
+	// }
 
-	if hasSegments {
-		return ErrCameraHasSegments
-	}
+	// if hasSegments {
+	// 	return ErrCameraHasSegments
+	// }
 
 	return s.repo.Delete(ctx, id)
 }

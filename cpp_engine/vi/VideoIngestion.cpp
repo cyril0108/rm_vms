@@ -1,9 +1,11 @@
 #include "VideoIngestion.h"
 #include "TSMuxer.h"
+#include "FFmpegLogger.h"
 
 #include <iostream>
 // #include <string>
 #include <chrono>
+#include <stdexcept>
 
 #include "utils/Time.h"
 
@@ -20,12 +22,14 @@ VideoIngestion::VideoIngestion(const VideoIngestionConfig& config)
       profile(config.profile),
       recording(config.recording)
 {
-    camName = "[Cam" + std::to_string(camID) + "]";
+    camName = "[Cam" + std::to_string(camID) + "][" + profile + "]";
     shmChannelID = shm->ChannelForCamID(camID);
     recorderWorker = std::make_unique<RecorderWorker>(config.rootPath, profile);
 
     camJsonPartial = "\"cam\":" + std::to_string(camID) + ", \"profile\": \"" + profile + "\"";
     updateRECStatus();
+
+    currentThreadLogPrefix = camName;
 
     if(shmChannelID < 0) {
 
@@ -38,6 +42,7 @@ VideoIngestion::VideoIngestion(const VideoIngestionConfig& config)
         workerThread = std::thread(&VideoIngestion::startIngestion, this);
 
     }
+
 
 }
 
@@ -66,6 +71,9 @@ VideoIngestion::~VideoIngestion() {
 
 
 int VideoIngestion::startIngestion() {
+
+    currentThreadLogPrefix = camName;
+
     avformat_network_init();
     options = configureAVDictionary(nullptr);
 
@@ -105,7 +113,7 @@ int VideoIngestion::startIngestion() {
     // ---------------------------------------------
     // --- Initialize the MPEG-TS Muxer ------------
     // ---------------------------------------------
-    tsMuxer = new TSMuxer(shm, shmChannelID);
+    tsMuxer = new TSMuxer(shm, shmChannelID, camName);
 
     // Extract exact Video parameters
     AVCodecParameters* vPar = (videoStreamIndex >= 0) ? fmtCtx->streams[videoStreamIndex]->codecpar : nullptr;
@@ -205,6 +213,9 @@ void VideoIngestion::startRecording() {
  * =========================================================
  */
 void VideoIngestion::findStreamIndices() {
+
+    currentThreadLogPrefix = camName;
+
     videoStreamIndex = -1;
     audioStreamIndex = -1;
 
@@ -569,6 +580,7 @@ void VideoIngestion::ingestAudio(AVPacket* packet) {
  * @return 0 on success, -1 on failure.
  */
 int VideoIngestion::openInput() {
+    currentThreadLogPrefix = camName;
 
     // Log::info(camName + "Connecting to: " + url);
 
@@ -581,20 +593,41 @@ int VideoIngestion::openInput() {
     fmtCtx->interrupt_callback.callback = VideoIngestion::interruptCallback;
     fmtCtx->interrupt_callback.opaque = this;
 
-    int ret = avformat_open_input(&fmtCtx, url.c_str(), nullptr, &options);
-    if (ret != 0) {
-        // Create a buffer for the error message
-        char errbuf[256];
 
-        // Ask FFmpeg to translate the error code
-        av_strerror(ret, errbuf, sizeof(errbuf));
+    try {
 
-        std::cerr << camName << "[FFmpeg Error] Could not open source " << std::endl;
-        std::cerr << "Reason: " << errbuf << " (Code: " << ret << ")" << std::endl;
+        muteThreadLogs = true;
+        int ret = avformat_open_input(&fmtCtx, url.c_str(), nullptr, &options);
+        muteThreadLogs = false;
 
-        // Note: avformat_open_input automatically frees fmtCtx on failure, 
-        // so we must set it back to nullptr to prevent double-free in cleanup()
-        fmtCtx = nullptr;
+        if (ret != 0) {
+            // Create a buffer for the error message
+            char errbuf[256];
+
+            // Ask FFmpeg to translate the error code
+            av_strerror(ret, errbuf, sizeof(errbuf));
+
+            Log::error(camName + "[FFmpeg Error] Could not open source \n\
+                Reason: " + std::string(errbuf) + " (Code: " + std::to_string(ret) + ")");
+
+            // Note: avformat_open_input automatically frees fmtCtx on failure, 
+            // so we must set it back to nullptr to prevent double-free in cleanup()
+            fmtCtx = nullptr;
+
+            return -1;
+        }
+
+    } catch (const std::exception& err) {
+
+        // This catches standard C++ exceptions (e.g., std::bad_alloc, std::runtime_error)
+        Log::error(camName + " [Exception] C++ exception caught: " + std::string(err.what()));
+
+        return -1;
+
+    } catch (...) {
+
+        // This is a "catch-all" block for anything thrown that isn't a standard exception
+        Log::error(camName + "[Exception] Unknown catastrophic exception caught!");
 
         return -1;
     }
