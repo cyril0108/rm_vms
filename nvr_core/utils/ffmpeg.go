@@ -2,11 +2,12 @@ package utils
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"os/exec"
 	"strconv"
 	"strings"
-	"encoding/json"
-	"os/exec"
 )
 
 // FFprobeOutput maps the JSON response from ffprobe
@@ -141,4 +142,25 @@ func GetRealVideoDurationMs(filePath string) (int64, error) {
 	durationMs := int64(durationSeconds * 1000)
 
 	return durationMs, nil
+}
+
+
+// ProbeAudioCodec uses ffprobe to quickly extract the audio codec of a media file.
+// It returns "pcm_alaw", "pcm_mulaw", "aac", etc.
+func ProbeAudioCodec(ctx context.Context, filePath string) string {
+	cmd := exec.CommandContext(ctx, "ffprobe",
+		"-v", "error",
+		"-select_streams", "a:0",
+		"-show_entries", "stream=codec_name",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		filePath,
+	)
+
+	out, err := cmd.Output()
+	if err != nil {
+		// If probe fails (e.g., video has no audio track), return empty string safely
+		return ""
+	}
+
+	return strings.TrimSpace(string(out))
 }

@@ -105,6 +105,14 @@ func (s *segmentServiceBase) ExportTimeRange(ctx context.Context, rootPath strin
 		return segments[i].StartTime < segments[j].StartTime
 	})
 
+	var audioCodec string
+	if len(segments) > 0 {
+		// Use a short 2-second timeout context just in case ffprobe hangs
+		probeCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		audioCodec = utils.ProbeAudioCodec(probeCtx, segments[0].FilePath)
+		cancel()
+	}
+
 	// Build the Concat File (Math & File I/O Responsibility)
 	concatFilePath, err := s.buildConcatFile(segments, reqStart, reqEnd)
 	if err != nil {
@@ -131,7 +139,7 @@ func (s *segmentServiceBase) ExportTimeRange(ctx context.Context, rootPath strin
 		}
 	}
 
-	if err := s.executeFFmpeg(ctx, concatFilePath, outputPath, format, totalDurationSec, progressCallback); err != nil {
+	if err := s.executeFFmpeg(ctx, concatFilePath, outputPath, format, audioCodec, totalDurationSec, progressCallback); err != nil {
 		return "", err
 	}
 
@@ -170,7 +178,7 @@ func (s *segmentServiceBase) buildConcatFile(segments []*models.Segment, reqStar
 // Pre-compile the regex to find "time=HH:MM:SS.ms" in FFmpeg output
 var timeRegex = regexp.MustCompile(`time=([0-9]{2}):([0-9]{2}):([0-9]{2}\.[0-9]+)`)
 
-func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, outputPath, format string, totalDurationSec float64, onProgress func(float64)) error {
+func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, outputPath, format, audioCodec string, totalDurationSec float64, onProgress func(float64)) error {
 
 	// Base arguments required for all exports
 	ffmpegArgs := []string{
@@ -182,7 +190,7 @@ func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, 
 	}
 
 	// Inject dynamic codec strategies (Copy vs Transcode)
-	ffmpegArgs = append(ffmpegArgs, s.getCodecStrategy(format)...)
+	ffmpegArgs = append(ffmpegArgs, s.getCodecStrategy(format, audioCodec)...)
 
 	// Finalize with the output path
 	ffmpegArgs = append(ffmpegArgs, outputPath)
@@ -253,21 +261,36 @@ func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, 
 }
 
 // getCodecStrategy determines if the stream requires re-encoding
-func (s *segmentServiceBase) getCodecStrategy(format string) []string {
+func (s *segmentServiceBase) getCodecStrategy(format string, audioCodec string) []string {
+
+	hasAudio := audioCodec != ""
+	isG711 := audioCodec == "pcm_alaw" || audioCodec == "pcm_mulaw" || audioCodec == "alaw" || audioCodec == "mulaw"
+
 	// AVI is a legacy container. We force a transcode to x264 to ensure 
 	// compatibility, utilizing the "superfast" preset so we don't melt the NVR's CPU.
 	if format == "avi" {
-		return []string{
-			"-c:v", "libx264", 
-			"-preset", "superfast", // Crucial for NVR performance
-			"-crf", "23",           // Standard visual quality
-			"-c:a", "aac",          // Transcode audio safely
+		args := []string{
+			"-c:v", "libx264",
+			"-preset", "superfast",
+			"-crf", "23",
 		}
+		if hasAudio {
+			args = append(args, "-c:a", "aac")
+		}
+		return args
 	}
 
 	// Modern formats (MP4, MKV, MOV) get the blazing fast Stream Copy
 	args := []string{"-c", "copy"}
-	
+
+	if (format == "mp4" || format == "mov") && isG711 {
+		args = []string{
+			"-c:v", "copy",   // STILL COPY VIDEO (Critical for NVR performance)
+			"-c:a", "aac",    // Transcode audio to AAC
+			"-b:a", "128k",   // Standard audio bitrate
+		}
+	}
+
 	// Apply Faststart only to ISO base media formats
 	if format == "mp4" || format == "mov" {
 		args = append(args, "-movflags", "+faststart")
