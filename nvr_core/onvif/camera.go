@@ -20,6 +20,8 @@ type OnvifRecord struct {
 	Firmware     string  `json:"firmware"`
 	SerialNumber string  `json:"serial_number"`
 	SupportsPTZ  bool    `json:"supports_ptz"`
+	SupportsAudio        bool  `json:"supports_audio"`
+	SupportsAudioOutput  bool  `json:"supports_audio_output"`
 
 	// Streams
 	MainStream       string  `json:"mainstream"`

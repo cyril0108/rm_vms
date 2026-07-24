@@ -1,46 +1,34 @@
 package onvif
 
 import (
+	"context"
 	"fmt"
-	"net/http"
+	"sync"
+	"time"
 
-	goonvif "github.com/use-go/onvif"
-	"github.com/use-go/onvif/ptz"
-	"github.com/use-go/onvif/xsd"
-	xsdonvif "github.com/use-go/onvif/xsd/onvif"
+	"github.com/0x524a/onvif-go"
 )
 
 // PTZController holds the authenticated device ready for commands
 type PTZController struct {
-	Device       *goonvif.Device
+	Client       *onvif.Client
 	ProfileToken string
+	stepMu       sync.Mutex
 }
 
+
 // NewPTZController initializes a device specifically for sending PTZ commands,
-// reusing our bulletproof AuthInterceptor.
-func NewPTZController(ip, username, password, profileToken string) (*PTZController, error) {
-	address := fmt.Sprintf("%s:80", ip)
+func NewPTZController(address, username, password, profileToken string) (*PTZController, error) {
+	// address := fmt.Sprintf("%s:80", ip)
 
-	customClient := &http.Client{
-		Transport: &AuthInterceptor{
-			Proxied:  http.DefaultTransport,
-			Username: username,
-			Password: password,
-		},
-	}
-
-	dev, err := goonvif.NewDevice(goonvif.DeviceParams{
-		Xaddr:      address,
-		Username:   username,
-		Password:   password,
-		HttpClient: customClient,
-	})
+	// Initialize Modern Client (Handles WS-Security & Digest Auth internally)
+	client, err := ONVIFClient(address, username, password)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect for PTZ: %w", err)
+		return nil, fmt.Errorf("failed to initialize ONVIF client: %w", err)
 	}
 
 	return &PTZController{
-		Device:       dev,
+		Client:       client,
 		ProfileToken: profileToken,
 	}, nil
 }
@@ -48,51 +36,172 @@ func NewPTZController(ip, username, password, profileToken string) (*PTZControll
 // MoveContinuous starts moving the camera.
 // pan, tilt, and zoom values MUST be floats between -1.0 and 1.0.
 // e.g., pan: 1.0 (Right), pan: -1.0 (Left), tilt: 1.0 (Up)
-func (pc *PTZController) MoveContinuous(pan, tilt, zoom float64) error {
-	req := ptz.ContinuousMove{
-		ProfileToken: xsdonvif.ReferenceToken(pc.ProfileToken),
-		Velocity: xsdonvif.PTZSpeed{
-			PanTilt: xsdonvif.Vector2D{
-				X:     pan,
-				Y:     tilt,
-				// Hardcoded 2D Space to Generic
-				Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace",
-			},
-			Zoom: xsdonvif.Vector1D{
-				X:     zoom,
-				// Hardcoded 2D Space to Generic
-				Space: "http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace",
-			},
-		},
+func (pc *PTZController) MoveContinuous(ctx context.Context, pan, tilt, zoom float64) error {
+
+	velocity := &onvif.PTZSpeed{
+	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
+	    Zoom: &onvif.Vector1D{X: zoom},
 	}
 
-	resp, err := pc.Device.CallMethod(req)
+	timeout := "PT2S" // 2 seconds
+
+	err := pc.Client.ContinuousMove(ctx, pc.ProfileToken, velocity, &timeout)
 	if err != nil {
 		return fmt.Errorf("ContinuousMove failed: %w", err)
 	}
-	if resp != nil {
-		resp.Body.Close()
+
+	return nil
+
+}
+
+// Stop halts all current movement.
+// CRITICAL: If you don't call this, the camera will spin forever until it hits the physical limit!
+func (pc *PTZController) Stop(ctx context.Context, stopPanTilt, stopZoom bool) error {
+
+	err := pc.Client.Stop(ctx, pc.ProfileToken, stopPanTilt, stopZoom)
+
+	if err != nil {
+		return fmt.Errorf("Stop failed: %w", err)
 	}
 
 	return nil
 }
 
-// Stop halts all current movement.
-// CRITICAL: If you don't call this, the camera will spin forever until it hits the physical limit!
-func (pc *PTZController) Stop(stopPanTilt, stopZoom bool) error {
-	req := ptz.Stop{
-		ProfileToken: xsdonvif.ReferenceToken(pc.ProfileToken),
-		PanTilt:      xsd.Boolean(stopPanTilt),
-		Zoom:         xsd.Boolean(stopZoom),
+// MoveRelative nudges the camera a specific discrete distance.
+// pan, tilt, and zoom values represent the translation step (e.g., +0.1 or -0.1).
+// speed dictates how fast it makes that step (0.0 to 1.0).
+func (pc *PTZController) MoveRelative(ctx context.Context, pan, tilt, zoom float64, speed float64) error {
+
+	vector := &onvif.PTZVector{
+	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
+	    Zoom:    &onvif.Vector1D{X: zoom},
 	}
 
-	resp, err := pc.Device.CallMethod(req)
-	if err != nil {
-		return fmt.Errorf("Stop failed: %w", err)
+	velocity := &onvif.PTZSpeed{
+	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
+	    Zoom: &onvif.Vector1D{X: zoom},
 	}
-	if resp != nil {
-		resp.Body.Close()
+
+	err := pc.Client.RelativeMove(ctx, pc.ProfileToken, vector, velocity)
+	if err != nil {
+		return fmt.Errorf("RelativeMove failed: %w", err)
 	}
 
 	return nil
+}
+
+func (pc *PTZController) MoveAbsolute(ctx context.Context, pan, tilt, zoom float64, speed float64) error {
+
+	position := &onvif.PTZVector{
+	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
+	    Zoom:    &onvif.Vector1D{X: zoom},
+	}
+
+	velocity := &onvif.PTZSpeed{
+	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
+	    Zoom: &onvif.Vector1D{X: zoom},
+	}
+
+	err := pc.Client.AbsoluteMove(ctx, pc.ProfileToken, position, velocity)
+	if err != nil {
+		return fmt.Errorf("RelativeMove failed: %w", err)
+	}
+
+	return nil
+}
+
+// Step attempts a native ONVIF RelativeMove. If the camera rejects it, 
+// it falls back to a time-based ContinuousMove to simulate the step.
+func (pc *PTZController) Step(ctx context.Context, pan, tilt, zoom float64, speed float64) error {
+
+	// TryLock instantly returns false if another Step is currently running.
+	if !pc.stepMu.TryLock() {
+		return fmt.Errorf("PTZ step already in progress")
+	}
+	// Ensure we release the lock no matter how this function exits
+	defer pc.stepMu.Unlock()
+
+	// Try the mathematically correct ONVIF Relative Move
+	err := pc.MoveRelative(ctx, pan, tilt, zoom, speed)
+
+	if err == nil {
+		// The camera supported it and executed perfectly!
+		return nil
+	}
+
+	// FALLBACK: The camera rejected RelativeMove (likely a generic camera).
+	// We simulate a step using ContinuousMove + Sleep + Stop.
+	
+	// Start the motors
+	err = pc.MoveContinuous(ctx, pan, tilt, zoom)
+	if err != nil {
+		return fmt.Errorf("fallback ContinuousMove failed: %w", err)
+	}
+
+	// Let the motors run for a brief moment (e.g., 300 milliseconds).
+	// You can expose this duration as a configuration setting later if needed.
+	time.Sleep(300 * time.Millisecond)
+
+	// Force the motors to stop
+	err = pc.Stop(ctx, true, true)
+	if err != nil {
+		return fmt.Errorf("failed to stop fallback step: %w", err)
+	}
+
+	return nil
+}
+
+
+// ===========================================================
+// Absolute Movements
+// ===========================================================
+
+func (pc *PTZController) MoveAbsoluteCenter(ctx context.Context) error {
+	return pc.MoveAbsolute(ctx, 0, 0, 0, 0.5)
+}
+
+// ===========================================================
+// Stepping Movements
+// ===========================================================
+
+func (pc *PTZController) StepLeft(ctx context.Context) error {
+	return pc.Step(ctx, -0.1, 0, 0, 0.5)
+}
+
+func (pc *PTZController) StepRight(ctx context.Context) error {
+	return pc.Step(ctx, 0.1, 0, 0, 0.5)
+}
+
+func (pc *PTZController) StepUp(ctx context.Context) error {
+	return pc.Step(ctx, 0, 0.1, 0, 0.5)
+}
+
+func (pc *PTZController) StepDown(ctx context.Context) error {
+	return pc.Step(ctx, 0, -0.1, 0, 0.5)
+}
+
+func (pc *PTZController) StepZoomIn(ctx context.Context) error {
+	return pc.Step(ctx, 0, 0, 0.1, 0.5)
+}
+
+func (pc *PTZController) StepZoomOut(ctx context.Context) error {
+	return pc.Step(ctx, 0, 0, -0.1, 0.5)
+}
+
+
+// ===========================================================
+// Private
+func panTiltVector(pan, tilt float64) *onvif.Vector2D {
+	return &onvif.Vector2D{
+		X:     pan,
+		Y:     tilt,
+		Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/TranslationGenericSpace",
+	}
+}
+
+func zoomVector(zoom float64) *onvif.Vector1D {
+	return &onvif.Vector1D{
+		X:     zoom,
+		Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/TranslationGenericSpace",
+	}
 }

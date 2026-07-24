@@ -161,6 +161,15 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", api.HandleLiveTransmuxTS)
 
 
+	// =============================================
+	// Camera PTZ
+	// =============================================
+	mux.HandleFunc("GET /api/ptz/{cam_id}/step/left", authMid(http.HandlerFunc(api.HandleCameraPTZStepLeft)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/step/right", authMid(http.HandlerFunc(api.HandleCameraPTZStepRight)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/step/up", authMid(http.HandlerFunc(api.HandleCameraPTZStepUp)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/step/down", authMid(http.HandlerFunc(api.HandleCameraPTZStepDown)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/center", authMid(http.HandlerFunc(api.HandleCameraPTZCenter)))
+
 
 	// =============================================
 	// Camera Management

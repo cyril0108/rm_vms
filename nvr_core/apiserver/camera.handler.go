@@ -155,11 +155,6 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if s.PM.CanAddNewCamera() {
-	// 	utils.RespondErrReachMaxLicense(w)
-	// 	return
-	// }
-
 	var newCamera dto.CreateCameraRequest
 	if err := json.NewDecoder(r.Body).Decode(&newCamera); err != nil {
 		utils.RespondErrInvalidPayload(w)
@@ -168,6 +163,9 @@ func (s *APIServer) AddCamera(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	cam := newCamera.MapToDBCamera()
+	if cam.HTTPPort == 0 {
+		cam.HTTPPort = DefaultScanPort
+	}
 	cam.EncryptPassword(newCamera.Password, s.CFG.Server.MasterKey())
 	if _, err := s.Services.Camera.AddCamera(ctx, cam); err != nil {
 
@@ -247,6 +245,7 @@ func (s *APIServer) AddONVIFCamera(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	newCam := cam.MapToDBCamera()
+	newCam.HTTPPort = port
 	newCam.EncryptPassword(camReq.Password, s.CFG.Server.MasterKey())
 	if _, err := s.Services.Camera.AddCamera(ctx, newCam); err != nil {
 		log.Printf("Failed to add camera: %v", err)

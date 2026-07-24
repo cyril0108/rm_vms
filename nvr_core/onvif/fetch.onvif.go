@@ -9,7 +9,6 @@ import (
 
 	"nvr_core/db/models"
 	"nvr_core/logger"
-
 )
 
 // MapToDBCamera remains unchanged
@@ -26,12 +25,26 @@ func (cr *OnvifRecord) MapToDBCamera() *models.Camera {
 		OnvifProfileToken:     cr.MainStreamToken,
 		SubStreamProfileToken: cr.SubStreamToken,
 		SupportsPTZ:           cr.SupportsPTZ,
+		SupportsAudio:         cr.SupportsAudio,
+		SupportsAudioOutput:   cr.SupportsAudioOutput,
+		EnableAudio:           cr.SupportsAudio,
 	}
+}
+
+func ONVIFAddress(ip string, port int) string {
+	return fmt.Sprintf("%s:%d", ip, port)
+}
+
+func ONVIFClient(address, username, password string) (*onvif.Client, error) {
+	return onvif.NewClient(
+		address,
+		onvif.WithCredentials(username, password),
+	)
 }
 
 // FetchCameraONVIFData connects to an ONVIF device and extracts its DB-ready metadata
 func FetchCameraONVIFData(ip string, port int, username, password string) (*OnvifRecord, error) {
-	address := fmt.Sprintf("%s:%d", ip, port)
+	address := ONVIFAddress(ip, port)
 
 	record := &OnvifRecord{
 		IP:       ip,
@@ -40,17 +53,14 @@ func FetchCameraONVIFData(ip string, port int, username, password string) (*Onvi
 	}
 
 	ll := logger.NewLogger("[]")
-	ll.Debug("[AddONVIFCamera] receive", "u", username, "p", password)
+	// ll.Debug("[AddONVIFCamera] receive", "u", username, "p", password)
 
 	// Establish Context (CRITICAL for NVRs so Goroutines don't hang if camera dies)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	// Initialize Modern Client (Handles WS-Security & Digest Auth internally)
-	client, err := onvif.NewClient(
-		address,
-		onvif.WithCredentials(username, password),
-	)
+	client, err := ONVIFClient(address, username, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize ONVIF client: %w", err)
 	}
@@ -86,12 +96,34 @@ func FetchCameraONVIFData(ip string, port int, username, password string) (*Onvi
 	// Assign Main Stream (First Profile)
 	mainProfile := profiles[0]
 	record.MainStreamToken = string(mainProfile.Token)
-	
+
 	// Strongly typed check for PTZ capability instead of raw string searching
 	if mainProfile.PTZConfiguration != nil {
 		record.SupportsPTZ = true
 	}
+
+
+	// ==========================================
+	// AUDIO CAPABILITY DETECTION
+	// ==========================================
 	
+	// Check for standard Audio (Microphone / One-Way)
+	// If the profile has an audio source or encoder, the camera can send audio to the NVR.
+	if mainProfile.AudioSourceConfiguration != nil || mainProfile.AudioEncoderConfiguration != nil {
+		record.SupportsAudio = true
+	}
+
+	// Many cameras physically have a speaker, but don't bind it to the default video profile.
+	// We explicitly ask the ONVIF Media service if any physical audio outputs exist.
+	audioOutputs, err := client.GetAudioOutputs(ctx)
+	if err == nil && len(audioOutputs) > 0 {
+		record.SupportsAudioOutput = true
+	}
+	// ==========================================
+
+
+
+
 	// Fetch Stream URI for Main Stream
 	if stream, err := client.GetStreamURI(ctx, record.MainStreamToken); err == nil && stream != nil {
 		record.MainStream = string(stream.URI)
