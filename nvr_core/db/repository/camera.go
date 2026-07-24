@@ -12,10 +12,14 @@ import (
 )
 
 var (
-	ErrCameraNotFound = errors.New("camera not found")
-	ErrCameraExists   = errors.New("camera already exists")
+	ErrCameraNotFound         = errors.New("camera not found")
+	ErrCameraExists           = errors.New("camera already exists")
 	ErrCameraHardwareConflict = errors.New("a camera with this serial number and IP address already exists")
 )
+
+type CameraBoolFields struct {
+	supportsPTZ, supportsAudio, supportsAudioOutput, enableAudio, isActive int
+}
 
 type CameraRepository interface {
 	// Get
@@ -40,8 +44,8 @@ func NewCameraRepository(db *sql.DB) CameraRepository {
 	return &cameraRepo{db: db}
 }
 
-// prepareForInsert initializes defaults, timestamps, and UUIDs.
-func (r *cameraRepo) prepareForInsert(cam *models.Camera) (supportsPTZ int, isActive int) {
+// prepareForInsert initializes defaults, timestamps, UUIDs, and converts booleans to integers.
+func (r *cameraRepo) prepareForInsert(cam *models.Camera) (CameraBoolFields) {
 	now := time.Now().Unix()
 	cam.CreatedAt = now
 	cam.UpdatedAt = now
@@ -51,10 +55,15 @@ func (r *cameraRepo) prepareForInsert(cam *models.Camera) (supportsPTZ int, isAc
 	}
 	cam.UUID = utils.GenerateCameraUUID(cam.MACAddress, cam.StreamURL)
 
-	if cam.SupportsPTZ { supportsPTZ = 1 }
-	if cam.IsActive { isActive = 1 }
+	var blf CameraBoolFields
 
-	return supportsPTZ, isActive
+	if cam.SupportsPTZ { blf.supportsPTZ = 1 }
+	if cam.SupportsAudio { blf.supportsAudio = 1 }
+	if cam.SupportsAudioOutput { blf.supportsAudioOutput = 1 }
+	if cam.EnableAudio { blf.enableAudio = 1 }
+	if cam.IsActive { blf.isActive = 1 }
+
+	return blf
 }
 
 // checkHardwareConflict looks for an existing camera by Serial or IP.
@@ -68,13 +77,14 @@ func (r *cameraRepo) checkHardwareConflict(ctx context.Context, tx *sql.Tx, seri
 }
 
 // resurrectCamera overwrites a soft-deleted camera's fields and marks it active.
-func (r *cameraRepo) resurrectCamera(ctx context.Context, tx *sql.Tx, id int64, cam *models.Camera, supportsPTZ, isActive int) error {
+func (r *cameraRepo) resurrectCamera(ctx context.Context, tx *sql.Tx, id int64, cam *models.Camera, blf CameraBoolFields) error {
 	query := `
 		UPDATE cameras SET 
 			uuid = ?, name = ?, manufacturer = ?, model = ?, serial_number = ?, 
 			ip_address = ?, mac_address = ?, http_port = ?, type = ?, 
 			username = ?, password_enc = ?, stream_url = ?, sub_stream_url = ?, 
 			onvif_profile_token = ?, sub_stream_profile_token = ?, supports_ptz = ?, 
+			supports_audio = ?, supports_audio_output = ?, enable_audio = ?,
 			retention_gb_limit = ?, is_active = ?, updated_at = ?, deleted = 0
 		WHERE id = ?
 	`
@@ -82,28 +92,31 @@ func (r *cameraRepo) resurrectCamera(ctx context.Context, tx *sql.Tx, id int64, 
 		cam.UUID, cam.Name, cam.Manufacturer, cam.Model, cam.SerialNumber,
 		cam.IPAddress, cam.MACAddress, cam.HTTPPort, cam.Type, cam.Username, cam.PasswordEnc,
 		cam.StreamURL, cam.SubStreamURL, cam.OnvifProfileToken, cam.SubStreamProfileToken,
-		supportsPTZ, cam.RetentionGBLimit, isActive, cam.UpdatedAt, id,
+		blf.supportsPTZ, blf.supportsAudio, blf.supportsAudioOutput, blf.enableAudio,
+		cam.RetentionGBLimit, blf.isActive, cam.UpdatedAt, id,
 	)
 	return err
 }
 
 
 // insertNewCamera handles a fresh insert into the database.
-func (r *cameraRepo) insertNewCamera(ctx context.Context, tx *sql.Tx, cam *models.Camera, supportsPTZ, isActive int) (int64, error) {
+func (r *cameraRepo) insertNewCamera(ctx context.Context, tx *sql.Tx, cam *models.Camera, blf CameraBoolFields) (int64, error) {
 	query := `
 		INSERT INTO cameras (
 			uuid, name, manufacturer, model, serial_number, 
 			ip_address, mac_address, http_port, type, 
 			username, password_enc, stream_url, sub_stream_url, 
-			onvif_profile_token, sub_stream_profile_token, supports_ptz, 
+			onvif_profile_token, sub_stream_profile_token, 
+			supports_ptz, supports_audio, supports_audio_output, enable_audio, 
 			retention_gb_limit, is_active, created_at, updated_at, deleted
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
 	`
 	result, err := tx.ExecContext(ctx, query,
 		cam.UUID, cam.Name, cam.Manufacturer, cam.Model, cam.SerialNumber,
 		cam.IPAddress, cam.MACAddress, cam.HTTPPort, cam.Type, cam.Username, cam.PasswordEnc,
 		cam.StreamURL, cam.SubStreamURL, cam.OnvifProfileToken, cam.SubStreamProfileToken,
-		supportsPTZ, cam.RetentionGBLimit, isActive, cam.CreatedAt, cam.UpdatedAt,
+		blf.supportsPTZ, blf.supportsAudio, blf.supportsAudioOutput, blf.enableAudio,
+		cam.RetentionGBLimit, blf.isActive, cam.CreatedAt, cam.UpdatedAt,
 	)
 
 	if err != nil {
@@ -123,7 +136,7 @@ func (r *cameraRepo) insertNewCamera(ctx context.Context, tx *sql.Tx, cam *model
 // Create inserts a new camera. The 'cam.ID' must be pre-generated (e.g., UUID).
 func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) (int64, error){
 
-	supportsPTZ, isActive := r.prepareForInsert(cam)
+	blf := r.prepareForInsert(cam)
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -146,14 +159,14 @@ func (r *cameraRepo) Create(ctx context.Context, cam *models.Camera) (int64, err
 		}
 
 		// Resurrect soft-deleted camera
-		if err := r.resurrectCamera(ctx, tx, existingID, cam, supportsPTZ, isActive); err != nil {
+		if err := r.resurrectCamera(ctx, tx, existingID, cam, blf); err != nil {
 			return 0, err
 		}
 		generatedID = existingID
 
 	} else {
 		// No conflict, safe to insert
-		generatedID, err = r.insertNewCamera(ctx, tx, cam, supportsPTZ, isActive)
+		generatedID, err = r.insertNewCamera(ctx, tx, cam, blf)
 		if err != nil {
 			return 0, err
 		}
@@ -174,7 +187,8 @@ func (r *cameraRepo) GetByID(ctx context.Context, id int64) (*models.Camera, err
 		SELECT id, uuid, name, manufacturer, model, serial_number, 
 		       ip_address, mac_address, http_port, type, 
 		       username, password_enc, stream_url, sub_stream_url, 
-		       onvif_profile_token, sub_stream_profile_token, supports_ptz, 
+		       onvif_profile_token, sub_stream_profile_token, 
+		       supports_ptz, supports_audio, supports_audio_output, enable_audio, 
 		       retention_gb_limit, is_active, created_at, updated_at 
 		FROM cameras WHERE deleted=0 AND id = ?
 	`
@@ -186,13 +200,14 @@ func (r *cameraRepo) GetByID(ctx context.Context, id int64) (*models.Camera, err
 	var subStream, onvifToken, subStreamToken sql.NullString
 	var macAddress sql.NullString
 	var retentionLimit sql.NullInt64
-	var supportsPTZ, isActive int
+	var supportsPTZ, supportsAudio, supportsAudioOutput, enableAudio, isActive int
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&c.ID, &c.UUID, &c.Name, &manufacturer, &model, &c.SerialNumber,
 		&c.IPAddress, &macAddress, &c.HTTPPort, &c.Type, &username, &passwordEnc,
 		&c.StreamURL, &subStream, &onvifToken, &subStreamToken,
-		&supportsPTZ, &retentionLimit, &isActive, &c.CreatedAt, &c.UpdatedAt,
+		&supportsPTZ, &supportsAudio, &supportsAudioOutput, &enableAudio, 
+		&retentionLimit, &isActive, &c.CreatedAt, &c.UpdatedAt,
 	)
 
 	if err != nil {
@@ -217,6 +232,9 @@ func (r *cameraRepo) GetByID(ctx context.Context, id int64) (*models.Camera, err
 	}
 
 	c.SupportsPTZ = supportsPTZ == 1
+	c.SupportsAudio = supportsAudio == 1
+	c.SupportsAudioOutput = supportsAudioOutput == 1
+	c.EnableAudio = enableAudio == 1
 	c.IsActive = isActive == 1
 
 	return &c, nil
@@ -228,7 +246,8 @@ func (r *cameraRepo) GetAll(ctx context.Context) ([]*models.Camera, error) {
 		SELECT id, uuid, name, manufacturer, model, serial_number, 
 		       ip_address, mac_address, http_port, type, 
 		       username, password_enc, stream_url, sub_stream_url, 
-		       onvif_profile_token, sub_stream_profile_token, supports_ptz, 
+		       onvif_profile_token, sub_stream_profile_token, 
+		       supports_ptz, supports_audio, supports_audio_output, enable_audio,
 		       retention_gb_limit, is_active, created_at, updated_at 
 		FROM cameras WHERE deleted=0 ORDER BY created_at ASC
 	`
@@ -246,13 +265,14 @@ func (r *cameraRepo) GetAll(ctx context.Context) ([]*models.Camera, error) {
 		var macAddress sql.NullString
 		var subStream, onvifToken, subStreamToken sql.NullString
 		var retentionLimit sql.NullInt64
-		var supportsPTZ, isActive int
+		var supportsPTZ, supportsAudio, supportsAudioOutput, enableAudio, isActive int
 
 		if err := rows.Scan(
 			&c.ID, &c.UUID, &c.Name, &manufacturer, &model, &c.SerialNumber,
 			&c.IPAddress, &macAddress, &c.HTTPPort, &c.Type, &username, &passwordEnc,
 			&c.StreamURL, &subStream, &onvifToken, &subStreamToken,
-			&supportsPTZ, &retentionLimit, &isActive, &c.CreatedAt, &c.UpdatedAt,
+			&supportsPTZ, &supportsAudio, &supportsAudioOutput, &enableAudio,
+			&retentionLimit, &isActive, &c.CreatedAt, &c.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -269,7 +289,11 @@ func (r *cameraRepo) GetAll(ctx context.Context) ([]*models.Camera, error) {
 			limit := int(retentionLimit.Int64)
 			c.RetentionGBLimit = limit
 		}
+		
 		c.SupportsPTZ = supportsPTZ == 1
+		c.SupportsAudio = supportsAudio == 1
+		c.SupportsAudioOutput = supportsAudioOutput == 1
+		c.EnableAudio = enableAudio == 1
 		c.IsActive = isActive == 1
 
 		cameras = append(cameras, &c)
@@ -323,7 +347,7 @@ func (r *cameraRepo) Activate(ctx context.Context, id int64) error {
 	return r.SetActivate(ctx, id, 1)
 }
 
-// Deactivate performs a soft-delete to preserve evidence in the segments table.
+// SetActivate modifies the active state of a camera.
 func (r *cameraRepo) SetActivate(ctx context.Context, id int64, active int) error {
 	query := `UPDATE cameras SET is_active = ?, updated_at = ? WHERE deleted=0 AND id = ?`
 

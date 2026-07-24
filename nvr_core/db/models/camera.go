@@ -37,6 +37,10 @@ type Camera struct {
 	SubStreamProfileToken string `json:"sub_stream_profile_token"`
 
 	SupportsPTZ           bool    `json:"supports_ptz"`
+	SupportsAudio         bool    `json:"supports_audio"`
+	SupportsAudioOutput   bool    `json:"supports_audio_output"`
+
+	EnableAudio           bool    `json:"enable_audio"`
 
 	RetentionGBLimit      int    `json:"retention_gb_limit"`
 	IsActive              bool    `json:"is_active"`

@@ -193,8 +193,6 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ll := LOG.Lin("fn","[UpdateCameraONVIF]")
-
 	user := cam.Username
 	pwd, err := cam.DecryptPassword(s.CFG.Server.MasterKey())
 
@@ -203,7 +201,16 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 		pwd = camReq.Password
 	}
 
-	camOnvif, err := onvif.FetchCameraONVIFData(cam.IPAddress, 80, user, pwd)
+	port, err := GetRequestPort(r)
+	if err != nil {
+		port = cam.HTTPPort
+	}
+
+	if port == 0 {
+		port = DefaultScanPort
+	}
+
+	camOnvif, err := onvif.FetchCameraONVIFData(cam.IPAddress, port, user, pwd)
 	if err != nil {
 
 		// utils.RespondJSONHTTPStatus(w, "Failed to get ONVIF data", http.StatusInternalServerError)
@@ -215,6 +222,7 @@ func (s *APIServer) UpdateCameraONVIF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updateCam := dto.Onvif2UpdateCameraRequest(camOnvif)
+	updateCam.HTTPPort = &port
 	data := updateCam.ToMapInterface(s.CFG.Server.MasterKey())
 
 	if err := s.Services.Camera.UpdateCamera(ctx, camID, data); err != nil {
