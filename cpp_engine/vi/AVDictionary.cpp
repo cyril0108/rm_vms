@@ -50,12 +50,11 @@ AVDictionary* configureAVDictionary(AVDictionary* options) {
     // 64 cams * 5MB = 320MB of RAM spiked just to connect.
     // Reduce to 32KB (usually enough for H.264 RTSP headers).
     // av_dict_set(&options, "probesize", "64768", 0); 
-    av_dict_set(&options, "probesize", "5000000", 0);      // 5 MB (default is 50MB)
-
+    av_dict_set(&options, "probesize", "50000000", 0);
     // Analyze Duration (in microseconds).
     // How long to watch the stream to detect frame rate/resolution.
     // Default is 5 seconds. Reduce to 0.5 or 1 second.
-    av_dict_set(&options, "analyzeduration", "500000", 0); // 0.5 seconds (default is 5,000,000)
+    av_dict_set(&options, "analyzeduration", "1000000", 0);
 
 
     // ---  LATENCY REDUCTION ---
