@@ -209,7 +209,7 @@ func (m *Manager) RemoveCamera(camID int) {
 	} else {
 		if sw != nil {
 			LOG.Info("Removing camera sub from worker", "cam", camID, "worker", sw.ID)
-			sw.StopCam(camID, utils.SegmentMainProfile)
+			sw.StopCam(camID, utils.SegmentSubProfile)
 		}
 	}
 

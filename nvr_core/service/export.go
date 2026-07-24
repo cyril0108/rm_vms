@@ -170,7 +170,7 @@ func (s *segmentServiceBase) buildConcatFile(segments []*models.Segment, reqStar
 			fmt.Fprintf(file, "outpoint %.3f\n", durationSeconds)
 		}
 	}
-	
+
 	file.Sync()
 	return concatFilePath, nil
 }

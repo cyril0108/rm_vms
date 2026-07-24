@@ -31,7 +31,7 @@ func DisableHTTPTimeouts(w http.ResponseWriter) error {
 	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
 		return fmt.Errorf("failed to disable write deadline: %w", err)
 	}
-	
+
 	if err := rc.SetReadDeadline(time.Time{}); err != nil {
 		return fmt.Errorf("failed to disable read deadline: %w", err)
 	}

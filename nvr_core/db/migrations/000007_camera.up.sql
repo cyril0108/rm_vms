@@ -1,3 +1,3 @@
-ALTER TABLE cameras ADD COLUMN support_audio INTEGER DEFAULT 0;
-ALTER TABLE cameras ADD COLUMN support_audio_output INTEGER DEFAULT 0;
-ALTER TABLE cameras ADD COLUMN audio_enable INTEGER DEFAULT 1;
+ALTER TABLE cameras ADD COLUMN supports_audio INTEGER DEFAULT 0;
+ALTER TABLE cameras ADD COLUMN supports_audio_output INTEGER DEFAULT 0;
+ALTER TABLE cameras ADD COLUMN enable_audio INTEGER DEFAULT 1;
