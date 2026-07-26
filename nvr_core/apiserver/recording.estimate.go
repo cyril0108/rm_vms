@@ -79,19 +79,7 @@ func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *htt
 
 	}
 
-
-	estMB, err := api.calculateBandwidth(streams, mapping)
-	if err != nil {
-
-		utils.RespondJSONHTTPStatus(w, "Failed to calculate bandwidth", http.StatusInternalServerError)
-		return
-
-	}
-
-	estimates.Cameras = utils.CopyMapValuesNL(mapping)
-
-	estimates.MBPerMinute = estMB
-
+	// Get Available MB
 	disk, err := hardware.GetDiskUsage(api.CFG.Server.StoragePath)
 	if err != nil {
 
@@ -104,18 +92,33 @@ func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *htt
 	availMB = availMB * utils.LowWaterMark
 	estimates.AvailableMB = availMB
 
+	// Calculate Camera Bandwidth
+	estMB, err := api.processBandwidthProbe(streams, mapping, estimates)
+	if err != nil {
+
+		utils.RespondJSONHTTPStatus(w, "Failed to calculate bandwidth", http.StatusInternalServerError)
+		return
+
+	}
+
+	estimates.Cameras = utils.CopyMapValuesNL(mapping)
+
+	estimates.MBPerMinute = estMB
+
 	if estMB > 0 {
 		estimates.RecordingTime = availMB / estMB
 	} else {
 		estimates.RecordingTime = 0.0 
 	}
 
+	estimates.RecordingTime = estimates.CalculateRecordingTime(estMB)
+
 	utils.RespondJSON(w, estimates, "success")
 
 }
 
 // CalculateTotalBandwidth acts as your API Handler logic
-func (api *APIServer) calculateBandwidth(streams []*ActiveStream, estimates map[int]*dto.CameraRecordingEstimates) (float64, error) {
+func (api *APIServer) processBandwidthProbe(streams []*ActiveStream, maps map[int]*dto.CameraRecordingEstimates, estimate *dto.RecordingEstimates) (float64, error) {
 	var wg sync.WaitGroup
 
 	// Mutex to protect totalMB while multiple goroutines add to it concurrently
@@ -142,8 +145,9 @@ func (api *APIServer) calculateBandwidth(streams []*ActiveStream, estimates map[
 				return // Skip adding to the total
 			}
 
-			camE := estimates[stream.CamID]
+			camE := maps[stream.CamID]
 			camE.Mbps = estimatedMB
+			camE.RecordingTime = estimate.CalculateRecordingTime(estimatedMB)
 
 			// Safely add the result to the total
 			mu.Lock()

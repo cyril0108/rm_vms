@@ -18,3 +18,13 @@ type CameraRecordingEstimates struct {
 	RecordedTime   float64  `json:"recorded_min"`
 	RecordingTime  float64  `json:"recording_min"`
 }
+
+
+// Return the estimate recording time by the given mbps
+// based on the AvailableMB
+func (re *RecordingEstimates) CalculateRecordingTime(mbps float64) float64 {
+	if mbps > 0 {
+		return re.AvailableMB / mbps
+	}
+	return 0.0
+}
