@@ -93,6 +93,10 @@ func (s *APIServer) HandleFetchSystemCameraONVIF(w http.ResponseWriter, r *http.
 
 	port, err := GetRequestPort(r)
 	if err != nil {
+		port = cam.HTTPPort
+	}
+
+	if port == 0 {
 		port = DefaultScanPort
 	}
 
