@@ -16,6 +16,16 @@ func CopyMapValues[K comparable, V any](m map[K]V, mu sync.Locker) []V {
 	return list
 }
 
+func CopyMapValuesNL[K comparable, V any](m map[K]V) []V {
+
+	list := make([]V, 0, len(m))
+	for _, v := range m {
+		list = append(list, v)
+	}
+
+	return list
+}
+
 // CopyMapKeys safely extracts all keys from a map into a slice.
 // It returns a slice of type K (the key type).
 func CopyMapKeys[K comparable, V any](m map[K]V, mu sync.Locker) []K {

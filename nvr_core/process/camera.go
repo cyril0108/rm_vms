@@ -19,6 +19,7 @@ type StreamProfile struct {
 // Camera represents the physical device for the API and Manager
 type Camera struct {
     ID         int            `json:"id"`
+    Name       string         `json:"name"`
     Active     bool           `json:"active"`
     MainStream *StreamProfile `json:"main_stream"`
     SubStream  *StreamProfile `json:"sub_stream"`
@@ -50,6 +51,7 @@ func NewCameraRuntime(c *models.Camera, masterKey []byte) *Camera {
     live := utils.URLForCameraLiveTSStream(c.ID, utils.SegmentMainProfile)
     cam := &Camera{
         ID: int(c.ID),
+        Name: c.Name,
         Active: c.IsActive,
         MainStream: NewStreamProfile(c.AuthMainUrl(masterKey), live),
     }

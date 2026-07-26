@@ -21,6 +21,8 @@ type CameraManagementService interface {
 	DeleteCamera(ctx context.Context, id int64) error
 	ActivateCamera(ctx context.Context, id int64) error
 	DeactivateCamera(ctx context.Context, id int64) error
+	// 
+	GetStorageSizeByCamera(ctx context.Context, camID int64) (uint64, error)
 }
 
 
@@ -68,6 +70,20 @@ func (s *cameraServiceBase) ActivateCamera(ctx context.Context, id int64) error 
 func (s *cameraServiceBase) DeactivateCamera(ctx context.Context, id int64) error {
 	return s.repo.Deactivate(ctx, id)
 }
+
+//========================
+// Maintain
+//========================
+
+// GetStorageSizeByCamera
+func (s *cameraServiceBase) GetStorageSizeByCamera(ctx context.Context, camID int64) (uint64, error) {
+	return s.segRepo.GetStorageSizeByCamera(ctx, camID)
+}
+
+
+//========================
+// Start Up
+//========================
 
 /// Load all cameras, if number of active cameras is more than license allowed,
 /// disable cameras to match licensed number.

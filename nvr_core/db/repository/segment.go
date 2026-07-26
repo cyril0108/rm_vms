@@ -41,6 +41,7 @@ type SegmentRepository interface {
 
 	// Camera Data Check
 	HasSegments(ctx context.Context, camID int64) (bool, error)
+	GetStorageSizeByCamera(ctx context.Context, camID int64) (uint64, error)
 
 	// DB/file sanity check
 	GetAllFilePaths(ctx context.Context) (map[string]struct{}, error)
@@ -162,6 +163,25 @@ func (r *segmentRepo) HasSegments(ctx context.Context, camID int64) (bool, error
 	return exists, nil
 }
 
+// GetStorageSizeByCamera calculates the total disk space in bytes used by a specific camera.
+func (r *segmentRepo) GetStorageSizeByCamera(ctx context.Context, camID int64) (uint64, error) {
+	// We wrap SUM() in COALESCE() so that if the camera has zero segments,
+	// it safely returns 0 instead of NULL (which would cause a scan error).
+	query := `
+		SELECT COALESCE(SUM(size_bytes), 0)
+		FROM segments
+		WHERE camera_id = ?;
+	`
+
+	var totalBytes uint64
+
+	err := r.db.QueryRowContext(ctx, query, camID).Scan(&totalBytes)
+	if err != nil {
+		return 0, fmt.Errorf("failed to calculate storage size for camera %d: %w", camID, err)
+	}
+
+	return totalBytes, nil
+}
 
 // ================================================
 // Maintenance

@@ -20,12 +20,21 @@ type ActiveStream struct {
 
 func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *http.Request) {
 
-	rc := http.NewResponseController(w)
-	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
-		LOG.Info("[TS Handler] Warning: Failed to clear write deadline:", "error", err)
+	ll := LOG.Prefix("[HandleGetRecordingEstimation]")
+
+	utils.DisableHTTPTimeouts(w)
+
+	doStorage := true
+	nostorage := r.URL.Query().Get("nostorage")
+	if nostorage != "" {
+		doStorage = false
 	}
 
 	cams := api.PM.AllCameras()
+
+	ctx := api.Context
+	estimates := &dto.RecordingEstimates{}
+	mapping := make(map[int]*dto.CameraRecordingEstimates, len(cams))
 
 	var streams []*ActiveStream
 
@@ -51,19 +60,35 @@ func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *htt
 				})
 			}
 
+			mapping[cam.ID] = &dto.CameraRecordingEstimates{
+				ID: cam.ID,
+				Name: cam.Name,
+			}
+
+			if doStorage {
+
+				bytes, err := api.Services.Camera.GetStorageSizeByCamera(ctx, int64(cam.ID))
+				if err != nil {
+					ll.Info("failed to get camera storage used", "cam", cam.ID, "err", err)
+				}
+				mapping[cam.ID].MBUsed = float64(bytes / 1000000)
+
+			}
+
 		}
 
 	}
 
-	estimates := &dto.RecordingEstimates{}
 
-	estMB, err := api.calculateTotalBandwidth(streams)
+	estMB, err := api.calculateBandwidth(streams, mapping)
 	if err != nil {
 
 		utils.RespondJSONHTTPStatus(w, "Failed to calculate bandwidth", http.StatusInternalServerError)
 		return
 
 	}
+
+	estimates.Cameras = utils.CopyMapValuesNL(mapping)
 
 	estimates.MBPerMinute = estMB
 
@@ -90,9 +115,9 @@ func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *htt
 }
 
 // CalculateTotalBandwidth acts as your API Handler logic
-func (api *APIServer) calculateTotalBandwidth(streams []*ActiveStream) (float64, error) {
+func (api *APIServer) calculateBandwidth(streams []*ActiveStream, estimates map[int]*dto.CameraRecordingEstimates) (float64, error) {
 	var wg sync.WaitGroup
-	
+
 	// Mutex to protect totalMB while multiple goroutines add to it concurrently
 	var mu sync.Mutex 
 	var totalMB float64
@@ -111,11 +136,14 @@ func (api *APIServer) calculateTotalBandwidth(streams []*ActiveStream) (float64,
 
 			// Send the IPC request to the estimation worker
 			estimatedMB, err := api.PM.EstWorker.RequestProbe(ctx, s.CamID, s.Profile, s.RTSPUrl)
-			
+
 			if err != nil {
 				fmt.Printf("[API] Failed to probe Cam %d %s: %v\n", s.CamID, s.Profile, err)
 				return // Skip adding to the total
 			}
+
+			camE := estimates[stream.CamID]
+			camE.Mbps = estimatedMB
 
 			// Safely add the result to the total
 			mu.Lock()
