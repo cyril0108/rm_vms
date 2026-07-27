@@ -42,6 +42,7 @@ type SegmentRepository interface {
 	// Camera Data Check
 	HasSegments(ctx context.Context, camID int64) (bool, error)
 	GetStorageSizeByCamera(ctx context.Context, camID int64) (uint64, error)
+	GetTotalDuration(ctx context.Context, camID int64, profile string) (int64, error)
 
 	// DB/file sanity check
 	GetAllFilePaths(ctx context.Context) (map[string]struct{}, error)
@@ -258,3 +259,23 @@ func (r *segmentRepo) GetHourlyBurnRateBytes(ctx context.Context) (uint64, error
 	return burnRateBytes, nil
 }
 
+// GetTotalDuration calculates the total recorded time (in seconds/milliseconds, depending on your timestamp format) 
+// for a specific camera and profile.
+func (r *segmentRepo) GetTotalDuration(ctx context.Context, camID int64, profile string) (int64, error) {
+	// We calculate the difference between end_time and start_time directly in the database.
+	// COALESCE ensures we safely return 0 instead of NULL if no segments exist.
+	query := `
+		SELECT COALESCE(SUM(end_time - start_time), 0)
+		FROM segments
+		WHERE camera_id = ? AND profile = ?;
+	`
+
+	var totalDuration int64
+
+	err := r.db.QueryRowContext(ctx, query, camID, profile).Scan(&totalDuration)
+	if err != nil {
+		return 0, fmt.Errorf("failed to calculate total duration for camera %d, profile %s: %w", camID, profile, err)
+	}
+
+	return totalDuration, nil
+}

@@ -73,6 +73,12 @@ func (api *APIServer) HandleGetRecordingEstimation(w http.ResponseWriter, r *htt
 				}
 				mapping[cam.ID].MBUsed = float64(bytes / 1000000)
 
+				ms, err := api.Services.Camera.GetCameraTotalDuration(ctx, int64(cam.ID))
+				if err != nil {
+					ll.Info("failed to get camera recorded time", "cam", cam.ID, "err", err)
+				}
+				mapping[cam.ID].RecordedTime = float64(ms / 60000)
+
 			}
 
 		}

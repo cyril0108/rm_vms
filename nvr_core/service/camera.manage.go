@@ -6,6 +6,7 @@ import (
 
 	"nvr_core/db/models"
 	"nvr_core/db/repository"
+	"nvr_core/utils"
 )
 
 var ErrCameraHasSegments = errors.New("cannot delete camera: existing video segments must be cleared first")
@@ -23,6 +24,7 @@ type CameraManagementService interface {
 	DeactivateCamera(ctx context.Context, id int64) error
 	// 
 	GetStorageSizeByCamera(ctx context.Context, camID int64) (uint64, error)
+	GetCameraTotalDuration(ctx context.Context, camID int64) (int64, error)
 }
 
 
@@ -78,6 +80,12 @@ func (s *cameraServiceBase) DeactivateCamera(ctx context.Context, id int64) erro
 // GetStorageSizeByCamera
 func (s *cameraServiceBase) GetStorageSizeByCamera(ctx context.Context, camID int64) (uint64, error) {
 	return s.segRepo.GetStorageSizeByCamera(ctx, camID)
+}
+
+// GetTotalDuration calculates the total recorded time (in seconds/milliseconds, depending on your timestamp format) 
+// for a specific camera and profile.
+func (s *cameraServiceBase) GetCameraTotalDuration(ctx context.Context, camID int64) (int64, error) {
+	return s.segRepo.GetTotalDuration(ctx, camID, utils.SegmentMainProfile)
 }
 
 
