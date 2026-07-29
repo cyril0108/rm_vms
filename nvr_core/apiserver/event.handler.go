@@ -25,18 +25,32 @@ func (api *APIServer) HandleGetEvents(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	mstime, err := GetMSFromTime(r, "mstime", "time")
+	// Parse timestamps
+	start, err := GetMSFromTime(r, "msstart", "start")
 	if err != nil {
-		utils.RespondJSONHTTPStatus(w, "need time arguments", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "need start arguments", http.StatusBadRequest)
 		return
 	}
 
-	t := time.UnixMilli(mstime)
-	events, err := api.Services.Event.GetEventsFrom(ctx, t)
-	if err != nil {
-		utils.RespondJSONHTTPStatus(w, "Failed to get events: "+err.Error(), http.StatusInternalServerError)
-		return
+	end, _ := GetMSFromTime(r, "msend", "end")
+
+	var events []*models.Event
+
+	if end == 0 {
+
+		t := time.UnixMilli(start)
+		events, err = api.Services.Event.GetEventsFrom(ctx, t)
+		if err != nil {
+			utils.RespondJSONHTTPStatus(w, "Failed to get events: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+	} else {
+
+
+
 	}
+
 
 	if events == nil {
 		events = []*models.Event{}

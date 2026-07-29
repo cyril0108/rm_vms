@@ -31,7 +31,7 @@ func NewEventRepository(db *sql.DB) EventRepository {
 }
 
 func (e *eventRepo) Insert(ctx context.Context, ev *models.Event) error {
-	query := `INSERT INTO event (type, message, created_at) 
+	query := `INSERT INTO events (type, message, created_at) 
 	          VALUES (?, ?, ?)`
 
 	result, err := e.db.ExecContext(ctx, query, ev.Type, ev.Message, ev.CreatedAt)
@@ -68,9 +68,44 @@ func (e *eventRepo) GetLastEvent(ctx context.Context) (*models.Event, error) {
 	return &ev, nil
 }
 
+func (e *eventRepo) GetEventsBetween(ctx context.Context, start, end time.Time) ([]*models.Event, error) {
+
+	query := `
+		SELECT id, type, message, payload, created_at
+		FROM events
+		WHERE
+			created_at > ?
+			AND
+			created_at < ?
+		ORDER BY created_at DESC
+	`
+
+	rows, err := e.db.QueryContext(ctx, query, start, end)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []*models.Event
+	for rows.Next() {
+		var ev models.Event
+		if err := rows.Scan( &ev.ID, &ev.Type, &ev.Message, &ev.Payload, &ev.CreatedAt); err != nil {
+			return nil, err
+		}
+		events = append(events, &ev)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+
+}
+
 func (e *eventRepo) GetEventsFrom(ctx context.Context, time time.Time) ([]*models.Event, error) {
 	query := `
-		SELECT id, type, message, created_at
+		SELECT id, type, message, payload, created_at
 		FROM events
 		WHERE
 			created_at > ?
@@ -86,10 +121,14 @@ func (e *eventRepo) GetEventsFrom(ctx context.Context, time time.Time) ([]*model
 	var events []*models.Event
 	for rows.Next() {
 		var ev models.Event
-		if err := rows.Scan( &ev.ID, &ev.Type, &ev.Message, &ev.CreatedAt); err != nil {
+		if err := rows.Scan( &ev.ID, &ev.Type, &ev.Message, &ev.Payload, &ev.CreatedAt); err != nil {
 			return nil, err
 		}
 		events = append(events, &ev)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return events, nil
