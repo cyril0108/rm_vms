@@ -17,8 +17,10 @@ import (
 type EventRepository interface {
 
 	Insert(ctx context.Context, ev *models.Event) error
+	GetLastestEvents(ctx context.Context, limit int) ([]*models.Event, error)
 	GetLastEvent(ctx context.Context) (*models.Event, error)
 	GetEventsFrom(ctx context.Context, time time.Time) ([]*models.Event, error)
+	GetEventsBetween(ctx context.Context, start, end time.Time) ([]*models.Event, error)
 
 }
 
@@ -68,23 +70,7 @@ func (e *eventRepo) GetLastEvent(ctx context.Context) (*models.Event, error) {
 	return &ev, nil
 }
 
-func (e *eventRepo) GetEventsBetween(ctx context.Context, start, end time.Time) ([]*models.Event, error) {
-
-	query := `
-		SELECT id, type, message, payload, created_at
-		FROM events
-		WHERE
-			created_at > ?
-			AND
-			created_at < ?
-		ORDER BY created_at DESC
-	`
-
-	rows, err := e.db.QueryContext(ctx, query, start, end)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+func (e *eventRepo) scanRows(rows *sql.Rows) ([]*models.Event, error) {
 
 	var events []*models.Event
 	for rows.Next() {
@@ -103,6 +89,47 @@ func (e *eventRepo) GetEventsBetween(ctx context.Context, start, end time.Time) 
 
 }
 
+func (e *eventRepo) GetLastestEvents(ctx context.Context, limit int) ([]*models.Event, error) {
+
+	query := `
+		SELECT id, type, message, payload, created_at
+		FROM events
+		ORDER BY created_at DESC
+		LIMIT ?
+	`
+
+	rows, err := e.db.QueryContext(ctx, query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return e.scanRows(rows)
+
+}
+
+func (e *eventRepo) GetEventsBetween(ctx context.Context, start, end time.Time) ([]*models.Event, error) {
+
+	query := `
+		SELECT id, type, message, payload, created_at
+		FROM events
+		WHERE
+			created_at > ?
+			AND
+			created_at < ?
+		ORDER BY created_at DESC
+	`
+
+	rows, err := e.db.QueryContext(ctx, query, start, end)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return e.scanRows(rows)
+
+}
+
 func (e *eventRepo) GetEventsFrom(ctx context.Context, time time.Time) ([]*models.Event, error) {
 	query := `
 		SELECT id, type, message, payload, created_at
@@ -118,18 +145,6 @@ func (e *eventRepo) GetEventsFrom(ctx context.Context, time time.Time) ([]*model
 	}
 	defer rows.Close()
 
-	var events []*models.Event
-	for rows.Next() {
-		var ev models.Event
-		if err := rows.Scan( &ev.ID, &ev.Type, &ev.Message, &ev.Payload, &ev.CreatedAt); err != nil {
-			return nil, err
-		}
-		events = append(events, &ev)
-	}
+	return e.scanRows(rows)
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return events, nil
 }

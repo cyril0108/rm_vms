@@ -24,6 +24,15 @@ func decodeRequest[T any](r *http.Request, req *T) error {
 	return json.NewDecoder(r.Body).Decode(req)
 }
 
+func getQueryInt(r *http.Request, name string) (int, error) {
+	targetStr := r.URL.Query().Get(name)
+	val, err := strconv.ParseInt(targetStr, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int(val), nil
+}
+
 func GetQueryProfile(r *http.Request) string {
 	profile := r.URL.Query().Get("profile")
 	if profile == "" {

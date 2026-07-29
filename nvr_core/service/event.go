@@ -12,6 +12,9 @@ import (
 type EventService interface {
 	NewEvent(ctx context.Context, evType models.EventType, message string) (*models.Event, error)
 	GetEventsFrom(ctx context.Context, time time.Time) ([]*models.Event, error)
+	GetEventsBetween(ctx context.Context, start, end time.Time) ([]*models.Event, error)
+	GetLastestEvents(ctx context.Context, limit int) ([]*models.Event, error)
+	GetLastEvent(ctx context.Context) (*models.Event, error)
 }
 
 func NewEventService(repo repository.EventRepository) EventService {
@@ -33,6 +36,15 @@ func (e *eventServiceBase) NewEvent(ctx context.Context, evType models.EventType
 func (e *eventServiceBase) GetEventsFrom(ctx context.Context, time time.Time) ([]*models.Event, error) {
 	return e.repo.GetEventsFrom(ctx, time)
 }
+
+func (e *eventServiceBase) GetEventsBetween(ctx context.Context, start, end time.Time) ([]*models.Event, error) {
+	return e.repo.GetEventsBetween(ctx, start, end)
+}
+
+func (e *eventServiceBase) GetLastestEvents(ctx context.Context, limit int) ([]*models.Event, error) {
+	return e.repo.GetLastestEvents(ctx, limit)
+}
+
 
 func (e *eventServiceBase) GetLastEvent(ctx context.Context) (*models.Event, error) {
 	return e.repo.GetLastEvent(ctx)

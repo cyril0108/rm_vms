@@ -25,10 +25,28 @@ func (api *APIServer) HandleGetEvents(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
+	limit, err := getQueryInt(r, "limit")
+	if err == nil {
+
+		events, err := api.Services.Event.GetLastestEvents(ctx, limit)
+		if err != nil {
+			utils.RespondJSONHTTPStatus(w, "Failed to get events: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if events == nil {
+			events = []*models.Event{}
+		}
+
+		utils.RespondJSON(w, events, "")
+
+		return
+	}
+
 	// Parse timestamps
 	start, err := GetMSFromTime(r, "msstart", "start")
 	if err != nil {
-		utils.RespondJSONHTTPStatus(w, "need start arguments", http.StatusBadRequest)
+		utils.RespondJSONHTTPStatus(w, "need start or limit arguments", http.StatusBadRequest)
 		return
 	}
 
@@ -47,10 +65,15 @@ func (api *APIServer) HandleGetEvents(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 
-
+		st := time.UnixMilli(start)
+		et := time.UnixMilli(end)
+		events, err = api.Services.Event.GetEventsBetween(ctx, st, et)
+		if err != nil {
+			utils.RespondJSONHTTPStatus(w, "Failed to get events: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 	}
-
 
 	if events == nil {
 		events = []*models.Event{}
