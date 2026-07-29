@@ -117,6 +117,11 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	// mux.HandleFunc("POST /api/web/logout", api.HandleWebLogout)
 	mux.HandleFunc("POST /api/web/refresh", api.HandleWebRefreshOrLogout)
 
+	// =============================================
+	// Events
+	// =============================================
+	mux.HandleFunc("GET /api/events", authMid(http.HandlerFunc(api.HandleGetEvents)))
+
 
 	// =============================================
 	// User Management

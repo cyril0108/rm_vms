@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"nvr_core/db/models"
+	"nvr_core/events"
 	"nvr_core/license"
 	"nvr_core/logger"
 	"nvr_core/service"
@@ -24,13 +25,16 @@ type Manager struct {
 	camMainWorker map[int]int
 	camSubWorker  map[int]int
 	cams          map[int]*Camera
+	// Ingest/Hub
 	ingester      service.IngestService
+	eventHub      *events.EventHub
+	//
 	log           *logger.Logger
 	mu            sync.Mutex
 }
 
 // NewManager initializes the pool (e.g., count=4)
-func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath string, ingester service.IngestService) *Manager {
+func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath string, ingester service.IngestService, evHub *events.EventHub) *Manager {
 
 	// The assignment logic will fail if 
 	if count < 2 {
@@ -46,18 +50,19 @@ func NewManager(ctx context.Context, cfg *utils.Config, count int, binaryPath st
 		camSubWorker: make(map[int]int),
 		cams: make(map[int]*Camera),
 		ingester:   ingester,
+		eventHub: evHub,
 		log: LOG.Lin("sub","[manager]"),
 	}
 
 	// Initialize workers
 	for i := 0; i < count; i++ {
-		w := NewWorker(i, binaryPath, ingester)
+		w := NewWorker(i, binaryPath, ingester, evHub)
 		mgr.workers[i] = w
 		w.SetStoragePath(cfg.Server.StoragePath)
 	}
 
 	// Create EstimationWorker
-	eWorker := NewWorker(99999999999999, binaryPath, nil)
+	eWorker := NewWorker(99999999999999, binaryPath, nil, nil)
 
 	// Start without hooking IPC
 	if err := eWorker.Start(ctx, false); err != nil {

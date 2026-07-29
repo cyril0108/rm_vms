@@ -71,11 +71,16 @@ func (s *APIServer) HandleCameraPTZStepLeft(w http.ResponseWriter, r *http.Reque
 
 	pc := s.getCameraPTZController(w, r)
 	if pc == nil {
+		// getCameraPTZController will send respond, so here we just return
 		return
 	}
 
 	ctx := r.Context()
-	pc.StepLeft(ctx)
+	err := pc.StepLeft(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	if err := utils.RespondJSON(w, "", "success"); err != nil {
 		log.Printf("Error encoding response: %v", err)
@@ -96,7 +101,11 @@ func (s *APIServer) HandleCameraPTZStepRight(w http.ResponseWriter, r *http.Requ
 	}
 
 	ctx := r.Context()
-	pc.StepRight(ctx)
+	err := pc.StepRight(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	if err := utils.RespondJSON(w, "", "success"); err != nil {
 		log.Printf("Error encoding response: %v", err)
@@ -117,7 +126,11 @@ func (s *APIServer) HandleCameraPTZStepUp(w http.ResponseWriter, r *http.Request
 	}
 
 	ctx := r.Context()
-	pc.StepUp(ctx)
+	err := pc.StepUp(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	if err := utils.RespondJSON(w, "", "success"); err != nil {
 		log.Printf("Error encoding response: %v", err)
@@ -138,7 +151,11 @@ func (s *APIServer) HandleCameraPTZStepDown(w http.ResponseWriter, r *http.Reque
 	}
 
 	ctx := r.Context()
-	pc.StepDown(ctx)
+	err := pc.StepDown(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	if err := utils.RespondJSON(w, "", "success"); err != nil {
 		log.Printf("Error encoding response: %v", err)
@@ -160,7 +177,11 @@ func (s *APIServer) HandleCameraPTZCenter(w http.ResponseWriter, r *http.Request
 	}
 
 	ctx := r.Context()
-	pc.MoveAbsoluteCenter(ctx)
+	err := pc.MoveAbsoluteCenter(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	if err := utils.RespondJSON(w, "", "success"); err != nil {
 		log.Printf("Error encoding response: %v", err)

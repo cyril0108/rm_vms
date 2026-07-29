@@ -3,16 +3,17 @@ package process
 import (
 	"context"
 
-    "nvr_core/db/models"
+	"nvr_core/db/models"
+	"nvr_core/events"
 	"nvr_core/service"
 	"nvr_core/utils"
 )
 
 const CPP_WORKER_BIN = "./nvr_worker"
 
-func Startup(ctx context.Context, cfg *utils.Config, ingester service.IngestService, cams []*models.Camera) (*Manager) {
+func Startup(ctx context.Context, cfg *utils.Config, ingester service.IngestService, evHub *events.EventHub, cams []*models.Camera) (*Manager) {
 
-	pm := NewManager(ctx, cfg, 4, CPP_WORKER_BIN, ingester)
+	pm := NewManager(ctx, cfg, 4, CPP_WORKER_BIN, ingester, evHub)
 	ll := LOG.Lin("fn", "Startup")
 
 	if err := pm.StartAllWorkers(); err != nil {

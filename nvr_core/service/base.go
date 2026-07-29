@@ -2,9 +2,10 @@ package service
 
 import (
 	"database/sql"
+	"time"
+
 	"nvr_core/db/repository"
 	"nvr_core/logger"
-	"time"
 )
 
 var LOG = logger.NewLogger("\033[35m[nvr_core][service]\033[0m")
@@ -21,6 +22,10 @@ type authServiceBase struct {
 type userServiceBase struct {
 	userRepo repository.UserRepository
 	permRepo repository.PermissionRepository
+}
+
+type eventServiceBase struct {
+	repo repository.EventRepository
 }
 
 type cameraServiceBase struct {

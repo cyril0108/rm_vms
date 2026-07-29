@@ -14,12 +14,17 @@ import (
 	"time"
 
 	"nvr_core/db/models"
+	"nvr_core/events"
 	"nvr_core/logger"
 	"nvr_core/service"
 	"nvr_core/shm"
 	"nvr_core/stream"
 	"nvr_core/utils"
+
+	"nvr_core/i18n/tw"
 )
+
+var Lang = tw.Translator{}
 
 const LOGSEP = "==============================================\n"
 
@@ -60,19 +65,23 @@ type Worker struct {
 	streamHubs map[int]*stream.Hub
 	mu         sync.Mutex // Protects concurrent writes to Stdin
 	dmu        utils.DebugMutex
+	// Ingest/Hub
 	ingester   service.IngestService
+	eventHub   *events.EventHub
+	//
 	log        *logger.Logger
 	restartCnt  map[int]int
 }
 
 // NewWorker creates a struct but doesn't start the process yet
-func NewWorker(id int, binaryPath string, ingester service.IngestService) *Worker {
+func NewWorker(id int, binaryPath string, ingester service.IngestService, evHub *events.EventHub) *Worker {
 	return &Worker{
 		ID:         id,
 		BinaryPath: binaryPath,
 		cameras:    make(map[int]*Camera),
 		streamHubs: make(map[int]*stream.Hub),
 		ingester:   ingester,
+		eventHub: evHub,
 		log:        LOG.Lin("worker", id),
 		restartCnt: make(map[int]int),
 	}
@@ -87,6 +96,11 @@ func (w *Worker) handleStoppedStream(resp WorkerResponse) {
 			pf.Status = "stopped"
 			if pf.ChannelID > -1 {
 				w.shmReader.StopChannel(resp.CamID, pf.ChannelID)
+			}
+			if w.eventHub != nil {
+				(*w.eventHub).SendEvent(models.EventTypeCameraOffline,
+										Lang.Translate(tw.MSGCameraOffline, cam.Name),
+										CameraEventPayload(cam.ID, cam.Name, resp.Profile))
 			}
 		}
 	}

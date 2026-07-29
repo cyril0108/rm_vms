@@ -5,10 +5,15 @@ import (
 	"os"
 	"time"
 
-    "nvr_core/db/repository"
-    "nvr_core/hardware"
-    "nvr_core/utils"
+	"nvr_core/db/models"
+	"nvr_core/db/repository"
+	"nvr_core/events"
+	"nvr_core/hardware"
+	"nvr_core/i18n/tw"
+	"nvr_core/utils"
 )
+
+var Lang = tw.Translator{}
 
 type ActiveCameraProvider func() int
 
@@ -16,6 +21,7 @@ type RetentionService struct {
 	path string
 	repo repository.SegmentRepository
 	getActiveCameras ActiveCameraProvider
+	eventHub   *events.EventHub
 }
 
 const HighWaterMark = utils.HighWaterMark
@@ -23,11 +29,12 @@ const LowWaterMark = utils.LowWaterMark
 
 // cameraProvider ActiveCameraProvider
 
-func NewRetentionService(segRepo repository.SegmentRepository, path string, cameraProvider ActiveCameraProvider) RetentionService {
+func NewRetentionService(segRepo repository.SegmentRepository, path string, evHub *events.EventHub, cameraProvider ActiveCameraProvider) RetentionService {
 	return RetentionService{
 		path: path,
 		repo: segRepo,
 		getActiveCameras: cameraProvider,
+		eventHub: evHub,
 	}
 }
 
@@ -60,14 +67,31 @@ func (s *RetentionService) checkDiskUsage() (float64, error) {
 
 }
 
+func (s *RetentionService) SendDiskNearFullWarning(per float64) {
+	msg := Lang.Translate(tw.MSGDiskNearFullWarning, LowWaterMark, per)
+	(*s.eventHub).SendEvent(models.EventTypeDiskWarning, msg, nil)
+}
+
+func (s *RetentionService) SendDiskFullWarning() {
+	msg := Lang.Translate(tw.MSGDiskFullWarning)
+	(*s.eventHub).SendEvent(models.EventTypeDiskWarning, msg, nil)
+}
+
 func (s *RetentionService) enforceDiskWatermark(ctx context.Context) {
 
 	// Check your physical disk usage here (e.g. using syscall.Statfs)
 	diskPerc, cdErr := s.checkDiskUsage() 
 
 	if (diskPerc < HighWaterMark) || cdErr != nil {
+
+		if diskPerc > LowWaterMark {
+			s.SendDiskNearFullWarning(diskPerc)
+		}
+
 		return // Disk is healthy or there is an error reading it, do nothing
 	}
+
+	go s.SendDiskFullWarning()
 
 	// One cameras could have 3 segments (main/sub/snapshot)
 	batchN := s.getActiveCameras() * 3

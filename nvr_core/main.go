@@ -5,17 +5,16 @@ import (
 
 	// Internal Packages
 	"nvr_core/apiserver"
+	"nvr_core/buildinfo"
 	"nvr_core/db"
+	"nvr_core/events"
 	"nvr_core/hardware"
 	"nvr_core/license"
 	"nvr_core/logger"
 	"nvr_core/process"
 	"nvr_core/service"
 	"nvr_core/utils"
-	"nvr_core/buildinfo"
 )
-
-
 
 // @title           NVR Core API
 // @version         0.1
@@ -61,7 +60,7 @@ func main() {
 
 	servs := service.NewServices(dbConn)
 	ingester := service.StartIngester(ctx, dbConn)
-
+	eventHub := events.StartUp(ctx, dbConn)
 
 	//--------------------------
 	// Boot Up Licenses
@@ -85,14 +84,14 @@ func main() {
 		return
 	}
 
-	pm := process.Startup(ctx, cfg, ingester, cams)
+	pm := process.Startup(ctx, cfg, ingester, eventHub, cams)
 	pm.SetLicenseManager(lm)
 
 	go apiserver.Initiate(ctx, cfg, pm, servs)
 
 	/// =====================================
 	/// === Initial clean up and watchers ===
-	service.StartRetentionWatcher(ctx, dbConn, cfg.Server.StoragePath, func() int {
+	service.StartRetentionWatcher(ctx, dbConn, cfg.Server.StoragePath, eventHub, func() int {
 		return pm.ActiveCameraCount()
 	})
 

@@ -75,3 +75,12 @@ func NewStreamProfile(url string, live string) *StreamProfile {
     }
     return pf
 }
+
+func CameraEventPayload(camID int, camName string, profile string) *models.EventPayload {
+    ep := &models.EventPayload{
+        "cam_id": camID,
+        "name": camName,
+        "profile": profile,
+    }
+    return ep
+}

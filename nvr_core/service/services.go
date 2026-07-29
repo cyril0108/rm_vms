@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"nvr_core/db/repository"
+	"nvr_core/events"
 	"os"
 	"path/filepath"
 )
@@ -15,6 +16,7 @@ type Services struct {
 	Auth       AuthService
 	License    LicenseService
 	Perms      PermsService
+	Event      EventService
 	User       UserManagementService
 	Camera     CameraManagementService
 	Timeline   TimelineService
@@ -33,6 +35,7 @@ func NewServices(dbConn *sql.DB) *Services {
 
 	segRepo  := repository.NewSegmentRepository(dbConn)
 	userRepo  := repository.NewUserRepository(dbConn)
+	eventRepo := repository.NewEventRepository(dbConn)
 	retknRepo := repository.NewRefreshTokenRepository(dbConn)
 	permRepo  := repository.NewPermissionRepository(dbConn)
 	cameraRepo := repository.NewCameraRepository(dbConn)
@@ -44,6 +47,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	systemSvc := NewSystemService(dbConn, userRepo)
 	// Some random secret key for now
 	authSvc := NewAuthService(userRepo, permRepo, retknRepo, ")($#YHdsJdsx")
+	eventSvc := NewEventService(eventRepo)
 	userSvc := NewUserManagementService(userRepo, permRepo)
 	permSvc := NewPermsService(permRepo)
 	camSvc := NewCameraManagementService(cameraRepo, segRepo)
@@ -57,6 +61,7 @@ func NewServices(dbConn *sql.DB) *Services {
 		Auth:     authSvc,
 		License:  licSvc,
 		Perms:    permSvc,
+		Event:    eventSvc,
 		User:     userSvc,
 		Camera:   camSvc,
 		Timeline: timelineSvc,
@@ -97,13 +102,13 @@ func CleanExportsOnBoot(rootPath string) error {
 }
 
 
-func StartRetentionWatcher(ctx context.Context, dbConn *sql.DB, path string, cameraProvider ActiveCameraProvider) {
+func StartRetentionWatcher(ctx context.Context, dbConn *sql.DB, path string, evHub *events.EventHub, cameraProvider ActiveCameraProvider) {
 
 	LOG.Info("[StartRetentionWatcher]", "path", path)
 
 	repo := repository.NewSegmentRepository(dbConn)
 
-	retention := NewRetentionService(repo, path, cameraProvider)
+	retention := NewRetentionService(repo, path, evHub, cameraProvider)
 
 	go retention.StartDiskWatchdog(ctx)
 
