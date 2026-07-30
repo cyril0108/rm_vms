@@ -29,11 +29,21 @@ var EventsMessage TranslateMap = TranslateMap {
 	MSGDiskFullWarning: "硬碟空間達到回收條件，準備進行回收",
 }
 
-type Translator struct {
-	// Translate(k I18NMessage, vals...any) string
+type Translator struct {}
+
+func (t *Translator) EventsMessage() TranslateMap {
+	return EventsMessage
 }
+
+func (t *Translator) Events() TranslateMap {
+	return Events
+}
+
 
 func (t *Translator) Translate(k I18NMessage, vals...any) string {
-	return fmt.Sprintf(string(k), vals)
+	return fmt.Sprintf(EventsMessage[string(k)], vals...)
 }
 
+func (t TranslateMap) Translate(k I18NMessage, vals...any) string {
+	return fmt.Sprintf(t[string(k)], vals...)
+}

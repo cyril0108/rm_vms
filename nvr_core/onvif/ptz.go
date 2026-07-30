@@ -131,11 +131,13 @@ func (pc *PTZController) Step(ctx context.Context, pan, tilt, zoom float64, spee
 
 	// FALLBACK: The camera rejected RelativeMove (likely a generic camera).
 	// We simulate a step using ContinuousMove + Sleep + Stop.
-	
+
+	relErr := err
+
 	// Start the motors
 	err = pc.MoveContinuous(ctx, pan, tilt, zoom)
 	if err != nil {
-		return fmt.Errorf("fallback ContinuousMove failed: %w", err)
+		return fmt.Errorf("fallback ContinuousMove failed: %w, \nRelative err: %w", err, relErr)
 	}
 
 	// Let the motors run for a brief moment (e.g., 300 milliseconds).

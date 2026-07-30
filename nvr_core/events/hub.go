@@ -41,7 +41,10 @@ func (s *eventService) SendEvent(etype models.EventType, message string, payload
 	e := models.Event {
 		Type: etype,
 		Message: message,
-		Payload: *payload,
+		CreatedAt: time.Now(),
+	}
+	if payload != nil {
+		e.Payload = *payload
 	}
 	s.Publish(e)
 }
