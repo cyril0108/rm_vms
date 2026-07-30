@@ -51,6 +51,208 @@ func (s *APIServer) getCameraPTZController(w http.ResponseWriter, r *http.Reques
 }
 
 
+func (s *APIServer) CameraPTZStatus(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	ll := LOG.Prefix("[CameraPTZ]")
+
+	pc := s.getCameraPTZController(w, r)
+	if pc == nil {
+		// getCameraPTZController will send respond, so here we just return
+		return
+	}
+
+	ctx := r.Context()
+
+	ll.Info("Endpoint", "Endpoint", pc.Client.Endpoint())
+
+	status, err := pc.GetStatus(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, status, "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
+
+
+func (s *APIServer) CameraPTZConfigurations(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	ll := LOG.Prefix("[CameraPTZ]")
+
+	pc := s.getCameraPTZController(w, r)
+	if pc == nil {
+		// getCameraPTZController will send respond, so here we just return
+		return
+	}
+
+	ctx := r.Context()
+
+	ll.Info("Endpoint", "Endpoint", pc.Client.Endpoint())
+
+	data, err := pc.GetConfigurations(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, data, "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
+
+func (s *APIServer) CameraPTZConfiguration(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	ll := LOG.Prefix("[CameraPTZ]")
+
+	pc := s.getCameraPTZController(w, r)
+	if pc == nil {
+		// getCameraPTZController will send respond, so here we just return
+		return
+	}
+
+	ctx := r.Context()
+
+	ll.Info("Endpoint", "Endpoint", pc.Client.Endpoint())
+
+	data, err := pc.GetConfiguration(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, data, "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
+
+func (s *APIServer) CameraPTZPresets(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	ll := LOG.Prefix("[CameraPTZ]")
+
+	pc := s.getCameraPTZController(w, r)
+	if pc == nil {
+		// getCameraPTZController will send respond, so here we just return
+		return
+	}
+
+	ctx := r.Context()
+
+	ll.Info("Endpoint", "Endpoint", pc.Client.Endpoint())
+
+	data, err := pc.GetPresets(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, data, "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
+
+
+func (s *APIServer) CameraPTZToHome(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	ll := LOG.Prefix("[CameraPTZ]")
+
+	pc := s.getCameraPTZController(w, r)
+	if pc == nil {
+		// getCameraPTZController will send respond, so here we just return
+		return
+	}
+
+	ctx := r.Context()
+
+	ll.Info("Endpoint", "Endpoint", pc.Client.Endpoint())
+
+	err := pc.GotoHomePosition(ctx, pc.Speed(1.0))
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, "", "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
+
+func (s *APIServer) CameraPTZToPreset(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	ll := LOG.Prefix("[CameraPTZ]")
+
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		utils.RespondErrInvalidPayload(w)
+		return
+	}
+
+	pc := s.getCameraPTZController(w, r)
+	if pc == nil {
+		// getCameraPTZController will send respond, so here we just return
+		return
+	}
+
+
+	ctx := r.Context()
+
+	ll.Info("Endpoint", "Endpoint", pc.Client.Endpoint())
+
+	err := pc.GotoPreset(ctx, token, pc.Speed(1.0))
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, "", "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
+
+
 // HandlePTZStepLeft godoc
 // @Summary      Send PTZ step left command to camera
 // @Description  Creates a new IP camera in the NVR database using the provided manual data.

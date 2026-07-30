@@ -7,7 +7,11 @@ import (
 	"time"
 
 	"github.com/0x524a/onvif-go"
+
+	"nvr_core/logger"
 )
+
+var LOG = logger.NewLogger("[onvif][ptz]")
 
 // PTZController holds the authenticated device ready for commands
 type PTZController struct {
@@ -16,16 +20,66 @@ type PTZController struct {
 	stepMu       sync.Mutex
 }
 
+// PTZ Service
+// https://github.com/0x524a/onvif-go#ptz-service
 
 // NewPTZController initializes a device specifically for sending PTZ commands,
 func NewPTZController(address, username, password, profileToken string) (*PTZController, error) {
 	// address := fmt.Sprintf("%s:80", ip)
+
+	ll := LOG.Prefix("[NewPTZController]")
+
+	ll.Info("argvs", "address", address, "username", username, "profile", profileToken)
+
+	// address = fmt.Sprintf("http://%s/onvif/device_service", address)
+
+	// LOG.Info("[NewPTZController] client address", "address", address)
 
 	// Initialize Modern Client (Handles WS-Security & Digest Auth internally)
 	client, err := ONVIFClient(address, username, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize ONVIF client: %w", err)
 	}
+
+	ctx := context.Background()
+
+	if err := client.Initialize(ctx); err != nil {
+		ll.Warn("failed to initialize and found ONVIF service endpoints")
+	}
+
+	info, err := client.GetDeviceInformation(ctx)
+	if err == nil {
+		LOG.Info("info", "device_info", info)
+	}
+
+	caps, err := client.GetCapabilities(ctx)
+	if err == nil {
+		LOG.Info("info", "Capabilities", caps)
+	}
+
+	endpoint, err := client.GetEndpointReference(ctx)
+	if err == nil {
+		LOG.Info("info", "endpoint", endpoint)
+	} else {
+		LOG.Info("endpoint error", "err", err)
+	}
+
+	services, err := client.GetServices(ctx, true)
+	if err == nil {
+		LOG.Info("info", "services", services)
+	}
+
+	if len(services) > 0 && services[0] != nil {
+		LOG.Info("info", "first_service", services[0].XAddr)
+	}
+
+	status, err := client.GetStatus(ctx, profileToken)
+	if err == nil {
+		LOG.Info("info", "ptz_status", status)
+	} else {
+		LOG.Error("failed to get ptz status", "err", err)
+	}
+
 
 	return &PTZController{
 		Client:       client,
@@ -66,6 +120,67 @@ func (pc *PTZController) Stop(ctx context.Context, stopPanTilt, stopZoom bool) e
 
 	return nil
 }
+
+// =============
+// PTZ Service
+// =============
+
+// ContinuousMove()
+// Start continuous PTZ movement
+// AbsoluteMove()
+// Move to absolute position
+// RelativeMove()
+// Move relative to current position
+
+// Stop()
+// Stop PTZ movement
+
+// Get current PTZ status and position
+func (pc *PTZController) GetStatus(ctx context.Context) (*onvif.PTZStatus, error) {
+	return pc.Client.GetStatus(ctx, pc.ProfileToken)
+}
+
+// Get list of PTZ presets
+func (pc *PTZController) GetPresets(ctx context.Context) ([]*onvif.PTZPreset, error) {
+	return pc.Client.GetPresets(ctx, pc.ProfileToken)
+}
+
+// Move to a preset position
+func (pc *PTZController) GotoPreset(ctx context.Context, presetToken string, speed *onvif.PTZSpeed) error {
+	return pc.Client.GotoPreset(ctx, pc.ProfileToken, presetToken, speed)
+}
+
+// Save current position as preset
+// func (pc *PTZController) SetPreset(ctx context.Context, ) (string, error) {
+// 	return pc.Client.SetPreset(ctx, pc.ProfileToken, )
+// }
+
+// // Delete a preset
+// func (pc *PTZController) RemovePreset(ctx context.Context) {
+// 	pc.Client.RemovePreset(ctx, pc.ProfileToken)
+// }
+
+// Move to home position 
+func (pc *PTZController) GotoHomePosition(ctx context.Context, speed *onvif.PTZSpeed) error {
+	return pc.Client.GotoHomePosition(ctx, pc.ProfileToken, speed)
+}
+
+// Set current position as home
+func (pc *PTZController) SetHomePosition(ctx context.Context) error {
+	return pc.Client.SetHomePosition(ctx, pc.ProfileToken)
+}
+
+// Get PTZ configuration
+func (pc *PTZController) GetConfiguration(ctx context.Context) (*onvif.PTZConfiguration, error) {
+	return pc.Client.GetConfiguration(ctx, pc.ProfileToken)
+}
+
+// Get all PTZ configurations
+func (pc *PTZController) GetConfigurations(ctx context.Context) ([]*onvif.PTZConfiguration, error) {
+	return pc.Client.GetConfigurations(ctx)
+}
+
+
 
 // MoveRelative nudges the camera a specific discrete distance.
 // pan, tilt, and zoom values represent the translation step (e.g., +0.1 or -0.1).
@@ -190,6 +305,12 @@ func (pc *PTZController) StepZoomOut(ctx context.Context) error {
 	return pc.Step(ctx, 0, 0, -0.1, 0.5)
 }
 
+func  (pc *PTZController) Speed(speed float64) *onvif.PTZSpeed {
+	return &onvif.PTZSpeed{
+	    PanTilt: &onvif.Vector2D{X: speed, Y: speed},
+	    Zoom: &onvif.Vector1D{X: speed},
+	}
+}
 
 // ===========================================================
 // Private
