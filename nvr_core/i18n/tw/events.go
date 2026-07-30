@@ -41,9 +41,9 @@ func (t *Translator) Events() TranslateMap {
 
 
 func (t *Translator) Translate(k I18NMessage, vals...any) string {
-	return fmt.Sprintf(EventsMessage[string(k)], vals...)
+	return fmt.Sprintf(EventsMessage[k], vals...)
 }
 
 func (t TranslateMap) Translate(k I18NMessage, vals...any) string {
-	return fmt.Sprintf(t[string(k)], vals...)
+	return fmt.Sprintf(t[k], vals...)
 }
