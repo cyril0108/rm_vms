@@ -7,6 +7,8 @@ import (
 	"nvr_core/apiserver/middleware"
 	"nvr_core/onvif"
 	"nvr_core/utils"
+
+	"modernc.org/libc/sys/stat"
 )
 
 // Get data from request and return PTZ controller.
@@ -74,6 +76,50 @@ func (s *APIServer) CameraPTZStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := pc.GetStatus(ctx)
 	if err != nil {
 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, status, "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
+
+func (s *APIServer) CameraPTZAbsolute(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	ll := LOG.Prefix("[CameraPTZAbsolute]")
+
+	pc := s.getCameraPTZController(w, r)
+	if pc == nil {
+		// getCameraPTZController will send respond, so here we just return
+		return
+	}
+
+	ctx := r.Context()
+
+	ll.Info("Endpoint", "Endpoint", pc.Client.Endpoint())
+
+	pan, tilt, zoom, speed, err := getQueryPTZ(r)
+	if err != nil {
+		utils.RespondErrInvalidPayload(w)
+		return
+	}
+
+	err = pc.MoveAbsolute(ctx, pan, tilt, zoom, speed)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	status, err := pc.GetStatus(ctx)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, "MoveAbsolute success sent, but failed to get status", http.StatusMultiStatus)
 		return
 	}
 

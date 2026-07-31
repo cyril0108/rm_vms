@@ -183,6 +183,8 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/ptz/{cam_id}/presets", authMid(http.HandlerFunc(api.CameraPTZPresets)))
 	mux.HandleFunc("GET /api/ptz/{cam_id}/preset/{token}", authMid(http.HandlerFunc(api.CameraPTZToPreset)))
 
+	mux.HandleFunc("GET /api/ptz/{cam_id}/abs", authMid(http.HandlerFunc(api.CameraPTZAbsolute)))
+
 
 	// =============================================
 	// Camera Management

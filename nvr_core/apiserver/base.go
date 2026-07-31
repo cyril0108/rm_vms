@@ -33,6 +33,15 @@ func getQueryInt(r *http.Request, name string) (int, error) {
 	return int(val), nil
 }
 
+func getQueryFloat(r *http.Request, name string, def float64) (float64, error) {
+	targetStr := r.URL.Query().Get(name)
+	val, err := strconv.ParseFloat(targetStr, 64)
+	if err != nil {
+		return def, err
+	}
+	return val, nil
+}
+
 func GetQueryProfile(r *http.Request) string {
 	profile := r.URL.Query().Get("profile")
 	if profile == "" {
@@ -40,6 +49,23 @@ func GetQueryProfile(r *http.Request) string {
 	}
 	return profile
 }
+
+
+// pan, tilt, zoom, speed
+func getQueryPTZ(r *http.Request) (float64,float64,float64,float64, error) {
+
+	pan, errP := getQueryFloat(r, "pan", 0)
+	tilt, errT := getQueryFloat(r, "tilt", 0)
+	zoom, errZ := getQueryFloat(r, "zoom", 0)
+	speed, _ := getQueryFloat(r, "speed", 0.5)
+
+	if errP != nil && errT != nil && errZ != nil {
+		return 0,0,0,0, errors.New("Lack argument: pan, tilt, zoom. At least one should be present.")
+	}
+
+	return pan, tilt, zoom, speed, nil
+}
+
 
 // Get given alternative names from url query.
 // msName is prefered when both exists.
