@@ -7,8 +7,6 @@ import (
 	"nvr_core/apiserver/middleware"
 	"nvr_core/onvif"
 	"nvr_core/utils"
-
-	"modernc.org/libc/sys/stat"
 )
 
 // Get data from request and return PTZ controller.
