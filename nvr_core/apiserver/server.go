@@ -165,6 +165,13 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /live/camera/{cam_id}", api.HandleLiveTransmuxTS)
 	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", api.HandleLiveTransmuxTS)
 
+	// =============================================
+	// Camera Bookmark
+	// =============================================
+	mux.HandleFunc("GET /api/bookmark", authMid(http.HandlerFunc(api.GetBookmarks)))
+	mux.HandleFunc("GET /api/bookmark/{cam_id}", authMid(http.HandlerFunc(api.GetCameraBookmarks)))
+	mux.HandleFunc("POST /api/bookmark", authMid(http.HandlerFunc(api.HandleCreateBookmark)))
+
 
 	// =============================================
 	// Camera PTZ

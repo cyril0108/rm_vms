@@ -90,3 +90,12 @@ func RespondErrFailedToEncodeResponse(w http.ResponseWriter) {
 func RespondErrInvalidPayload(w http.ResponseWriter) {
 	RespondJSONHTTPStatus(w, ErrorInvalidPayload, http.StatusInternalServerError)
 }
+
+func RespondErrInvalidPayloadWError(w http.ResponseWriter, err error) {
+	if err == nil {
+		err = ErrorInvalidPayload
+	} else {
+		err = errors.New(ErrorInvalidPayload.Error() + ":" + err.Error())
+	}
+	RespondJSONHTTPStatus(w, err, http.StatusInternalServerError)
+}
