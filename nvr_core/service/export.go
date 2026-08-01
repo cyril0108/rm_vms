@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"image"
+	_ "image/png"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,13 +21,14 @@ import (
 )
 
 type ExportParams struct {
-	TM       *ExportTaskManager `json:"-"`
-	TaskID  string    `json:"task_id"`
-	CamID    int64    `json:"cam_id"`
-	Profile  string   `json:"profile"`
-	Format   string   `json:"format"`
-	Start    int64    `json:"start"`
-	End      int64    `json:"end"`
+	TM        *ExportTaskManager `json:"-"`
+	TaskID    string             `json:"task_id"`
+	CamID     int64              `json:"cam_id"`
+	Profile   string             `json:"profile"`
+	Format    string             `json:"format"`
+	Start     int64              `json:"start"`
+	End       int64              `json:"end"`
+	Watermark *WatermarkParams   `json:"-"`
 }
 
 
@@ -139,7 +142,12 @@ func (s *segmentServiceBase) ExportTimeRange(ctx context.Context, rootPath strin
 		}
 	}
 
-	if err := s.executeFFmpeg(ctx, concatFilePath, outputPath, format, audioCodec, totalDurationSec, progressCallback); err != nil {
+	sampleSegPath := ""
+	if len(segments) > 0 {
+		sampleSegPath = segments[0].FilePath
+	}
+
+	if err := s.executeFFmpeg(ctx, concatFilePath, outputPath, format, audioCodec, totalDurationSec, params.Watermark, sampleSegPath, progressCallback); err != nil {
 		return "", err
 	}
 
@@ -178,7 +186,7 @@ func (s *segmentServiceBase) buildConcatFile(segments []*models.Segment, reqStar
 // Pre-compile the regex to find "time=HH:MM:SS.ms" in FFmpeg output
 var timeRegex = regexp.MustCompile(`time=([0-9]{2}):([0-9]{2}):([0-9]{2}\.[0-9]+)`)
 
-func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, outputPath, format, audioCodec string, totalDurationSec float64, onProgress func(float64)) error {
+func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, outputPath, format, audioCodec string, totalDurationSec float64, wm *WatermarkParams, sampleSegPath string, onProgress func(float64)) error {
 
 	// Base arguments required for all exports
 	ffmpegArgs := []string{
@@ -189,8 +197,74 @@ func (s *segmentServiceBase) executeFFmpeg(ctx context.Context, concatFilePath, 
 		"-i", concatFilePath,
 	}
 
-	// Inject dynamic codec strategies (Copy vs Transcode)
-	ffmpegArgs = append(ffmpegArgs, s.getCodecStrategy(format, audioCodec)...)
+	if wm != nil && (wm.Text != "" || wm.ImagePath != "") {
+		hasImage := wm.ImagePath != ""
+		hasText := wm.Text != ""
+
+		var videoW, videoH, pngW, pngH int
+		if hasImage {
+			ffmpegArgs = append(ffmpegArgs, "-i", wm.ImagePath)
+			probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+			var err error
+			videoW, videoH, err = probeVideoDimensions(probeCtx, sampleSegPath)
+			cancel()
+			if err != nil {
+				return fmt.Errorf("probe video failed: %v", err)
+			}
+			imgW, imgH, err := getImageDimensions(wm.ImagePath)
+			if err != nil {
+				return fmt.Errorf("read image failed: %v", err)
+			}
+			if imgW > 0 {
+				pngW = videoW * wm.Scale / 100
+				pngH = imgH * pngW / imgW
+				if pngW < 1 {
+					pngW = 1
+				}
+				if pngH < 1 {
+					pngH = 1
+				}
+			}
+		}
+
+		var textFilePath string
+		if hasText {
+			tf, err := os.CreateTemp("", "wm_text_*.txt")
+			if err != nil {
+				return err
+			}
+			defer os.Remove(tf.Name())
+			tf.WriteString(wm.Text)
+			tf.Close()
+			textFilePath = tf.Name()
+		}
+
+		filter := buildWatermarkFilter(*wm, hasImage, hasText, videoW, videoH, pngW, pngH, textFilePath)
+
+		if hasImage {
+			ffmpegArgs = append(ffmpegArgs, "-filter_complex", filter, "-map", "[out]", "-map", "0:a?")
+		} else {
+			ffmpegArgs = append(ffmpegArgs, "-vf", filter)
+		}
+
+		ffmpegArgs = append(ffmpegArgs, "-c:v", "libx264", "-preset", "superfast", "-crf", "23")
+
+		isG711 := audioCodec == "pcm_alaw" || audioCodec == "pcm_mulaw" || audioCodec == "alaw" || audioCodec == "mulaw"
+		if audioCodec != "" {
+			if (format == "mp4" || format == "mov") && isG711 {
+				ffmpegArgs = append(ffmpegArgs, "-c:a", "aac", "-b:a", "128k")
+			} else {
+				ffmpegArgs = append(ffmpegArgs, "-c:a", "copy")
+			}
+		}
+
+		if format == "mp4" || format == "mov" {
+			ffmpegArgs = append(ffmpegArgs, "-movflags", "+faststart")
+		}
+	} else {
+		// Inject dynamic codec strategies (Copy vs Transcode)
+		ffmpegArgs = append(ffmpegArgs, s.getCodecStrategy(format, audioCodec)...)
+	}
 
 	// Finalize with the output path
 	ffmpegArgs = append(ffmpegArgs, outputPath)
@@ -297,4 +371,168 @@ func (s *segmentServiceBase) getCodecStrategy(format string, audioCodec string) 
 	}
 
 	return args
+}
+
+// --- Watermark ---
+
+type WatermarkParams struct {
+	InputPath string
+	Text      string
+	ImagePath string
+	Position  string
+	Scale     int
+	Opacity   int
+	Color     string
+}
+
+const (
+	wmPadding  = 10
+	wmGap      = 5
+	wmFontSize = 24
+)
+
+
+
+func buildWatermarkFilter(p WatermarkParams, hasImage, hasText bool, videoW, videoH, pngW, pngH int, textFilePath string) string {
+	opacity := float64(p.Opacity) / 100.0
+	rgb, textAlpha := parseRGBAColor(p.Color)
+	fontOpt := findFontOpt()
+
+	if hasImage && hasText {
+		ox, oy := overlayPosition(p.Position, videoW, videoH, pngW, pngH, true)
+		tx, ty := textPositionBelow(p.Position, oy, pngH)
+		return fmt.Sprintf(
+			"[1:v]scale=%d:%d,format=rgba,colorchannelmixer=aa=%.2f[wm];"+
+				"[0:v][wm]overlay=%d:%d,"+
+				"drawtext=%stextfile='%s':fontsize=%d:fontcolor=0x%s@%.2f:x=%s:y=%s[out]",
+			pngW, pngH, opacity,
+			ox, oy,
+			fontOpt, textFilePath, wmFontSize, rgb, textAlpha, tx, ty,
+		)
+	}
+
+	if hasImage {
+		ox, oy := overlayPosition(p.Position, videoW, videoH, pngW, pngH, false)
+		return fmt.Sprintf(
+			"[1:v]scale=%d:%d,format=rgba,colorchannelmixer=aa=%.2f[wm];"+
+				"[0:v][wm]overlay=%d:%d[out]",
+			pngW, pngH, opacity,
+			ox, oy,
+		)
+	}
+
+	tx, ty := textPosition(p.Position)
+	return fmt.Sprintf(
+		"drawtext=%stextfile='%s':fontsize=%d:fontcolor=0x%s@%.2f:x=%s:y=%s",
+		fontOpt, textFilePath, wmFontSize, rgb, textAlpha, tx, ty,
+	)
+}
+
+func overlayPosition(position string, videoW, videoH, pngW, pngH int, withText bool) (int, int) {
+	textSpace := 0
+	if withText {
+		textSpace = wmFontSize + wmGap
+	}
+	totalH := pngH + textSpace
+
+	switch position {
+	case "top-right":
+		return videoW - pngW - wmPadding, wmPadding
+	case "center":
+		return (videoW - pngW) / 2, (videoH - totalH) / 2
+	case "bottom-left":
+		return wmPadding, videoH - totalH - wmPadding
+	case "bottom-right":
+		return videoW - pngW - wmPadding, videoH - totalH - wmPadding
+	default:
+		return wmPadding, wmPadding
+	}
+}
+
+func textPositionBelow(position string, overlayY, pngH int) (string, string) {
+	ty := fmt.Sprintf("%d", overlayY+pngH+wmGap)
+	switch position {
+	case "top-right", "bottom-right":
+		return fmt.Sprintf("w-tw-%d", wmPadding), ty
+	case "center":
+		return "(w-tw)/2", ty
+	default:
+		return fmt.Sprintf("%d", wmPadding), ty
+	}
+}
+
+func textPosition(position string) (string, string) {
+	pad := fmt.Sprintf("%d", wmPadding)
+	switch position {
+	case "top-right":
+		return "w-tw-" + pad, pad
+	case "center":
+		return "(w-tw)/2", "(h-th)/2"
+	case "bottom-left":
+		return pad, "h-th-" + pad
+	case "bottom-right":
+		return "w-tw-" + pad, "h-th-" + pad
+	default:
+		return pad, pad
+	}
+}
+
+func probeVideoDimensions(ctx context.Context, path string) (int, int, error) {
+	cmd := exec.CommandContext(ctx, "ffprobe",
+		"-v", "error",
+		"-select_streams", "v:0",
+		"-show_entries", "stream=width,height",
+		"-of", "csv=p=0:s=x",
+		path,
+	)
+	out, err := cmd.Output()
+	if err != nil {
+		return 0, 0, err
+	}
+	parts := strings.Split(strings.TrimSpace(string(out)), "x")
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("unexpected ffprobe output: %s", out)
+	}
+	w, _ := strconv.Atoi(parts[0])
+	h, _ := strconv.Atoi(parts[1])
+	return w, h, nil
+}
+
+func getImageDimensions(path string) (int, int, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer f.Close()
+	cfg, _, err := image.DecodeConfig(f)
+	if err != nil {
+		return 0, 0, err
+	}
+	return cfg.Width, cfg.Height, nil
+}
+
+func parseRGBAColor(color string) (string, float64) {
+	if len(color) != 8 {
+		return "FFFFFF", 0.25
+	}
+	rgb := color[:6]
+	aa, err := strconv.ParseUint(color[6:8], 16, 8)
+	if err != nil {
+		return rgb, 0.25
+	}
+	return rgb, float64(aa) / 255.0
+}
+
+func findFontOpt() string {
+	paths := []string{
+		"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+		"/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+		"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+	}
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			return "fontfile=" + p + ":"
+		}
+	}
+	return ""
 }
