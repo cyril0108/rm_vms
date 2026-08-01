@@ -1,3 +1,69 @@
 .gitmessage
 
-nvr_core/security/key
+# Security & Secrets
+nvr_core/security/key/*.key
+nvr_core/security/key/private*
+*.key
+*.pem
+!nvr_core/security/key/public.key.pem
+!public.key.pem
+*.crt
+*.p12
+.env*
+
+# Build Outputs & Compiled Binaries
+/dist/
+/nvr_service
+/nvr_worker
+cpp_engine/build/
+web/dist/
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.exe
+*.a
+*.lib
+
+# Archive Files
+*.tar.gz
+*.zip
+*.7z
+*.iso
+
+# Node / Web Dependencies & Large Generated Files
+node_modules/
+**/node_modules/
+package-lock.json
+**/package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs & Temporary Files
+*.log
+**/log/
+logs/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+.eslintcache
+.tsbuildinfo
+
+# IDE & OS Files
+.vscode/
+.idea/
+.vs/
+.DS_Store
+Thumbs.db
+
+# Media & Recorded Files
+*.mp4
+*.mkv
+*.h264
+*.h265
+*.ts
+*.pcap

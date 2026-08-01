@@ -1,0 +1,4333 @@
+{
+  "info": {
+    "_postman_id": "a07d78b2-bf7b-42da-8ec1-479a964a3d66",
+    "name": "NVR Core API",
+    "description": "API endpoints for NVR.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "3267356"
+  },
+  "item": [
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "User Management",
+          "item": [
+            {
+              "name": "All users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/users",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create User",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"userr3\",\n  \"name\": \"three\",\n  \"password\": \"one12345\",\n  \"role_id\": 3,\n  \"email\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/users/create",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "create"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"\",\n  \"password\": \"admin12345\",\n  \"role_id\": 2,\n  \"email\": \"\",\n  \"is_active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{user_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Deactive User",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users/{{user_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{user_id}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User Password",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"admin12345\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/users/{{user_id}}/password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{user_id}}",
+                    "password"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update User Permissions",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"permission_ids\": [\n    6,\n    7\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/admin/users/{{user_id}}/permissions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{user_id}}",
+                    "permissions"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Permissons And Roles",
+          "item": [
+            {
+              "name": "Permission List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/permissions",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "permissions"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Role List",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/roles",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "roles"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "License",
+          "item": [
+            {
+              "name": "Feed License",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"licenses\": [\"\"]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/license",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "license"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Feed License Key",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"key\": \"\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/license/key",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "license",
+                    "key"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "All Licenses",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/license/all",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "license",
+                    "all"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Active Licenses Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/license/status",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "license",
+                    "status"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "`{ \"Data\": { \"health\": \"ok\", \"configured\": true } }`"
+          },
+          "response": [
+            {
+              "name": "Health Check",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/health",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "health"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 06 Jul 2026 07:59:32 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "56"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": {\n        \"health\": \"Ok\",\n        \"configured\": true\n    },\n    \"message\": \"\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Debug DB Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/debug/db",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "debug",
+                "db"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Admin Configuration Init",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"NVR Server\",\n    \"username\": \"admin\",\n    \"password\": \"admin12345\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/configure",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "configure"
+              ]
+            },
+            "description": "This API only user password. No need to send username.\n\nThis API will not present and may return 404 once the nvr admin account has been configured."
+          },
+          "response": []
+        },
+        {
+          "name": "Machine Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/machine",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "machine"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Machine Info",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/machine",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "machine"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 06 Jul 2026 07:58:35 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "137"
+                }
+              ],
+              "cookie": [
+                {
+                  "expires": "Invalid Date",
+                  "domain": "",
+                  "path": ""
+                }
+              ],
+              "body": "{\n    \"data\": {\n        \"machine_id\": \"abcdef1234567890abcdefghjkl1234567890abcdef1234567890abcdefghjkl1234567890\",\n        \"server_name\": \"RM Server\"\n    },\n    \"message\": \"success\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Network Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/network",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "network"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Network Info",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/network",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "network"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Cache-Control",
+                  "value": "no-cache, no-store, must-revalidate"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 06 Jul 2026 07:57:58 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "74"
+                }
+              ],
+              "cookie": [
+                {
+                  "expires": "Invalid Date",
+                  "domain": "",
+                  "path": ""
+                }
+              ],
+              "body": "{\n    \"data\": {\n        \"NICs\": [\n            \"eno1\",\n            \"ppp0\"\n        ],\n        \"primaryIP\": \"114.32.3.110\"\n    },\n    \"message\": \"\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "System Usage Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/usage",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "usage"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "System Usage Metrics",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/usage",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "usage"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Cache-Control",
+                  "value": "no-cache, no-store, must-revalidate"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 06 Jul 2026 07:56:16 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "254"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": {\n        \"cpu_usage_percent\": 13.509277336496094,\n        \"mem_used_mb\": 5687,\n        \"mem_total_mb\": 31881,\n        \"mem_usage_percent\": 17.839986042103057,\n        \"disk_free_gb\": 2758.269390106201,\n        \"disk_usage_percent\": 80.35124619455549,\n        \"network_rx_mbps\": 0,\n        \"network_tx_mbps\": 0\n    },\n    \"message\": \"\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Recording Estimation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/estimate/recording",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "estimate",
+                "recording"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Recording Estimation",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/estimate/recording",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "estimate",
+                    "recording"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 06 Jul 2026 07:59:44 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "99"
+                }
+              ],
+              "cookie": [
+                {
+                  "expires": "Invalid Date",
+                  "domain": "",
+                  "path": ""
+                }
+              ],
+              "body": "{\n    \"data\": {\n        \"mb_per_min\": 75.843018,\n        \"mb_available\": 1725076.8625,\n        \"recording_time\": 22745.36151106223,\n        \"cameras\": [\n            {\n                \"id\": 8,\n                \"name\": \"Camera_107\",\n                \"mb_used\": 1760350,\n                \"mbps\": 0.911316,\n                \"recorded_min\": 0,\n                \"recording_min\": 1892951.3609988193\n            },\n            {\n                \"id\": 9,\n                \"name\": \"Cam_114\",\n                \"mb_used\": 1063847,\n                \"mbps\": 1.449646,\n                \"recorded_min\": 0,\n                \"recording_min\": 1189998.7048562202\n            },\n            {\n                \"id\": 12,\n                \"name\": \"Cam101New\",\n                \"mb_used\": 1632934,\n                \"mbps\": 0.961304,\n                \"recorded_min\": 0,\n                \"recording_min\": 1794517.5121501626\n            }\n        ]\n    },\n    \"message\": \"success\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Set Server Name",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"value\": \"RM Server\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/config/servername",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "config",
+                "servername"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events?start=1785322842",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1785322842"
+                },
+                {
+                  "key": "end",
+                  "value": "1985322842",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scan",
+      "item": [
+        {
+          "name": "Scan Onvif (Multicast)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/scan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scan"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Scan Single Onvif Camera By IP",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/scan/{{$randomIP}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scan",
+                "{{$randomIP}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Scan Onvif Camera Details By IP",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"Hdit\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/scan/192.168.1.78/onvif?port=2020",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scan",
+                "192.168.1.78",
+                "onvif"
+              ],
+              "query": [
+                {
+                  "key": "port",
+                  "value": "2020"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Scan Sweep Onvif Camera Details",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"start_ip\": \"192.168.13.100\",\n    \"end_ip\": \"192.168.13.200\",\n    \"username\": \"admin\",\n    \"password\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/scansweep/detail",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scansweep",
+                "detail"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Scan Sweep Onvif",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/scansweep",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "scansweep"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Scan Sweep Onvif (random IP Example (Likely to fail))",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/scansweep?startip={{$randomIP}}&endip={{$randomIP}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "scansweep"
+                  ],
+                  "query": [
+                    {
+                      "key": "startip",
+                      "value": "{{$randomIP}}"
+                    },
+                    {
+                      "key": "endip",
+                      "value": "{{$randomIP}}"
+                    }
+                  ]
+                }
+              },
+              "_postman_previewlanguage": "Text",
+              "header": null,
+              "cookie": [],
+              "body": null
+            },
+            {
+              "name": "Scan Sweep Onvif (Private IP)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/scansweep?startip=192.168.1.10&endip=192.168.1.16",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "scansweep"
+                  ],
+                  "query": [
+                    {
+                      "key": "startip",
+                      "value": "192.168.1.10"
+                    },
+                    {
+                      "key": "endip",
+                      "value": "192.168.1.16"
+                    }
+                  ]
+                }
+              },
+              "_postman_previewlanguage": "Text",
+              "header": null,
+              "cookie": [],
+              "body": null
+            },
+            {
+              "name": "Scan Sweep Onvif (Automatic Primary IP scan)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/scansweep",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "scansweep"
+                  ]
+                }
+              },
+              "_postman_previewlanguage": "Text",
+              "header": null,
+              "cookie": [],
+              "body": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cameras",
+      "item": [
+        {
+          "name": "Get All Cameras",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Cameras (DB)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/db",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "db"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fetch System Camera ONVIF Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/onvif",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "onvif"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add New Camera",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"string\",\n    \"manufacturer\": \"string\",\n    \"model\": \"string\",\n    \"serial_number\": \"\",\n    \"ip_address\": \"string3\",\n    \"http_port\": 80,\n    \"type\": \"rtsp\",\n    \"username\": \"admin\",\n    \"password\": \"string\",\n    \"stream_url\": \"string\",\n    \"sub_stream_url\": \"string\",\n    \"retention_gb_limit\": 0,\n    \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cameras/add",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add New ONVIF Camera",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"ip_address\": \"192.168.13.101\",\n    \"username\": \"admin\",\n    \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cameras/add/onvif",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "add",
+                "onvif"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Camera",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Name\",\n    \"manufacturer\": \"ONVIF_ICAMERA\",\n    \"model\": \"MCL12_AF\",\n    \"serial_number\": \"EF00000000D7FAE5\",\n    \"mac_address\": \"\",\n    \"ip_address\": \"192.168.13.101\",\n    \"http_port\": 80,\n    \"type\": \"onvif\",\n    \"username\": \"admin\",\n    \"stream_url\": \"rtsp://192.168.13.101:554/stream0?username=admin&amp;password=E10ADC3949BA59ABBE56E057F20F883E\",\n    \"sub_stream_url\": \"\",\n    \"onvif_profile_token\": \"\",\n    \"sub_stream_profile_token\": \"\",\n    \"supports_ptz\": false,\n    \"retention_gb_limit\": 0,\n    \"is_active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/update",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Camera ONVIF",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/onvif",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "onvif"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Camera Auth",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/auth",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "auth"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Camera",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Start Camera Recording",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Camera Recording",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/stop",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "stop"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PTZ",
+      "item": [
+        {
+          "name": "Center",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/center",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "center"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step Left",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/step/left",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "step",
+                "left"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step Right",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/step/right",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "step",
+                "right"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step Up",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/step/up",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "step",
+                "up"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step Down",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/step/down",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "step",
+                "down"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Playback & Timeline",
+      "item": [
+        {
+          "name": "Get Recording Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/summary?profile=main&start=1775133507&end=1780403907",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "profile",
+                  "value": "main"
+                },
+                {
+                  "key": "start",
+                  "value": "1775133507"
+                },
+                {
+                  "key": "end",
+                  "value": "1780403907"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Timeline",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/timeline/1775133507/1780403907",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "timeline",
+                "1775133507",
+                "1780403907"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Timeline Profile Segments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/timeline/segs?profile=main&start=1775133507&end=1780403907",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "timeline",
+                "segs"
+              ],
+              "query": [
+                {
+                  "key": "profile",
+                  "value": "main"
+                },
+                {
+                  "key": "start",
+                  "value": "1775133507"
+                },
+                {
+                  "key": "end",
+                  "value": "1780403907"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Timeline Segment Snapshots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/snapshot/range?start=1775133507&end=1780403907",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "snapshot",
+                "range"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1775133507"
+                },
+                {
+                  "key": "end",
+                  "value": "1780403907"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Play Video Segment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/1/play?profile=sub&time=1774943508",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "1",
+                "play"
+              ],
+              "query": [
+                {
+                  "key": "profile",
+                  "value": "sub"
+                },
+                {
+                  "key": "time",
+                  "value": "1774943508"
+                }
+              ]
+            },
+            "description": "Get single recording segment content for the given time."
+          },
+          "response": []
+        },
+        {
+          "name": "Play Video Segment for MPEG-TS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/1/play/ts?profile=sub&time=1774943508",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "1",
+                "play",
+                "ts"
+              ],
+              "query": [
+                {
+                  "key": "profile",
+                  "value": "sub"
+                },
+                {
+                  "key": "time",
+                  "value": "1774943508"
+                }
+              ]
+            },
+            "description": "Get single recording segment content for the given time."
+          },
+          "response": []
+        },
+        {
+          "name": "Camera Playlist",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}}/playlist.m3u8?profile={{profile}}&start=1773102902&end=1775102966",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}}",
+                "playlist.m3u8"
+              ],
+              "query": [
+                {
+                  "key": "profile",
+                  "value": "{{profile}}"
+                },
+                {
+                  "key": "start",
+                  "value": "1773102902"
+                },
+                {
+                  "key": "end",
+                  "value": "1775102966"
+                }
+              ]
+            },
+            "description": "Get single recording segment content for the given time."
+          },
+          "response": []
+        },
+        {
+          "name": "Camera MPEG-TS Playlist",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}}/playlist/ts.m3u8?profile={{profile}}&start=1773102902&end=1775102966",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}}",
+                "playlist",
+                "ts.m3u8"
+              ],
+              "query": [
+                {
+                  "key": "profile",
+                  "value": "{{profile}}"
+                },
+                {
+                  "key": "start",
+                  "value": "1773102902"
+                },
+                {
+                  "key": "end",
+                  "value": "1775102966"
+                }
+              ]
+            },
+            "description": "Get single recording segment content for the given time."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Video Segment Snapshot",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/cameras/{{cam_id}}/snapshot?time=1780214543733",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "cameras",
+                "{{cam_id}}",
+                "snapshot"
+              ],
+              "query": [
+                {
+                  "key": "time",
+                  "value": "1780214543733"
+                }
+              ]
+            },
+            "description": "Get single recording segment content for the given time."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Streaming",
+      "item": [
+        {
+          "name": "WebSocket Stream Handshake",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ws/stream/{{cam_id}}/{{profile}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ws",
+                "stream",
+                "{{cam_id}}",
+                "{{profile}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "MPEG-TS Live Streaming",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/live/camera/{{cam_id}}/{{profile}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "live",
+                "camera",
+                "{{cam_id}}",
+                "{{profile}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Export",
+      "item": [
+        {
+          "name": "Initiate a video export task",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/export/{{cam_id}}?start=1783116957374&end=1783162426798&profile=main",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "export",
+                "{{cam_id}}"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1783116957374"
+                },
+                {
+                  "key": "end",
+                  "value": "1783162426798"
+                },
+                {
+                  "key": "profile",
+                  "value": "main"
+                },
+                {
+                  "key": "format",
+                  "value": "",
+                  "description": "mp4,mkv,avi,mov,webm",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Asynchronously exports video for a specific camera and time range. Returns a task ID for status polling and downloading."
+          },
+          "response": [
+            {
+              "name": "Returns task_id and status (pending)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":cam_id"
+                  ],
+                  "query": [
+                    {
+                      "key": "start",
+                      "value": "2138",
+                      "description": "Start Unix timestamp (milliseconds)"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2138",
+                      "description": "End Unix timestamp (milliseconds)"
+                    },
+                    {
+                      "key": "profile",
+                      "value": "string",
+                      "description": "Stream profile (e.g., main, sub)"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "cam_id",
+                      "value": "2138",
+                      "description": "Camera ID"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": {\n        \"task_id\": 73.123\n    },\n    \"message\": \"success\"\n}"
+            },
+            {
+              "name": "Invalid camera ID or timestamps",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":cam_id"
+                  ],
+                  "query": [
+                    {
+                      "description": "Start Unix timestamp (milliseconds)",
+                      "key": "start",
+                      "value": "2138"
+                    },
+                    {
+                      "description": "End Unix timestamp (milliseconds)",
+                      "key": "end",
+                      "value": "2138"
+                    },
+                    {
+                      "description": "Stream profile (e.g., main, sub)",
+                      "key": "profile",
+                      "value": "string"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "cam_id",
+                      "value": "2138",
+                      "description": "Camera ID"
+                    }
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"key_0\": \"string\"\n}"
+            },
+            {
+              "name": "Forbidden - Missing export permissions",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":cam_id"
+                  ],
+                  "query": [
+                    {
+                      "description": "Start Unix timestamp (milliseconds)",
+                      "key": "start",
+                      "value": "2138"
+                    },
+                    {
+                      "description": "End Unix timestamp (milliseconds)",
+                      "key": "end",
+                      "value": "2138"
+                    },
+                    {
+                      "description": "Stream profile (e.g., main, sub)",
+                      "key": "profile",
+                      "value": "string"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "cam_id",
+                      "value": "2138",
+                      "description": "Camera ID"
+                    }
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        },
+        {
+          "name": "Initiate video export task with watermarks",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "logo",
+                  "type": "file",
+                  "uuid": "141b4312-5c5a-4605-a954-7801e5c106ae",
+                  "value": null
+                },
+                {
+                  "key": "text",
+                  "value": "",
+                  "type": "text",
+                  "uuid": "e215bf40-481d-46ad-9aa3-3088b213f32b"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/export/{{cam_id}}?start=1783116957374&end=1783162426798&profile=main",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "export",
+                "{{cam_id}}"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1783116957374"
+                },
+                {
+                  "key": "end",
+                  "value": "1783162426798"
+                },
+                {
+                  "key": "profile",
+                  "value": "main"
+                },
+                {
+                  "key": "format",
+                  "value": "",
+                  "description": "mp4,mkv,avi,mov,webm",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Asynchronously exports video for a specific camera and time range. Returns a task ID for status polling and downloading."
+          },
+          "response": [
+            {
+              "name": "Returns task_id and status (pending)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":cam_id"
+                  ],
+                  "query": [
+                    {
+                      "key": "start",
+                      "value": "2138",
+                      "description": "Start Unix timestamp (milliseconds)"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2138",
+                      "description": "End Unix timestamp (milliseconds)"
+                    },
+                    {
+                      "key": "profile",
+                      "value": "string",
+                      "description": "Stream profile (e.g., main, sub)"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "cam_id",
+                      "value": "2138",
+                      "description": "Camera ID"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": {\n        \"task_id\": 73.123\n    },\n    \"message\": \"success\"\n}"
+            },
+            {
+              "name": "Invalid camera ID or timestamps",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":cam_id"
+                  ],
+                  "query": [
+                    {
+                      "description": "Start Unix timestamp (milliseconds)",
+                      "key": "start",
+                      "value": "2138"
+                    },
+                    {
+                      "description": "End Unix timestamp (milliseconds)",
+                      "key": "end",
+                      "value": "2138"
+                    },
+                    {
+                      "description": "Stream profile (e.g., main, sub)",
+                      "key": "profile",
+                      "value": "string"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "cam_id",
+                      "value": "2138",
+                      "description": "Camera ID"
+                    }
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"key_0\": \"string\"\n}"
+            },
+            {
+              "name": "Forbidden - Missing export permissions",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":cam_id"
+                  ],
+                  "query": [
+                    {
+                      "description": "Start Unix timestamp (milliseconds)",
+                      "key": "start",
+                      "value": "2138"
+                    },
+                    {
+                      "description": "End Unix timestamp (milliseconds)",
+                      "key": "end",
+                      "value": "2138"
+                    },
+                    {
+                      "description": "Stream profile (e.g., main, sub)",
+                      "key": "profile",
+                      "value": "string"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "cam_id",
+                      "value": "2138",
+                      "description": "Camera ID"
+                    }
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        },
+        {
+          "name": "Get export status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/export/:task_id/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "export",
+                ":task_id",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "task_id",
+                  "value": "53a5ef17bbcae95fb2e229a4203d0813",
+                  "description": "Export Task ID (UUID)"
+                }
+              ]
+            },
+            "description": "Downloads the compiled .mp4 file for a completed export task."
+          },
+          "response": [
+            {
+              "name": "Export status",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/export/:task_id/status",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "53a5ef17bbcae95fb2e229a4203d0813",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Sun, 05 Jul 2026 07:58:00 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "171"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": {\n        \"id\": \"53a5ef17bbcae95fb2e229a4203d0813\",\n        \"status\": \"pending\",\n        \"progress\": 17.041517834050417,\n        \"created_at\": \"2026-07-05T15:57:17.026568059+08:00\"\n    },\n    \"message\": \"pending\"\n}"
+            },
+            {
+              "name": "Missing task ID",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Forbidden - Missing export permissions",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Export task not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Exported file has expired or been deleted",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Gone",
+              "code": 410,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        },
+        {
+          "name": "Download exported video",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/export/:task_id/download",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "export",
+                ":task_id",
+                "download"
+              ],
+              "variable": [
+                {
+                  "key": "task_id",
+                  "value": "19fc2e056e69d7ff3298700ca4d2cb25",
+                  "description": "Export Task ID (UUID)"
+                }
+              ]
+            },
+            "description": "Downloads the compiled .mp4 file for a completed export task."
+          },
+          "response": [
+            {
+              "name": "The exported MP4 video file",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Missing task ID",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Forbidden - Missing export permissions",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Export task not found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Export is not ready for download",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Exported file has expired or been deleted",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Gone",
+              "code": 410,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        },
+        {
+          "name": "Initiate video export task with watermark",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "start",
+                  "value": "1722300000000",
+                  "description": "Start Unix timestamp (milliseconds)",
+                  "type": "text"
+                },
+                {
+                  "key": "end",
+                  "value": "1722303600000",
+                  "description": "End Unix timestamp (milliseconds)",
+                  "type": "text"
+                },
+                {
+                  "key": "profile",
+                  "value": "main",
+                  "description": "Stream profile (e.g. main, sub)",
+                  "type": "text"
+                },
+                {
+                  "key": "format",
+                  "value": "mp4",
+                  "description": "Export format (default mp4)",
+                  "type": "text"
+                },
+                {
+                  "key": "text",
+                  "value": "Watermark Text",
+                  "description": "Watermark text",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "description": "Watermark image (PNG format)",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "position",
+                  "value": "top-left",
+                  "description": "Position: top-left, top-right, center, bottom-left, bottom-right",
+                  "type": "text"
+                },
+                {
+                  "key": "scale",
+                  "value": "20",
+                  "description": "PNG scale percentage relative to video width (1-100, default 20)",
+                  "type": "text"
+                },
+                {
+                  "key": "opacity",
+                  "value": "15",
+                  "description": "PNG opacity percentage (0-100, default 15)",
+                  "type": "text"
+                },
+                {
+                  "key": "color",
+                  "value": "FFFFFF40",
+                  "description": "Text color RGBA hex (default FFFFFF40)",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/export/:cam_id/watermark",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "export",
+                ":cam_id",
+                "watermark"
+              ],
+              "variable": [
+                {
+                  "key": "cam_id",
+                  "value": "1",
+                  "description": "Camera ID"
+                }
+              ]
+            },
+            "description": "Asynchronously exports video for a specific camera with text and/or image watermark. Returns a task ID for status polling and downloading."
+          },
+          "response": [
+            {
+              "name": "The watermarked exported video file",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "text",
+                      "value": "Watermark Text",
+                      "type": "text"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": []
+                    },
+                    {
+                      "key": "position",
+                      "value": "top-left",
+                      "type": "text"
+                    },
+                    {
+                      "key": "scale",
+                      "value": "20",
+                      "type": "text"
+                    },
+                    {
+                      "key": "opacity",
+                      "value": "15",
+                      "type": "text"
+                    },
+                    {
+                      "key": "color",
+                      "value": "FFFFFF40",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download",
+                    "watermark"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Missing task ID or invalid parameters",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download",
+                    "watermark"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Forbidden - Missing export permissions",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download",
+                    "watermark"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Export task not found",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download",
+                    "watermark"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Export is not ready for download",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download",
+                    "watermark"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Exported file has expired or been deleted",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "export",
+                    ":task_id",
+                    "download",
+                    "watermark"
+                  ],
+                  "variable": [
+                    {
+                      "key": "task_id",
+                      "value": "string",
+                      "description": "Export Task ID (UUID)"
+                    }
+                  ]
+                }
+              },
+              "status": "Gone",
+              "code": 410,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "User Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"response must be valid and have a body\", function () {",
+                  "     pm.response.to.be.ok;",
+                  "     pm.response.to.be.withBody;",
+                  "     pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test(\"response data test\", function () {",
+                  "",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.data).to.be.an('object');",
+                  "    pm.expect(jsonData.data.token).to.be.an('string');",
+                  "    pm.vault.set(\"nvr_api_access_token\", jsonData.data.token);",
+                  "    pm.vault.set(\"nvr_api_refresh_token\", jsonData.data.refresh_token);",
+                  "",
+                  "});",
+                  "",
+                  "",
+                  "let responseData = pm.response.json();",
+                  "pm.test(responseData);",
+                  "",
+                  "",
+                  "pm.test(pm.response.responseTime + \"ms\");",
+                  ""
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123456\"\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "login"
+              ]
+            },
+            "description": "Authenticates a user by username and password. Returns a short-lived JWT access token, a long-lived refresh token, and a list of user permissions."
+          },
+          "response": [
+            {
+              "name": "Successfully authenticated",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"string\",\n  \"username\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"Data\": {\n        \"permissions\": [\n            \"string\",\n            \"string\"\n        ],\n        \"refresh_token\": \"string\",\n        \"token\": \"string\"\n    }\n}"
+            },
+            {
+              "name": "Invalid JSON payload",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"string\",\n  \"username\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Invalid credentials or account disabled",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"string\",\n  \"username\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Internal server error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"string\",\n  \"username\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        },
+        {
+          "name": "User Web Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"response must be valid and have a body\", function () {",
+                  "     pm.response.to.be.ok;",
+                  "     pm.response.to.be.withBody;",
+                  "     pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test(\"response data test\", function () {",
+                  "",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.data).to.be.an('object');",
+                  "    pm.expect(jsonData.data.token).to.be.an('string');",
+                  "    pm.vault.set(\"nvr_api_access_token\", jsonData.data.token)",
+                  "",
+                  "});",
+                  "",
+                  "",
+                  "let responseData = pm.response.json();",
+                  "pm.test(responseData);",
+                  "",
+                  "",
+                  "pm.test(pm.response.responseTime + \"ms\");",
+                  ""
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123456\"\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/web/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "web",
+                "login"
+              ]
+            },
+            "description": "Authenticates a user by username and password. Returns a short-lived JWT access token, a long-lived refresh token, and a list of user permissions."
+          },
+          "response": [
+            {
+              "name": "Successfully authenticated",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"string\",\n  \"username\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/web/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "web",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"Data\": {\n        \"permissions\": [\n            \"string\",\n            \"string\"\n        ],\n        \"refresh_token\": \"string\",\n        \"token\": \"string\"\n    }\n}"
+            },
+            {
+              "name": "Invalid JSON payload",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"string\",\n  \"username\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/web/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "web",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Invalid credentials or account disabled",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"string\",\n  \"username\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/web/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "web",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Internal server error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password\": \"string\",\n  \"username\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/web/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "web",
+                    "login"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        },
+        {
+          "name": "User Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refresh_token\": \"{{vault:nvr_api_refresh_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "logout"
+              ]
+            },
+            "description": "Authenticates a user by username and password. Returns a short-lived JWT access token, a long-lived refresh token, and a list of user permissions."
+          },
+          "response": []
+        },
+        {
+          "name": "User Web Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"logout\": true}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/web/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "web",
+                "refresh"
+              ]
+            },
+            "description": "Authenticates a user by username and password. Returns a short-lived JWT access token, a long-lived refresh token, and a list of user permissions."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"response must be valid and have a body\", function () {",
+                  "     pm.response.to.be.ok;",
+                  "     pm.response.to.be.withBody;",
+                  "     pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test(\"response data test\", function () {",
+                  "",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.data).to.be.an('object');",
+                  "    pm.expect(jsonData.data.token).to.be.an('string');",
+                  "    pm.vault.set(\"nvr_api_access_token\", jsonData.data.token)",
+                  "",
+                  "});",
+                  "",
+                  "",
+                  "let responseData = pm.response.json();",
+                  "pm.test(responseData);",
+                  "",
+                  "",
+                  "pm.test(pm.response.responseTime + \"ms\");",
+                  ""
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{vault:nvr_api_refresh_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "refresh"
+              ]
+            },
+            "description": "Exchanges a valid refresh token for a new short-lived JWT access token and updated permissions."
+          },
+          "response": [
+            {
+              "name": "Successfully refreshed",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"Data\": {\n        \"permissions\": [\n            \"string\",\n            \"string\"\n        ],\n        \"token\": \"string\"\n    }\n}"
+            },
+            {
+              "name": "Invalid JSON payload",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"Data\": \"string\"\n}"
+            },
+            {
+              "name": "Invalid or expired refresh token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Internal server error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Access Token for web",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"response must be valid and have a body\", function () {",
+                  "     pm.response.to.be.ok;",
+                  "     pm.response.to.be.withBody;",
+                  "     pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test(\"response data test\", function () {",
+                  "",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.data).to.be.an('object');",
+                  "    pm.expect(jsonData.data.token).to.be.an('string');",
+                  "    pm.vault.set(\"nvr_api_access_token\", jsonData.data.token)",
+                  "",
+                  "});",
+                  "",
+                  "",
+                  "let responseData = pm.response.json();",
+                  "pm.test(responseData);",
+                  "",
+                  "",
+                  "pm.test(pm.response.responseTime + \"ms\");",
+                  ""
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "headerFamily": "json",
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/web/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "web",
+                "refresh"
+              ]
+            },
+            "description": "Exchanges a valid refresh token for a new short-lived JWT access token and updated permissions."
+          },
+          "response": [
+            {
+              "name": "Successfully refreshed",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/web/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "web",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"Data\": {\n        \"permissions\": [\n            \"string\",\n            \"string\"\n        ],\n        \"token\": \"string\"\n    }\n}"
+            },
+            {
+              "name": "Invalid JSON payload",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/web/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "web",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Invalid or expired refresh token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/web/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "web",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            },
+            {
+              "name": "Internal server error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/web/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "web",
+                    "refresh"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maintenance",
+      "item": [
+        {
+          "name": "Get Abnormal Segments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/maintain/segments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "maintain",
+                "segments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fix Abnormal Segments",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/maintain/segments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "maintain",
+                "segments"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{vault:nvr_api_access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "randomIP",
+      "value": ""
+    }
+  ]
+}

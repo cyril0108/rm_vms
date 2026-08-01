@@ -1,0 +1,23 @@
+# Ripgrep and search tool ignore rules
+
+dist/
+cpp_engine/build/
+web/dist/
+node_modules/
+**/node_modules/
+package-lock.json
+**/package-lock.json
+yarn.lock
+pnpm-lock.yaml
+go.sum
+*.log
+**/log/
+logs/
+*.mp4
+*.mkv
+*.h264
+*.h265
+*.ts
+*.pcap
+*.tar.gz
+*.zip

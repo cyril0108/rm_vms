@@ -1,0 +1,83 @@
+# ==========================================
+# NVR Project Makefile for Windows
+# ==========================================
+
+DOCKER_IMAGE_NAME = vmsnvr
+VERSION = 0.1.33
+GIT_HASH ?= $(shell git rev-parse --short HEAD 2>nul || echo unknown)
+BUILD_TIME ?= $(shell powershell -Command "Get-Date -Format 'yyyy-MM-ddTHH:mm:ss'" 2>nul || echo unknown)
+
+WORKER_BIN_NAME := nvr_worker.exe
+SERVICE_BIN_NAME := nvr_service.exe
+
+GO_DIR := nvr_core
+CPP_ENGINE_DIR := cpp_engine
+CPP_ENGINE_BUILD_DIR := $(CPP_ENGINE_DIR)/build
+VUE_DIR := web
+
+GO_LDFLAGS := -ldflags="-s -w -X 'nvr_core/buildinfo.Version=$(VERSION)' -X 'nvr_core/buildinfo.CommitSHA=$(GIT_HASH)' -X 'nvr_core/buildinfo.BuildTime=$(BUILD_TIME)'"
+
+GO := go
+CMAKE := cmake
+
+.PHONY: all help clean build-cpp build-go docker docker-run vue swag export
+
+.DEFAULT_GOAL := help
+
+help:
+	@echo.
+	@echo Usage: make -f Makefile.win ^<target^>
+	@echo.
+	@echo Targets:
+	@echo   all         Build Go service and C++ worker
+	@echo   build-go    Build Go NVR Service (nvr_service.exe)
+	@echo   build-cpp   Build C++ Worker (nvr_worker.exe)
+	@echo   vue         Build Vue Web Frontend
+	@echo   swag        Generate Swagger Docs
+	@echo   clean       Clean build outputs
+	@echo   docker      Build Docker Image
+	@echo   docker-run  Run Docker Container
+	@echo   export      Extract build artifacts from Docker
+	@echo.
+
+all: build-go build-cpp
+
+build-go:
+	@echo --- Building Go NVR Service ---
+	cd $(GO_DIR) && $(GO) build $(GO_LDFLAGS) -o ../$(SERVICE_BIN_NAME)
+	@echo Go Manager built successfully: ./%SERVICE_BIN_NAME%
+
+build-cpp:
+	@echo --- Building C++ Worker ---
+	$(CMAKE) -B $(CPP_ENGINE_BUILD_DIR) -S $(CPP_ENGINE_DIR) -DTHE_VERSION=$(VERSION) -DGIT_HASH=$(GIT_HASH)
+	$(CMAKE) --build $(CPP_ENGINE_BUILD_DIR) --config Release
+	@if exist $(CPP_ENGINE_BUILD_DIR)\Release\$(WORKER_BIN_NAME) ( copy /y $(CPP_ENGINE_BUILD_DIR)\Release\$(WORKER_BIN_NAME) .\$(WORKER_BIN_NAME) ) else if exist $(CPP_ENGINE_BUILD_DIR)\$(WORKER_BIN_NAME) ( copy /y $(CPP_ENGINE_BUILD_DIR)\$(WORKER_BIN_NAME) .\$(WORKER_BIN_NAME) )
+	@echo C++ Worker built successfully: ./%WORKER_BIN_NAME%
+
+swag:
+	cd $(GO_DIR) && swag init
+
+vue:
+	cd $(VUE_DIR) && npm run build
+
+clean:
+	@echo --- Cleaning ---
+	@if exist $(CPP_ENGINE_BUILD_DIR) rmdir /s /q $(CPP_ENGINE_BUILD_DIR)
+	@if exist $(WORKER_BIN_NAME) del /f /q $(WORKER_BIN_NAME)
+	@if exist $(SERVICE_BIN_NAME) del /f /q $(SERVICE_BIN_NAME)
+	@echo Clean complete
+
+docker:
+	docker build --build-arg GIT_HASH=$(GIT_HASH) --build-arg BUILD_TIME=$(BUILD_TIME) -t $(DOCKER_IMAGE_NAME) .
+
+docker-run:
+	docker run -it --rm $(DOCKER_IMAGE_NAME)
+
+export:
+	docker create --name nvr-extractor $(DOCKER_IMAGE_NAME)
+	@if not exist dist mkdir dist
+	@if not exist dist\web mkdir dist\web
+	docker cp nvr-extractor:/app/nvr_service ./dist/nvr_service
+	docker cp nvr-extractor:/app/nvr_worker ./dist/nvr_worker
+	docker cp nvr-extractor:/app/web/dist/. ./dist/web/
+	docker rm nvr-extractor
