@@ -25,7 +25,7 @@ var Events TranslateMap = TranslateMap {
 var EventsMessage TranslateMap = TranslateMap {
 	MSGCameraOffline: "\"%v\"目前離線",
 	MSGCameraBackOnline: "\"%v\"恢復連線",
-	MSGDiskNearFullWarning: "硬碟空間即將達到上線(%v)，目前：%v",
+	MSGDiskNearFullWarning: "硬碟空間即將達到上限(%v)，目前：%v",
 	MSGDiskFullWarning: "硬碟空間達到回收條件，準備進行回收",
 }
 

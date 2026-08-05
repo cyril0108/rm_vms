@@ -17,6 +17,7 @@ var LOG = logger.NewLogger("[onvif][ptz]")
 type PTZController struct {
 	Client       *onvif.Client
 	ProfileToken string
+	Profile      *onvif.Profile
 	stepMu       sync.Mutex
 }
 
@@ -47,45 +48,55 @@ func NewPTZController(address, username, password, profileToken string) (*PTZCon
 		ll.Warn("failed to initialize and found ONVIF service endpoints")
 	}
 
-	info, err := client.GetDeviceInformation(ctx)
-	if err == nil {
-		LOG.Info("info", "device_info", info)
+	profile, err := client.GetProfile(ctx, profileToken)
+	if err != nil {
+		ll.Info("Failed to get profile")
 	}
 
-	caps, err := client.GetCapabilities(ctx)
-	if err == nil {
-		LOG.Info("info", "Capabilities", caps)
-	}
+	// info, err := client.GetDeviceInformation(ctx)
+	// if err == nil {
+	// 	LOG.Info("info", "device_info", info)
+	// }
 
-	endpoint, err := client.GetEndpointReference(ctx)
-	if err == nil {
-		LOG.Info("info", "endpoint", endpoint)
-	} else {
-		LOG.Info("endpoint error", "err", err)
-	}
+	// caps, err := client.GetCapabilities(ctx)
+	// if err == nil {
+	// 	LOG.Info("info", "Capabilities", caps)
+	// }
 
-	services, err := client.GetServices(ctx, true)
-	if err == nil {
-		LOG.Info("info", "services", services)
-	}
+	// endpoint, err := client.GetEndpointReference(ctx)
+	// if err == nil {
+	// 	LOG.Info("info", "endpoint", endpoint)
+	// } else {
+	// 	// LOG.Info("endpoint error", "err", err)
+	// }
 
-	if len(services) > 0 && services[0] != nil {
-		LOG.Info("info", "first_service", services[0].XAddr)
-	}
+	// services, err := client.GetServices(ctx, true)
+	// if err == nil {
+	// 	LOG.Info("info", "services", services)
+	// }
 
-	status, err := client.GetStatus(ctx, profileToken)
-	if err == nil {
-		LOG.Info("info", "ptz_status", status)
-	} else {
-		LOG.Error("failed to get ptz status", "err", err)
-	}
+	// if len(services) > 0 && services[0] != nil {
+	// 	LOG.Info("info", "first_service", services[0].XAddr)
+	// }
 
+	// status, err := client.GetStatus(ctx, profileToken)
+	// if err == nil {
+	// 	LOG.Info("info", "ptz_status", status)
+	// } else {
+	// 	// LOG.Error("failed to get ptz status", "err", err)
+	// }
+
+	// client.GetCompatiblePTZConfigurations(ctx, profileToken)
+
+	// client.Endpoint()
 
 	return &PTZController{
 		Client:       client,
 		ProfileToken: profileToken,
+		Profile: profile,
 	}, nil
 }
+
 
 // MoveContinuous starts moving the camera.
 // pan, tilt, and zoom values MUST be floats between -1.0 and 1.0.
@@ -136,8 +147,11 @@ func (pc *PTZController) Stop(ctx context.Context, stopPanTilt, stopZoom bool) e
 // Stop PTZ movement
 
 // Get current PTZ status and position
-func (pc *PTZController) GetStatus(ctx context.Context) (*onvif.PTZStatus, error) {
-	return pc.Client.GetStatus(ctx, pc.ProfileToken)
+func (pc *PTZController) GetStatus(ctx context.Context, profile string) (*onvif.PTZStatus, error) {
+	if profile == "" {
+		return pc.Client.GetStatus(ctx, pc.ProfileToken)
+	}
+	return pc.Client.GetStatus(ctx, profile)
 }
 
 // Get list of PTZ presets
@@ -175,9 +189,13 @@ func (pc *PTZController) GetConfiguration(ctx context.Context) (*onvif.PTZConfig
 	return pc.Client.GetConfiguration(ctx, pc.ProfileToken)
 }
 
-// Get all PTZ configurations
 func (pc *PTZController) GetConfigurations(ctx context.Context) ([]*onvif.PTZConfiguration, error) {
 	return pc.Client.GetConfigurations(ctx)
+}
+
+// Get all PTZ configurations
+func (pc *PTZController) GetCompatiblePTZConfigurations(ctx context.Context) ([]*onvif.PTZConfiguration, error) {
+	return pc.Client.GetCompatiblePTZConfigurations(ctx, pc.ProfileToken)
 }
 
 
@@ -188,14 +206,11 @@ func (pc *PTZController) GetConfigurations(ctx context.Context) ([]*onvif.PTZCon
 func (pc *PTZController) MoveRelative(ctx context.Context, pan, tilt, zoom float64, speed float64) error {
 
 	vector := &onvif.PTZVector{
-	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
-	    Zoom:    &onvif.Vector1D{X: zoom},
+	    PanTilt: panTiltVector(pan, tilt),
+	    Zoom:    zoomVector(zoom),
 	}
 
-	velocity := &onvif.PTZSpeed{
-	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
-	    Zoom: &onvif.Vector1D{X: zoom},
-	}
+	velocity := ptzSpeed(speed,speed,speed)
 
 	err := pc.Client.RelativeMove(ctx, pc.ProfileToken, vector, velocity)
 	if err != nil {
@@ -208,22 +223,20 @@ func (pc *PTZController) MoveRelative(ctx context.Context, pan, tilt, zoom float
 func (pc *PTZController) MoveAbsolute(ctx context.Context, pan, tilt, zoom float64, speed float64) error {
 
 	position := &onvif.PTZVector{
-	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
-	    Zoom:    &onvif.Vector1D{X: zoom},
+	    PanTilt: panTiltVector(pan, tilt),
+	    Zoom:    zoomVector(zoom),
 	}
 
-	velocity := &onvif.PTZSpeed{
-	    PanTilt: &onvif.Vector2D{X: pan, Y: tilt},
-	    Zoom: &onvif.Vector1D{X: zoom},
-	}
+	velocity := ptzSpeed(speed,speed,speed)
 
 	err := pc.Client.AbsoluteMove(ctx, pc.ProfileToken, position, velocity)
 	if err != nil {
-		return fmt.Errorf("RelativeMove failed: %w", err)
+		return fmt.Errorf("MoveAbsolute failed: %w", err)
 	}
 
 	return nil
 }
+
 
 // Step attempts a native ONVIF RelativeMove. If the camera rejects it, 
 // it falls back to a time-based ContinuousMove to simulate the step.
@@ -237,27 +250,27 @@ func (pc *PTZController) Step(ctx context.Context, pan, tilt, zoom float64, spee
 	defer pc.stepMu.Unlock()
 
 	// Try the mathematically correct ONVIF Relative Move
-	err := pc.MoveRelative(ctx, pan, tilt, zoom, speed)
+	// err := pc.MoveRelative(ctx, pan, tilt, zoom, speed)
 
-	if err == nil {
-		// The camera supported it and executed perfectly!
-		return nil
-	}
+	// if err == nil {
+	// 	// The camera supported it and executed perfectly!
+	// 	return nil
+	// }
 
 	// FALLBACK: The camera rejected RelativeMove (likely a generic camera).
 	// We simulate a step using ContinuousMove + Sleep + Stop.
 
-	relErr := err
+	// relErr := err
 
 	// Start the motors
-	err = pc.MoveContinuous(ctx, pan, tilt, zoom)
+	err := pc.MoveContinuous(ctx, pan, tilt, zoom)
 	if err != nil {
-		return fmt.Errorf("fallback ContinuousMove failed: %w, \nRelative err: %w", err, relErr)
+		return fmt.Errorf("fallback ContinuousMove failed: %w", err)
 	}
 
 	// Let the motors run for a brief moment (e.g., 300 milliseconds).
 	// You can expose this duration as a configuration setting later if needed.
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// Force the motors to stop
 	err = pc.Stop(ctx, true, true)
@@ -318,13 +331,118 @@ func panTiltVector(pan, tilt float64) *onvif.Vector2D {
 	return &onvif.Vector2D{
 		X:     pan,
 		Y:     tilt,
-		Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/TranslationGenericSpace",
+		Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/PositionGenericSpace",
+		// Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/TranslationGenericSpace",
 	}
 }
+
 
 func zoomVector(zoom float64) *onvif.Vector1D {
 	return &onvif.Vector1D{
 		X:     zoom,
-		Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/TranslationGenericSpace",
+		Space: "http://www.onvif.org/ver10/tptz/ZoomSpaces/PositionGenericSpace",
+		// Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/TranslationGenericSpace",
 	}
+}
+
+func ptzSpeed(pan, tilt, zoom float64) *onvif.PTZSpeed {
+	return &onvif.PTZSpeed{
+		PanTilt: &onvif.Vector2D{
+			X:     pan,
+			Y:     tilt,
+			Space: "http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace",
+		},
+		Zoom: &onvif.Vector1D{
+			X:     zoom,
+			Space: "http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace",
+		},
+	}
+}
+
+// ===========================================================
+// Experimental Helpers
+
+
+// PTZCapabilities holds the verified features of the camera
+type PTZCapabilities struct {
+	SupportsPanTilt   bool
+	SupportsZoom      bool
+	SupportsRelative  bool
+	SupportsContinuous bool
+	SupportsAbsolute  bool
+}
+
+func (pc *PTZController) PTZToken() string {
+	if pc.Profile != nil && pc.Profile.PTZConfiguration != nil {
+		return pc.Profile.PTZConfiguration.Token
+	}
+	return ""
+}
+
+// ProbeCapabilities queries the camera's PTZ Configurations to see what movements it officially supports.
+func (pc *PTZController) ProbeCapabilities(ctx context.Context) (*PTZCapabilities, error) {
+
+	ll := LOG.Prefix("[ProbeCapabilities]")
+
+	caps := &PTZCapabilities{}
+
+	// 1. Fetch the Media Profile using your "MainStream" ProfileToken
+	// Note: Depending on the 0x524a/onvif-go library version, this might be called on pc.Client.Media.GetProfile or directly on pc.Client
+	profile, err := pc.Client.GetProfile(ctx, pc.ProfileToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get media profile: %w", err)
+	}
+
+	ll.Info("", "profile", profile)
+
+
+	// 2. Extract the actual PTZ Configuration Token mapped to this specific video stream
+	if profile.PTZConfiguration == nil || profile.PTZConfiguration.Token == "" {
+		// If there is no PTZ Configuration attached to this profile, the camera definitively does not support PTZ!
+		return caps, nil
+	}
+
+	// PTZToken := profile.PTZConfiguration.Token 
+	// e.g., actualPTZToken is now "PTZ_Config_1" instead of "MainStream"
+
+
+	// 3. NOW fetch the PTZ Configuration using the correct token
+	cfg := profile.PTZConfiguration
+
+	ll.Info("PTZ", "token", cfg.Token)
+
+	ll.Info("PTZConfiguration", "cft", cfg)
+
+	// Check for Pan/Tilt support (Do the physical Pan/Tilt boundaries exist?)
+	if cfg.PanTiltLimits != nil {
+		caps.SupportsPanTilt = true
+	}
+	
+	// Check for Zoom support (Do the physical Zoom boundaries exist?)
+	if cfg.ZoomLimits != nil {
+		caps.SupportsZoom = true
+	}
+
+	// -------------------------------------------------------------------------
+	// STRUCT WARNING: Depending on how the library generated the WSDL structs,
+	// these space properties might be pointers (*string) or direct strings (string).
+	// If your Go compiler complains about `!= nil` below, simply change it to `!= ""`
+	// -------------------------------------------------------------------------
+
+	// Check for Continuous Move support
+	if cfg.DefaultContinuousPanTiltVelocitySpace != "" || cfg.DefaultContinuousZoomVelocitySpace != "" {
+		caps.SupportsContinuous = true
+	}
+
+	// Check for Relative Move support (Stepping)
+	if cfg.DefaultRelativePanTiltTranslationSpace != "" || cfg.DefaultRelativeZoomTranslationSpace != "" {
+		caps.SupportsRelative = true
+	}
+	
+	// Check for Absolute Move support
+	if cfg.DefaultAbsolutePantTiltPositionSpace != "" || cfg.DefaultAbsoluteZoomPositionSpace != "" {
+		caps.SupportsAbsolute = true
+	}
+
+	return caps, nil
 }
