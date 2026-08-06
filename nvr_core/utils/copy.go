@@ -16,6 +16,7 @@ func CopyMapValues[K comparable, V any](m map[K]V, mu sync.Locker) []V {
 	return list
 }
 
+// No lock map copying
 func CopyMapValuesNL[K comparable, V any](m map[K]V) []V {
 
 	list := make([]V, 0, len(m))
@@ -38,4 +39,22 @@ func CopyMapKeys[K comparable, V any](m map[K]V, mu sync.Locker) []K {
 	}
 
 	return keys
+}
+
+// ConvertSlice transforms a slice of type T1 into a slice of type T2
+// by applying the provided converter function to each element.
+func ConvertSlice[T1 any, T2 any](input []T1, converter func(T1) T2) []T2 {
+	if input == nil {
+		return nil
+	}
+
+	// Pre-allocate the result slice with the exact length of the input
+	// to prevent expensive memory reallocations during the loop.
+	result := make([]T2, len(input))
+	
+	for i, v := range input {
+		result[i] = converter(v)
+	}
+
+	return result
 }

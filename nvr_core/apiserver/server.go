@@ -165,6 +165,13 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /live/camera/{cam_id}", api.HandleLiveTransmuxTS)
 	mux.HandleFunc("GET /live/camera/{cam_id}/{profile}", api.HandleLiveTransmuxTS)
 
+	// =============================================
+	// Camera Bookmark
+	// =============================================
+	mux.HandleFunc("GET /api/bookmark", authMid(http.HandlerFunc(api.GetBookmarks)))
+	mux.HandleFunc("GET /api/bookmark/{cam_id}", authMid(http.HandlerFunc(api.GetCameraBookmarks)))
+	mux.HandleFunc("POST /api/bookmark", authMid(http.HandlerFunc(api.HandleCreateBookmark)))
+
 
 	// =============================================
 	// Camera PTZ
@@ -173,7 +180,26 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/ptz/{cam_id}/step/right", authMid(http.HandlerFunc(api.HandleCameraPTZStepRight)))
 	mux.HandleFunc("GET /api/ptz/{cam_id}/step/up", authMid(http.HandlerFunc(api.HandleCameraPTZStepUp)))
 	mux.HandleFunc("GET /api/ptz/{cam_id}/step/down", authMid(http.HandlerFunc(api.HandleCameraPTZStepDown)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/step/in", authMid(http.HandlerFunc(api.HandleCameraPTZStepZoomIn)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/step/out", authMid(http.HandlerFunc(api.HandleCameraPTZStepZoomOut)))
 	mux.HandleFunc("GET /api/ptz/{cam_id}/center", authMid(http.HandlerFunc(api.HandleCameraPTZCenter)))
+
+	mux.HandleFunc("GET /api/ptz/{cam_id}/home", authMid(http.HandlerFunc(api.CameraPTZToHome)))
+
+	mux.HandleFunc("GET /api/ptz/{cam_id}/profile", authMid(http.HandlerFunc(api.CameraProfile)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/caps", authMid(http.HandlerFunc(api.CameraCapabilities)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/services", authMid(http.HandlerFunc(api.CameraServices)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/status", authMid(http.HandlerFunc(api.CameraPTZStatus)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/config", authMid(http.HandlerFunc(api.CameraConfigurations)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/configs", authMid(http.HandlerFunc(api.CameraPTZConfiguration)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/presets", authMid(http.HandlerFunc(api.CameraPTZPresets)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/preset/{token}", authMid(http.HandlerFunc(api.CameraPTZToPreset)))
+
+	mux.HandleFunc("GET /api/ptz/{cam_id}/abs", authMid(http.HandlerFunc(api.CameraPTZAbsolute)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/rel", authMid(http.HandlerFunc(api.CameraPTZRelative)))
+
+	mux.HandleFunc("GET /api/ptz/{cam_id}/cnt", authMid(http.HandlerFunc(api.CameraPTZContinuous)))
+	mux.HandleFunc("GET /api/ptz/{cam_id}/stp", authMid(http.HandlerFunc(api.CameraPTZStop)))
 
 
 	// =============================================

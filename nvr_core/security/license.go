@@ -11,7 +11,7 @@ import (
 	"nvr_core/logger"
 )
 
-var LOG = logger.NewLogger("[license]")
+var LOG = logger.NewLogger("[security][license]")
 
 //go:embed key/public.key.pem
 var thePublicKey embed.FS

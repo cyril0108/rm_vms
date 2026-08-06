@@ -24,6 +24,10 @@ type userServiceBase struct {
 	permRepo repository.PermissionRepository
 }
 
+type bookmarkServiceBase struct {
+	repo repository.BookmarkRepository
+}
+
 type eventServiceBase struct {
 	repo repository.EventRepository
 }

@@ -33,10 +33,10 @@ func NewEventRepository(db *sql.DB) EventRepository {
 }
 
 func (e *eventRepo) Insert(ctx context.Context, ev *models.Event) error {
-	query := `INSERT INTO events (type, message, created_at) 
-	          VALUES (?, ?, ?)`
+	query := `INSERT INTO events (type, message, payload, created_at) 
+	          VALUES (?, ?, ?, ?)`
 
-	result, err := e.db.ExecContext(ctx, query, ev.Type, ev.Message, ev.CreatedAt)
+	result, err := e.db.ExecContext(ctx, query, ev.Type, ev.Message, ev.Payload, ev.CreatedAt)
 	if err != nil {
 		return err
 	}

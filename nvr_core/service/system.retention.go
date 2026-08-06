@@ -19,9 +19,9 @@ type ActiveCameraProvider func() int
 
 type RetentionService struct {
 	path string
-	repo repository.SegmentRepository
+	repo             repository.SegmentRepository
 	getActiveCameras ActiveCameraProvider
-	eventHub   *events.EventHub
+	eventHub         *events.EventHub
 }
 
 const HighWaterMark = utils.HighWaterMark
@@ -68,12 +68,12 @@ func (s *RetentionService) checkDiskUsage() (float64, error) {
 }
 
 func (s *RetentionService) SendDiskNearFullWarning(per float64) {
-	msg := Lang.Translate(tw.MSGDiskNearFullWarning, LowWaterMark, per)
+	msg := Lang.EventsMessage().Translate(tw.MSGDiskNearFullWarning, LowWaterMark, per)
 	(*s.eventHub).SendEvent(models.EventTypeDiskWarning, msg, nil)
 }
 
 func (s *RetentionService) SendDiskFullWarning() {
-	msg := Lang.Translate(tw.MSGDiskFullWarning)
+	msg := Lang.EventsMessage().Translate(tw.MSGDiskFullWarning)
 	(*s.eventHub).SendEvent(models.EventTypeDiskWarning, msg, nil)
 }
 
