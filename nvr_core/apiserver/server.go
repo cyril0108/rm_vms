@@ -107,6 +107,19 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 
 
 	// =============================================
+	// Email Settings
+	// =============================================
+	mux.HandleFunc("GET /api/email/smtp", authMid(http.HandlerFunc(api.HandleGetSMTPSettings)))
+	mux.HandleFunc("PUT /api/email/smtp", authMid(http.HandlerFunc(api.HandleUpdateSMTPSettings)))
+	mux.HandleFunc("POST /api/email/test", authMid(http.HandlerFunc(api.HandleTestEmail)))
+
+	mux.HandleFunc("GET /api/email/groups", authMid(http.HandlerFunc(api.HandleListEmailGroups)))
+	mux.HandleFunc("POST /api/email/groups", authMid(http.HandlerFunc(api.HandleCreateEmailGroup)))
+	mux.HandleFunc("PUT /api/email/groups/{id}", authMid(http.HandlerFunc(api.HandleUpdateEmailGroup)))
+	mux.HandleFunc("DELETE /api/email/groups/{id}", authMid(http.HandlerFunc(api.HandleDeleteEmailGroup)))
+
+
+	// =============================================
 	// Login
 	// =============================================
 	mux.HandleFunc("POST /api/login", api.HandleLogin)

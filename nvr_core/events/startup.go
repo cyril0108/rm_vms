@@ -10,12 +10,13 @@ import (
 func StartUp(ctx context.Context, db *sql.DB) *EventHub {
 
 	eventRepo := repository.NewEventRepository(db)
+	emailRepo := repository.NewEmailRepository(db)
 
 	hub := NewEventHub(500)
 
 	hub.RegisterNotifier(NewDatabaseNotifier(eventRepo))
+	hub.RegisterNotifier(NewEmailNotifier(emailRepo))
 	// hub.RegisterNotifier(events.NewWebSocketNotifier(wsHub))
-	// hub.RegisterNotifier(events.NewEmailNotifier(emailConfig))
 
 	// Start the background dispatcher
 	go hub.Start(ctx)

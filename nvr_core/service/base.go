@@ -61,3 +61,7 @@ type licenseServiceBase struct {
 type maintainServiceBase struct {
 	repo repository.SegmentRepository
 }
+
+type emailServiceBase struct {
+	repo repository.EmailRepository
+}

@@ -28,6 +28,7 @@ type Services struct {
 	Export     ExportService
 	ExportTM   *ExportTaskManager
 	Maintain   MaintainService
+	Email      EmailService
 }
 
 
@@ -59,6 +60,8 @@ func NewServices(dbConn *sql.DB) *Services {
 	exportSvc := NewExportService(segRepo)
 	exportTMSvc := NewExportTaskManager()
 	maintainSvc := NewMaintainService(segRepo)
+	emailRepo := repository.NewEmailRepository(dbConn)
+	emailSvc := NewEmailService(emailRepo)
 
 	return &Services{
 		Auth:     authSvc,
@@ -76,6 +79,7 @@ func NewServices(dbConn *sql.DB) *Services {
 		Export: exportSvc,
 		ExportTM: exportTMSvc,
 		Maintain: maintainSvc,
+		Email: emailSvc,
 	}
 }
 
