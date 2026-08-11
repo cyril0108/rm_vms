@@ -1,5 +1,7 @@
 package onvif
 
+import "nvr_core/db/models"
+
 // DiscoveredCamera represents a network video transmitter found on the LAN.
 type DiscoveredCamera struct {
 	MessageID string
@@ -42,4 +44,26 @@ type BulkScanRequest struct {
 	EndIP    string `json:"end_ip"`   // Optional: if empty, scans primary subnet
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+
+
+// MapToDBCamera remains unchanged
+func (cr *OnvifRecord) MapToDBCamera() *models.Camera {
+	return &models.Camera{
+		Manufacturer:          cr.Manufacturer,
+		Model:                 cr.Model,
+		SerialNumber:          cr.SerialNumber,
+		IPAddress:             cr.IP,
+		Type:                  models.CameraTypeONVIF,
+		Username:              cr.Username,
+		StreamURL:             cr.MainStream,
+		SubStreamURL:          cr.SubStream,
+		OnvifProfileToken:     cr.MainStreamToken,
+		SubStreamProfileToken: cr.SubStreamToken,
+		SupportsPTZ:           cr.SupportsPTZ,
+		SupportsAudio:         cr.SupportsAudio,
+		SupportsAudioOutput:   cr.SupportsAudioOutput,
+		EnableAudio:           cr.SupportsAudio,
+	}
 }

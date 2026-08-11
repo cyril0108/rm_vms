@@ -220,6 +220,11 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 
 	mux.HandleFunc("DELETE /api/cameras/{cam_id}", authMid(http.HandlerFunc(api.DeleteCamera)))
 
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/caps", authMid(http.HandlerFunc(api.OMCameraCapabilities)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/info", authMid(http.HandlerFunc(api.OMCameraDeviceInfo)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/profiles", authMid(http.HandlerFunc(api.OMCameraProfiles)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/video", authMid(http.HandlerFunc(api.OMCameraVideoSourceConfig)))
+
 
 	// =============================================
 	// Timeline and Playback

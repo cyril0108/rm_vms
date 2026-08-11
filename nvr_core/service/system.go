@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"nvr_core/apiserver/dto"
-	// "nvr_core/db/models"
+	"nvr_core/buildinfo"
 	"nvr_core/db/repository"
 )
 
@@ -27,6 +27,7 @@ func (s *systemServiceBase) GetHealthData(ctx context.Context) (dto.SystemHealth
 	health := dto.SystemHealthInfo{
 		Health: "Ok",
 		Configured: true,
+		Version: buildinfo.Version,
 	}
 
 	user, err := s.repo.GetAdmin(ctx)

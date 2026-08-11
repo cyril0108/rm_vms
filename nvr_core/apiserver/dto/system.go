@@ -28,6 +28,7 @@ type SystemMachineInfo struct {
 	MachineID     string `json:"machine_id"`
 	ServerName    string `json:"server_name"`
 	Version       string `json:"version"`
+	BuildTime     string `json:"buildtime"`
 }
 
 

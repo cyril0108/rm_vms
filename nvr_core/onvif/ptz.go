@@ -417,7 +417,7 @@ func (pc *PTZController) ProbeCapabilities(ctx context.Context) (*PTZCapabilitie
 	if cfg.PanTiltLimits != nil {
 		caps.SupportsPanTilt = true
 	}
-	
+
 	// Check for Zoom support (Do the physical Zoom boundaries exist?)
 	if cfg.ZoomLimits != nil {
 		caps.SupportsZoom = true

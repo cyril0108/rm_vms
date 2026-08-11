@@ -26,6 +26,7 @@ func (s *APIServer) HandleGetMachineInfo(w http.ResponseWriter, r *http.Request)
 	info.ServerName = name
 
 	info.Version = buildinfo.Version
+	info.BuildTime = buildinfo.BuildTime
 
 	utils.RespondJSON(w, info, "success")
 	return
