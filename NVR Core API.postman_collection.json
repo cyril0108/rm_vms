@@ -1,10 +1,11 @@
 {
   "info": {
-    "_postman_id": "a07d78b2-bf7b-42da-8ec1-479a964a3d66",
+    "_postman_id": "cdbc4dcd-fa74-47dc-aeb3-167cfc1d1cc8",
     "name": "NVR Core API",
     "description": "API endpoints for NVR.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "3267356"
+    "_exporter_id": "3267356",
+    "_collection_link": "https://go.postman.co/collection/3267356-cdbc4dcd-fa74-47dc-aeb3-167cfc1d1cc8?source=collection_link"
   },
   "item": [
     {
@@ -750,6 +751,273 @@
       ]
     },
     {
+      "name": "Bookmark",
+      "item": [
+        {
+          "name": "Get Bookmarks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bookmark?start=1785447664&end=1785485752",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookmark"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1785447664"
+                },
+                {
+                  "key": "end",
+                  "value": "1785485752"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Camera Bookmarks",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/bookmark/{{cam_id}}?start=1785447664&end=1785485752",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bookmark",
+                    "{{cam_id}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "start",
+                      "value": "1785447664"
+                    },
+                    {
+                      "key": "end",
+                      "value": "1785485752"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Fri, 31 Jul 2026 09:16:43 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "169"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": [\n        {\n            \"id\": 1,\n            \"user_id\": 2,\n            \"camera_id\": 9,\n            \"time\": 1785447664,\n            \"duration\": 10,\n            \"message\": \"Camera bookmark creation test\",\n            \"created_at\": \"2026-07-31T09:16:10Z\"\n        }\n    ],\n    \"message\": \"\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Camera Bookmarks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bookmark/{{cam_id}}?start=1785447664&end=1785485752",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookmark",
+                "{{cam_id}}"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1785447664"
+                },
+                {
+                  "key": "end",
+                  "value": "1785485752"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Camera Bookmarks",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/bookmark/{{cam_id}}?start=1785447664&end=1785485752",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bookmark",
+                    "{{cam_id}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "start",
+                      "value": "1785447664"
+                    },
+                    {
+                      "key": "end",
+                      "value": "1785485752"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Fri, 31 Jul 2026 09:16:43 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "169"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": [\n        {\n            \"id\": 1,\n            \"user_id\": 2,\n            \"camera_id\": 9,\n            \"time\": 1785447664,\n            \"duration\": 10,\n            \"message\": \"Camera bookmark creation test\",\n            \"created_at\": \"2026-07-31T09:16:10Z\"\n        }\n    ],\n    \"message\": \"\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Bookmark",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"camera_id\": 9,\n    \"time\": 1785447664,\n    \"duration\": 10,\n    \"message\": \"Camera bookmark creation test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookmark",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bookmark"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Create Bookmark",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"camera_id\": 9,\n    \"time\": 1785447664,\n    \"duration\": 10,\n    \"message\": \"Camera bookmark creation test\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/bookmark",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "bookmark"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "Text",
+              "header": [
+                {
+                  "key": "Access-Control-Allow-Headers",
+                  "value": "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization"
+                },
+                {
+                  "key": "Access-Control-Allow-Methods",
+                  "value": "GET, POST, PUT, DELETE, OPTIONS"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Date",
+                  "value": "Fri, 31 Jul 2026 09:16:10 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "167"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"data\": {\n        \"id\": 1,\n        \"user_id\": 2,\n        \"camera_id\": 9,\n        \"time\": 1785447664,\n        \"duration\": 10,\n        \"message\": \"Camera bookmark creation test\",\n        \"created_at\": \"2026-07-31T09:16:10Z\"\n    },\n    \"message\": \"\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Events",
       "item": [
         {
@@ -1111,7 +1379,46 @@
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Add New ONVIF Camera with given port",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"ip_address\": \"192.168.13.101\",\n    \"username\": \"admin\",\n    \"password\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/cameras/add/onvif?port=123",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "cameras",
+                    "add",
+                    "onvif"
+                  ],
+                  "query": [
+                    {
+                      "key": "port",
+                      "value": "123"
+                    }
+                  ]
+                }
+              },
+              "_postman_previewlanguage": "Text",
+              "header": null,
+              "cookie": [],
+              "body": null
+            }
+          ]
         },
         {
           "name": "Update Camera",
@@ -1265,6 +1572,26 @@
       "name": "PTZ",
       "item": [
         {
+          "name": "Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Center",
           "request": {
             "method": "GET",
@@ -1279,6 +1606,102 @@
                 "ptz",
                 "{{cam_id}}",
                 "center"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Absolute",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/abs?pan=-0.1&tilt=0.1&zoom=0.0&speed=0.1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "abs"
+              ],
+              "query": [
+                {
+                  "key": "pan",
+                  "value": "-0.1"
+                },
+                {
+                  "key": "tilt",
+                  "value": "0.1"
+                },
+                {
+                  "key": "zoom",
+                  "value": "0.0"
+                },
+                {
+                  "key": "speed",
+                  "value": "0.1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Continuous",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/cnt?pan=0.5&tilt=0.5&zoom=0.5&speed=0.5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "cnt"
+              ],
+              "query": [
+                {
+                  "key": "pan",
+                  "value": "0.5"
+                },
+                {
+                  "key": "tilt",
+                  "value": "0.5"
+                },
+                {
+                  "key": "zoom",
+                  "value": "0.5"
+                },
+                {
+                  "key": "speed",
+                  "value": "0.5"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Stop",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/stp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "stp"
               ]
             }
           },
@@ -1363,6 +1786,48 @@
                 "{{cam_id}}",
                 "step",
                 "down"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step Zoom In",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/step/in",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "step",
+                "in"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step Zoom Out",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ptz/{{cam_id}}/step/out",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "ptz",
+                "{{cam_id}}",
+                "step",
+                "out"
               ]
             }
           },
@@ -1807,7 +2272,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n    \"data\": {\n        \"task_id\": 73.123\n    },\n    \"message\": \"success\"\n}"
+              "body": "{\n    \"data\": {\n        \"task_id\": \"545cvsdf\"\n    },\n    \"message\": \"success\"\n}"
             },
             {
               "name": "Invalid camera ID or timestamps",
@@ -1934,45 +2399,56 @@
             "header": [
               {
                 "key": "Accept",
-                "value": "application/json"
+                "value": "*/*"
               }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
-                  "key": "logo",
-                  "type": "file",
-                  "uuid": "141b4312-5c5a-4605-a954-7801e5c106ae",
-                  "value": null
+                  "type": "text",
+                  "key": "text",
+                  "value": "Watermark Text"
                 },
                 {
-                  "key": "text",
-                  "value": "",
+                  "type": "file",
+                  "key": "image",
+                  "src": "/C:/Users/Aki/Downloads/rm-logo.png"
+                },
+                {
                   "type": "text",
-                  "uuid": "e215bf40-481d-46ad-9aa3-3088b213f32b"
+                  "key": "position",
+                  "value": "center"
+                },
+                {
+                  "type": "text",
+                  "key": "scale",
+                  "value": "30"
+                },
+                {
+                  "type": "text",
+                  "key": "opacity",
+                  "value": "20"
+                },
+                {
+                  "type": "text",
+                  "key": "color",
+                  "value": "FFFFFF40"
                 }
               ]
             },
             "url": {
-              "raw": "{{base_url}}/api/export/{{cam_id}}?start=1783116957374&end=1783162426798&profile=main",
+              "raw": "{{base_url}}/api/export/{{cam_id}}/watermark?profile=main&start=1785508768&end=1785509011",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "export",
-                "{{cam_id}}"
+                "{{cam_id}}",
+                "watermark"
               ],
               "query": [
-                {
-                  "key": "start",
-                  "value": "1783116957374"
-                },
-                {
-                  "key": "end",
-                  "value": "1783162426798"
-                },
                 {
                   "key": "profile",
                   "value": "main"
@@ -1983,6 +2459,14 @@
                   "description": "mp4,mkv,avi,mov,webm",
                   "type": "text",
                   "disabled": true
+                },
+                {
+                  "key": "start",
+                  "value": "1785508768"
+                },
+                {
+                  "key": "end",
+                  "value": "1785509011"
                 }
               ]
             },
@@ -1992,45 +2476,71 @@
             {
               "name": "Returns task_id and status (pending)",
               "originalRequest": {
-                "method": "GET",
+                "method": "POST",
                 "header": [
                   {
                     "key": "Accept",
-                    "value": "application/json"
+                    "value": "*/*"
                   }
                 ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "type": "text",
+                      "key": "text",
+                      "value": "Watermark Text"
+                    },
+                    {
+                      "type": "file",
+                      "key": "image",
+                      "src": "/C:/Users/Aki/Downloads/rm-logo.png"
+                    },
+                    {
+                      "type": "text",
+                      "key": "position",
+                      "value": "center"
+                    },
+                    {
+                      "type": "text",
+                      "key": "scale",
+                      "value": "30"
+                    },
+                    {
+                      "type": "text",
+                      "key": "opacity",
+                      "value": "20"
+                    },
+                    {
+                      "type": "text",
+                      "key": "color",
+                      "value": "FFFFFF40"
+                    }
+                  ]
+                },
                 "url": {
-                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "raw": "{{base_url}}/api/export/{{cam_id}}/watermark?start=1785508768&end=1785509011&profile=main",
                   "host": [
-                    "{{baseUrl}}"
+                    "{{base_url}}"
                   ],
                   "path": [
                     "api",
                     "export",
-                    ":cam_id"
+                    "{{cam_id}}",
+                    "watermark"
                   ],
                   "query": [
                     {
                       "key": "start",
-                      "value": "2138",
-                      "description": "Start Unix timestamp (milliseconds)"
+                      "value": "1785508768"
                     },
                     {
                       "key": "end",
-                      "value": "2138",
-                      "description": "End Unix timestamp (milliseconds)"
+                      "value": "1785509011"
                     },
                     {
                       "key": "profile",
-                      "value": "string",
-                      "description": "Stream profile (e.g., main, sub)"
-                    }
-                  ],
-                  "variable": [
-                    {
-                      "key": "cam_id",
-                      "value": "2138",
-                      "description": "Camera ID"
+                      "value": "main"
                     }
                   ]
                 }
@@ -2045,50 +2555,79 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n    \"data\": {\n        \"task_id\": 73.123\n    },\n    \"message\": \"success\"\n}"
+              "body": "{\n    \"data\": {\n        \"task_id\": \"545cvsdf\"\n    },\n    \"message\": \"success\"\n}"
             },
             {
               "name": "Invalid camera ID or timestamps",
               "originalRequest": {
-                "method": "GET",
+                "method": "POST",
                 "header": [
                   {
                     "key": "Accept",
-                    "value": "application/json"
+                    "value": "*/*"
                   }
                 ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "type": "text",
+                      "key": "text",
+                      "value": "Watermark Text"
+                    },
+                    {
+                      "type": "file",
+                      "key": "image",
+                      "src": "/C:/Users/Aki/Downloads/rm-logo.png"
+                    },
+                    {
+                      "type": "text",
+                      "key": "position",
+                      "value": "center"
+                    },
+                    {
+                      "type": "text",
+                      "key": "scale",
+                      "value": "30"
+                    },
+                    {
+                      "type": "text",
+                      "key": "opacity",
+                      "value": "20"
+                    },
+                    {
+                      "type": "text",
+                      "key": "color",
+                      "value": "FFFFFF40"
+                    }
+                  ]
+                },
                 "url": {
-                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "raw": "{{base_url}}/api/export/{{cam_id}}/watermark?start=1785508768&end=1785509011&profile=main",
                   "host": [
-                    "{{baseUrl}}"
+                    "{{base_url}}"
                   ],
                   "path": [
                     "api",
                     "export",
-                    ":cam_id"
+                    "{{cam_id}}",
+                    "watermark"
                   ],
                   "query": [
                     {
-                      "description": "Start Unix timestamp (milliseconds)",
                       "key": "start",
-                      "value": "2138"
+                      "value": "1785508768",
+                      "description": "Start Unix timestamp (milliseconds)"
                     },
                     {
-                      "description": "End Unix timestamp (milliseconds)",
                       "key": "end",
-                      "value": "2138"
+                      "value": "1785509011",
+                      "description": "End Unix timestamp (milliseconds)"
                     },
                     {
-                      "description": "Stream profile (e.g., main, sub)",
                       "key": "profile",
-                      "value": "string"
-                    }
-                  ],
-                  "variable": [
-                    {
-                      "key": "cam_id",
-                      "value": "2138",
-                      "description": "Camera ID"
+                      "value": "main",
+                      "description": "Stream profile (e.g., main, sub)"
                     }
                   ]
                 }
@@ -2108,45 +2647,74 @@
             {
               "name": "Forbidden - Missing export permissions",
               "originalRequest": {
-                "method": "GET",
+                "method": "POST",
                 "header": [
                   {
                     "key": "Accept",
-                    "value": "application/json"
+                    "value": "*/*"
                   }
                 ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "type": "text",
+                      "key": "text",
+                      "value": "Watermark Text"
+                    },
+                    {
+                      "type": "file",
+                      "key": "image",
+                      "src": "/C:/Users/Aki/Downloads/rm-logo.png"
+                    },
+                    {
+                      "type": "text",
+                      "key": "position",
+                      "value": "center"
+                    },
+                    {
+                      "type": "text",
+                      "key": "scale",
+                      "value": "30"
+                    },
+                    {
+                      "type": "text",
+                      "key": "opacity",
+                      "value": "20"
+                    },
+                    {
+                      "type": "text",
+                      "key": "color",
+                      "value": "FFFFFF40"
+                    }
+                  ]
+                },
                 "url": {
-                  "raw": "{{baseUrl}}/api/export/:cam_id?start=2138&end=2138&profile=string",
+                  "raw": "{{base_url}}/api/export/{{cam_id}}/watermark?start=1785508768&end=1785509011&profile=main",
                   "host": [
-                    "{{baseUrl}}"
+                    "{{base_url}}"
                   ],
                   "path": [
                     "api",
                     "export",
-                    ":cam_id"
+                    "{{cam_id}}",
+                    "watermark"
                   ],
                   "query": [
                     {
-                      "description": "Start Unix timestamp (milliseconds)",
                       "key": "start",
-                      "value": "2138"
+                      "value": "1785508768",
+                      "description": "Start Unix timestamp (milliseconds)"
                     },
                     {
-                      "description": "End Unix timestamp (milliseconds)",
                       "key": "end",
-                      "value": "2138"
+                      "value": "1785509011",
+                      "description": "End Unix timestamp (milliseconds)"
                     },
                     {
-                      "description": "Stream profile (e.g., main, sub)",
                       "key": "profile",
-                      "value": "string"
-                    }
-                  ],
-                  "variable": [
-                    {
-                      "key": "cam_id",
-                      "value": "2138",
-                      "description": "Camera ID"
+                      "value": "main",
+                      "description": "Stream profile (e.g., main, sub)"
                     }
                   ]
                 }
@@ -2270,9 +2838,9 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "raw": "{{base_url}}/api/export/:task_id/download",
                   "host": [
-                    "{{baseUrl}}"
+                    "{{base_url}}"
                   ],
                   "path": [
                     "api",
@@ -2312,9 +2880,9 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "raw": "{{base_url}}/api/export/:task_id/download",
                   "host": [
-                    "{{baseUrl}}"
+                    "{{base_url}}"
                   ],
                   "path": [
                     "api",
@@ -2354,9 +2922,9 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "raw": "{{base_url}}/api/export/:task_id/download",
                   "host": [
-                    "{{baseUrl}}"
+                    "{{base_url}}"
                   ],
                   "path": [
                     "api",
@@ -2396,9 +2964,9 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download",
+                  "raw": "{{base_url}}/api/export/:task_id/download",
                   "host": [
-                    "{{baseUrl}}"
+                    "{{base_url}}"
                   ],
                   "path": [
                     "api",
@@ -2691,398 +3259,6 @@
                     "export",
                     ":task_id",
                     "download"
-                  ],
-                  "variable": [
-                    {
-                      "key": "task_id",
-                      "value": "string",
-                      "description": "Export Task ID (UUID)"
-                    }
-                  ]
-                }
-              },
-              "status": "Gone",
-              "code": 410,
-              "_postman_previewlanguage": "text",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "*/*"
-                }
-              ],
-              "cookie": [],
-              "body": "string"
-            }
-          ]
-        },
-        {
-          "name": "Initiate video export task with watermark",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "*/*"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "start",
-                  "value": "1722300000000",
-                  "description": "Start Unix timestamp (milliseconds)",
-                  "type": "text"
-                },
-                {
-                  "key": "end",
-                  "value": "1722303600000",
-                  "description": "End Unix timestamp (milliseconds)",
-                  "type": "text"
-                },
-                {
-                  "key": "profile",
-                  "value": "main",
-                  "description": "Stream profile (e.g. main, sub)",
-                  "type": "text"
-                },
-                {
-                  "key": "format",
-                  "value": "mp4",
-                  "description": "Export format (default mp4)",
-                  "type": "text"
-                },
-                {
-                  "key": "text",
-                  "value": "Watermark Text",
-                  "description": "Watermark text",
-                  "type": "text"
-                },
-                {
-                  "key": "image",
-                  "description": "Watermark image (PNG format)",
-                  "type": "file",
-                  "src": []
-                },
-                {
-                  "key": "position",
-                  "value": "top-left",
-                  "description": "Position: top-left, top-right, center, bottom-left, bottom-right",
-                  "type": "text"
-                },
-                {
-                  "key": "scale",
-                  "value": "20",
-                  "description": "PNG scale percentage relative to video width (1-100, default 20)",
-                  "type": "text"
-                },
-                {
-                  "key": "opacity",
-                  "value": "15",
-                  "description": "PNG opacity percentage (0-100, default 15)",
-                  "type": "text"
-                },
-                {
-                  "key": "color",
-                  "value": "FFFFFF40",
-                  "description": "Text color RGBA hex (default FFFFFF40)",
-                  "type": "text"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{base_url}}/api/export/:cam_id/watermark",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "export",
-                ":cam_id",
-                "watermark"
-              ],
-              "variable": [
-                {
-                  "key": "cam_id",
-                  "value": "1",
-                  "description": "Camera ID"
-                }
-              ]
-            },
-            "description": "Asynchronously exports video for a specific camera with text and/or image watermark. Returns a task ID for status polling and downloading."
-          },
-          "response": [
-            {
-              "name": "The watermarked exported video file",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "*/*"
-                  }
-                ],
-                "body": {
-                  "mode": "formdata",
-                  "formdata": [
-                    {
-                      "key": "text",
-                      "value": "Watermark Text",
-                      "type": "text"
-                    },
-                    {
-                      "key": "image",
-                      "type": "file",
-                      "src": []
-                    },
-                    {
-                      "key": "position",
-                      "value": "top-left",
-                      "type": "text"
-                    },
-                    {
-                      "key": "scale",
-                      "value": "20",
-                      "type": "text"
-                    },
-                    {
-                      "key": "opacity",
-                      "value": "15",
-                      "type": "text"
-                    },
-                    {
-                      "key": "color",
-                      "value": "FFFFFF40",
-                      "type": "text"
-                    }
-                  ]
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "export",
-                    ":task_id",
-                    "download",
-                    "watermark"
-                  ],
-                  "variable": [
-                    {
-                      "key": "task_id",
-                      "value": "string",
-                      "description": "Export Task ID (UUID)"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "text",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "*/*"
-                }
-              ],
-              "cookie": [],
-              "body": "string"
-            },
-            {
-              "name": "Missing task ID or invalid parameters",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "*/*"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "export",
-                    ":task_id",
-                    "download",
-                    "watermark"
-                  ],
-                  "variable": [
-                    {
-                      "key": "task_id",
-                      "value": "string",
-                      "description": "Export Task ID (UUID)"
-                    }
-                  ]
-                }
-              },
-              "status": "Bad Request",
-              "code": 400,
-              "_postman_previewlanguage": "text",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "*/*"
-                }
-              ],
-              "cookie": [],
-              "body": "string"
-            },
-            {
-              "name": "Forbidden - Missing export permissions",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "*/*"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "export",
-                    ":task_id",
-                    "download",
-                    "watermark"
-                  ],
-                  "variable": [
-                    {
-                      "key": "task_id",
-                      "value": "string",
-                      "description": "Export Task ID (UUID)"
-                    }
-                  ]
-                }
-              },
-              "status": "Forbidden",
-              "code": 403,
-              "_postman_previewlanguage": "text",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "*/*"
-                }
-              ],
-              "cookie": [],
-              "body": "string"
-            },
-            {
-              "name": "Export task not found",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "*/*"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "export",
-                    ":task_id",
-                    "download",
-                    "watermark"
-                  ],
-                  "variable": [
-                    {
-                      "key": "task_id",
-                      "value": "string",
-                      "description": "Export Task ID (UUID)"
-                    }
-                  ]
-                }
-              },
-              "status": "Not Found",
-              "code": 404,
-              "_postman_previewlanguage": "text",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "*/*"
-                }
-              ],
-              "cookie": [],
-              "body": "string"
-            },
-            {
-              "name": "Export is not ready for download",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "*/*"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "export",
-                    ":task_id",
-                    "download",
-                    "watermark"
-                  ],
-                  "variable": [
-                    {
-                      "key": "task_id",
-                      "value": "string",
-                      "description": "Export Task ID (UUID)"
-                    }
-                  ]
-                }
-              },
-              "status": "Conflict",
-              "code": 409,
-              "_postman_previewlanguage": "text",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "*/*"
-                }
-              ],
-              "cookie": [],
-              "body": "string"
-            },
-            {
-              "name": "Exported file has expired or been deleted",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "*/*"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/export/:task_id/download/watermark",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "export",
-                    ":task_id",
-                    "download",
-                    "watermark"
                   ],
                   "variable": [
                     {
@@ -4284,6 +4460,182 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Email",
+      "item": [
+        {
+          "name": "Get SMTP Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/email/smtp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "smtp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update SMTP Settings",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"host\": \"smtp.gmail.com\",\n  \"port\": 587,\n  \"username\": \"alert@example.com\",\n  \"password\": \"app-password\",\n  \"sender_email\": \"alert@example.com\",\n  \"sender_name\": \"NVR Alert\",\n  \"use_tls\": true,\n  \"enabled\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/email/smtp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "smtp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Test Email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"admin@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/email/test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "test"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Email Groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/email/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "groups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Email Group",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"維運團隊\",\n  \"recipients\": [\n    \"ops1@example.com\",\n    \"ops2@example.com\"\n  ],\n  \"event_types\": [\n    \"CAMERA_OFFLINE\",\n    \"DISK_WARNING\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/email/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "groups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Email Group",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"維運與管理團隊\",\n  \"recipients\": [\n    \"ops1@example.com\",\n    \"admin@example.com\"\n  ],\n  \"event_types\": [\n    \"CAMERA_OFFLINE\",\n    \"DISK_WARNING\",\n    \"MOTION_DETECTED\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/email/groups/{{group_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "groups",
+                "{{group_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Email Group",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/email/groups/{{group_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "groups",
+                "{{group_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "auth": {
@@ -4322,11 +4674,11 @@
   ],
   "variable": [
     {
-      "key": "base_url",
+      "key": "f35a99d7-f771-45f7-b576-14241fc5ecd3",
       "value": "http://localhost:8080"
     },
     {
-      "key": "randomIP",
+      "key": "763115b3-e855-4306-9e6c-58cbdccbd312",
       "value": ""
     }
   ]
