@@ -28,6 +28,10 @@ type bookmarkServiceBase struct {
 	repo repository.BookmarkRepository
 }
 
+type layoutServiceBase struct {
+	repo repository.LayoutRepository
+}
+
 type eventServiceBase struct {
 	repo repository.EventRepository
 }

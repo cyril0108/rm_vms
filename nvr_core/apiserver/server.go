@@ -141,6 +141,16 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("DELETE /api/users/{id}", authMid(http.HandlerFunc(api.HandleDeactivateUser)))
 
 
+	// =============================================
+	// Layouts
+	// =============================================
+	mux.HandleFunc("GET /api/layout", authMid(http.HandlerFunc(api.GetUserLayouts)))
+	mux.HandleFunc("GET /api/layout/{id}", authMid(http.HandlerFunc(api.GetLayout)))
+	mux.HandleFunc("POST /api/layout", authMid(http.HandlerFunc(api.HandleCreateLayout)))
+	mux.HandleFunc("PUT /api/layout", authMid(http.HandlerFunc(api.HandleUpdateLayout)))
+	mux.HandleFunc("DELETE /api/layout/{id}", authMid(http.HandlerFunc(api.DeleteLayout)))
+
+
 
 	// =============================================
 	// Camera Discovery

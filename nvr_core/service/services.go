@@ -19,6 +19,7 @@ type Services struct {
 	Event      EventService
 	User       UserManagementService
 	Bookmark   BookmarkService
+	Layout     LayoutService
 	Camera     CameraManagementService
 	Timeline   TimelineService
 	Playback   PlaybackService
@@ -38,6 +39,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	userRepo  := repository.NewUserRepository(dbConn)
 	eventRepo := repository.NewEventRepository(dbConn)
 	bmRepo    := repository.NewBookmarkRepository(dbConn)
+	loRepo    := repository.NewLayoutRepository(dbConn)
 	retknRepo := repository.NewRefreshTokenRepository(dbConn)
 	permRepo  := repository.NewPermissionRepository(dbConn)
 	cameraRepo := repository.NewCameraRepository(dbConn)
@@ -51,6 +53,7 @@ func NewServices(dbConn *sql.DB) *Services {
 	authSvc := NewAuthService(userRepo, permRepo, retknRepo, ")($#YHdsJdsx")
 	eventSvc := NewEventService(eventRepo)
 	bmSvc := NewBookmarkService(bmRepo)
+	loSvc := NewLayoutService(loRepo)
 	userSvc := NewUserManagementService(userRepo, permRepo)
 	permSvc := NewPermsService(permRepo)
 	camSvc := NewCameraManagementService(cameraRepo, segRepo)
@@ -65,6 +68,7 @@ func NewServices(dbConn *sql.DB) *Services {
 		License:  licSvc,
 		Perms:    permSvc,
 		Bookmark: bmSvc,
+		Layout:   loSvc,
 		Event:    eventSvc,
 		User:     userSvc,
 		Camera:   camSvc,

@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS layouts;
+DROP TABLE IF EXISTS layout_items;
