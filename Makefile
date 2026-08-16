@@ -4,7 +4,7 @@
 
 # Docker Build Name
 DOCKER_IMAGE_NAME = vmsnvr
-VERSION = 0.1.46
+VERSION = 0.1.47
 GIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null)
 BUILD_TIME ?= $(shell date '+%Y-%m-%dT%H:%M:%S' 2>/dev/null)
 

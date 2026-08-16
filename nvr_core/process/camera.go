@@ -1,6 +1,7 @@
 package process
 
 import (
+    onvifxml "nvr_core/onvif/xml"
 	"nvr_core/db/models"
 	"nvr_core/utils"
 )
@@ -14,6 +15,9 @@ type StreamProfile struct {
     VCodec    uint32 `json:"vcodec"`
     ACodec    uint32 `json:"acodec"`
     Status    string `json:"status"`    // e.g., "offline", "streaming", "failed"
+    VideoSource onvifxml.VideoSource      `json:"onvif_video"`
+    AudioSource onvifxml.VideoSource      `json:"onvif_audio"`
+    PTZ         onvifxml.PTZConfiguration `json:"onvif_ptz"`
 }
 
 // Camera represents the physical device for the API and Manager

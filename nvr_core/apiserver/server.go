@@ -202,6 +202,21 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/ptz/{cam_id}/stp", authMid(http.HandlerFunc(api.CameraPTZStop)))
 
 
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/caps", authMid(http.HandlerFunc(api.OMCameraCapabilities)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/info", authMid(http.HandlerFunc(api.OMCameraDeviceInfo)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/profiles", authMid(http.HandlerFunc(api.OMCameraProfiles)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/profile", authMid(http.HandlerFunc(api.OMCameraProfile)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/video", authMid(http.HandlerFunc(api.OMCameraVideoSourceConfig)))
+
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/status", authMid(http.HandlerFunc(api.OMCameraPTZStatus)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/cnt", authMid(http.HandlerFunc(api.OMCameraPTZContinuousMove)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/rel", authMid(http.HandlerFunc(api.OMCameraPTZRelativeMove)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/abs", authMid(http.HandlerFunc(api.OMCameraPTZAbsoluteMove)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/center", authMid(http.HandlerFunc(api.OMCameraPTZAbsoluteCanter)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/step/{dir}", authMid(http.HandlerFunc(api.OMCameraPTZStep)))
+
+
+
 	// =============================================
 	// Camera Management
 	// =============================================
@@ -219,11 +234,6 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("POST /api/cameras/{cam_id}/start", authMid(http.HandlerFunc(api.ActivateCamera)))
 
 	mux.HandleFunc("DELETE /api/cameras/{cam_id}", authMid(http.HandlerFunc(api.DeleteCamera)))
-
-	mux.HandleFunc("GET /api/cameras/{cam_id}/om/caps", authMid(http.HandlerFunc(api.OMCameraCapabilities)))
-	mux.HandleFunc("GET /api/cameras/{cam_id}/om/info", authMid(http.HandlerFunc(api.OMCameraDeviceInfo)))
-	mux.HandleFunc("GET /api/cameras/{cam_id}/om/profiles", authMid(http.HandlerFunc(api.OMCameraProfiles)))
-	mux.HandleFunc("GET /api/cameras/{cam_id}/om/video", authMid(http.HandlerFunc(api.OMCameraVideoSourceConfig)))
 
 
 	// =============================================

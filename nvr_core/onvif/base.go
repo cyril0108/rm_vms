@@ -6,7 +6,10 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"nvr_core/logger"
 )
+
+var LOG = logger.NewLogger("[onvif]")
 
 
 func ONVIFAddress(ip string, port int) string {

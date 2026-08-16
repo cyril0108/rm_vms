@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"nvr_core/db/models"
@@ -19,6 +20,7 @@ import (
 type ONVIFManager struct {
 	Device *goonvif.Device
 	Camera *models.Camera
+	stepMu       sync.Mutex
 }
 
 // NewONVIFManager creates the connection and automatically fetches basic capabilities.
@@ -43,12 +45,8 @@ func NewONVIFManager(cfg DeviceConfig, cam *models.Camera) (*ONVIFManager, error
 	}
 
 	xaddr := ONVIFAddress(cfg.IP, cfg.Port)
-	// if !strings.HasPrefix(xaddr, "http") {
-	// 	xaddr = "http://" + xaddr
-	// }
 
 	ll := LOG.Prefix("[NewONVIFManager]")
-
 	ll.Info("", "xaddr", xaddr)
 
 	params := goonvif.DeviceParams{
@@ -105,7 +103,9 @@ func (c *ONVIFManager) SupportsEvents() bool {
 	return endpoint != ""
 }
 
-
+func RangeExists(r onvifxml.FloatRange) bool {
+	return r.Max != 0 || r.Min != 0
+}
 
 func CallONVIFRequest[T any](device *goonvif.Device, req interface{}) (T, error) {
 	// Initialize an empty variable of type T to return in case of errors

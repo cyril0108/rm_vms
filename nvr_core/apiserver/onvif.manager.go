@@ -89,6 +89,57 @@ func (s *APIServer) OMCameraProfiles(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (s *APIServer) OMCameraProfile(w http.ResponseWriter, r *http.Request) {
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	ll := LOG.Prefix("[OMCameraProfile]")
+
+	om := s.getOnvifManager(w, r)
+	if om == nil {
+		// getCameraPTZController will send respond, so here we just return
+		return
+	}
+
+	ctx := r.Context()
+
+	ll.Info("Endpoint", "Endpoint", om.Device.GetEndpoint("media"))
+
+	pf := GetQueryProfile(r)
+
+	switch pf {
+	case "":
+		fallthrough
+	case utils.SegmentMainProfile:
+		pf = om.Camera.OnvifProfileToken
+
+	case utils.SegmentSubProfile:
+		pf = om.Camera.SubStreamProfileToken
+	}
+	// if pf == utils.SegmentMainProfile {
+	// 	pf = om.Camera.OnvifProfileToken
+	// } else if pf == utils.SegmentSubProfile {
+	// 	pf = om.Camera.SubStreamProfileToken
+	// }
+
+	ll.Info("Query profile", "profile", pf)
+
+	profile, err := om.GetProfile(ctx, pf)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, profile, "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
+
 func (s *APIServer) OMCameraCapabilities(w http.ResponseWriter, r *http.Request) {
 
 	session, ok := middleware.GetSession(r.Context())
@@ -215,38 +266,3 @@ func (s *APIServer) OMCameraVideoSourceConfig(w http.ResponseWriter, r *http.Req
 // 	}
 
 // }
-
-// func (s *APIServer) OMCameraPTZStatus(w http.ResponseWriter, r *http.Request) {
-
-// 	session, ok := middleware.GetSession(r.Context())
-// 	if !ok || !session.HasPermissionCameraPTZ() {
-// 		utils.RespondErrForbidden(w)
-// 		return
-// 	}
-
-// 	profile := GetQueryProfile(r)
-
-// 	ll := LOG.Prefix("[CameraPTZ]")
-
-// 	om := s.getOnvifManager(w, r)
-// 	if om == nil {
-// 		// getCameraPTZController will send respond, so here we just return
-// 		return
-// 	}
-
-// 	ctx := r.Context()
-
-// 	ll.Info("Endpoint", "Endpoint", pc.Client.Endpoint())
-
-// 	status, err := pc.GetStatus(ctx, profile)
-// 	if err != nil {
-// 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	if err := utils.RespondJSON(w, status, "success"); err != nil {
-// 		log.Printf("Error encoding response: %v", err)
-// 	}
-
-// }
-

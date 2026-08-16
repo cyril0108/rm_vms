@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	nvrxsd   "nvr_core/onvif/xml"
-	nvrmedia "nvr_core/onvif/media"
+	nvrxsd "nvr_core/onvif/xml"
+	nvrmedia "nvr_core/onvif/xml/media"
 
 	"github.com/use-go/onvif/media"
-	// sdk "github.com/use-go/onvif/sdk/media"
 	xsd "github.com/use-go/onvif/xsd/onvif"
 )
-
-
 
 // GetProfiles
 func (m *ONVIFManager) GetProfiles(ctx context.Context) ([]nvrxsd.Profile, error) {
@@ -24,6 +21,20 @@ func (m *ONVIFManager) GetProfiles(ctx context.Context) ([]nvrxsd.Profile, error
 	}
 
 	return data.Profiles, nil
+}
+
+// GetProfiles
+func (m *ONVIFManager) GetProfile(ctx context.Context, token string) (nvrxsd.Profile, error) {
+	req := media.GetProfile {
+		ProfileToken: xsd.ReferenceToken(token),
+	}
+
+	data, err := CallONVIFRequest[nvrmedia.GetProfileResponse](m.Device, req)
+	if err != nil {
+		return nvrxsd.Profile{}, fmt.Errorf("failed to fetch video source: %w", err)
+	}
+
+	return data.Profile, nil
 }
 
 // This won't work. GetVideoSource does not ask for profile token.

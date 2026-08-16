@@ -8,10 +8,7 @@ import (
 
 	"github.com/0x524a/onvif-go"
 
-	"nvr_core/logger"
 )
-
-var LOG = logger.NewLogger("[onvif][ptz]")
 
 // PTZController holds the authenticated device ready for commands
 type PTZController struct {
