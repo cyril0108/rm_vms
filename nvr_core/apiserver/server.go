@@ -209,10 +209,11 @@ func Initiate(ctx context.Context, cfg *utils.Config, pm *process.Manager, svcs 
 	mux.HandleFunc("GET /api/cameras/{cam_id}/om/video", authMid(http.HandlerFunc(api.OMCameraVideoSourceConfig)))
 
 	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/status", authMid(http.HandlerFunc(api.OMCameraPTZStatus)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/stop", authMid(http.HandlerFunc(api.OMCameraPTZStop)))
 	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/cnt", authMid(http.HandlerFunc(api.OMCameraPTZContinuousMove)))
 	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/rel", authMid(http.HandlerFunc(api.OMCameraPTZRelativeMove)))
 	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/abs", authMid(http.HandlerFunc(api.OMCameraPTZAbsoluteMove)))
-	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/center", authMid(http.HandlerFunc(api.OMCameraPTZAbsoluteCanter)))
+	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/center", authMid(http.HandlerFunc(api.OMCameraPTZAbsoluteCenter)))
 	mux.HandleFunc("GET /api/cameras/{cam_id}/om/ptz/step/{dir}", authMid(http.HandlerFunc(api.OMCameraPTZStep)))
 
 

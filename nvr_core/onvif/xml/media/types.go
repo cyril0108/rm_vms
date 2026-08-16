@@ -83,7 +83,7 @@ type GetProfile struct {
 }
 
 type GetProfileResponse struct {
-	XMLName string `xml:"struct"`
+	XMLName string `xml:"GetProfileResponse"`
 	Profile onvif.Profile
 }
 

@@ -30,10 +30,12 @@ func (m *ONVIFManager) GetPTZStatus(ctx context.Context, profile string) (nvrxsd
 // func (m *ONVIFManager) PTZContinuousMove(ctx context.Context, profile string, velocity onvif.PTZSpeed, timeout string) (error) {
 func (m *ONVIFManager) PTZContinuousMove(ctx context.Context, profile string, velocity *xsd.PTZSpeed) (error) {
 
+	timeout := "PT2S" // 2 seconds
+
 	req := ptz.ContinuousMove{
 		ProfileToken: xsd.ReferenceToken(profile),
 		Velocity: *velocity,
-		// Timeout: ,
+		Timeout: xxsd.Duration(timeout),
 	}
 
 	_, err := CallONVIFRequest[nvrptz.ContinuousMoveResponse](m.Device, req)

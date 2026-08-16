@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"nvr_core/db/models"
+	"nvr_core/logger"
 
 	"nvr_core/onvif/xml"
+
 	xsd "github.com/use-go/onvif/xsd/onvif"
 )
 
@@ -18,6 +20,7 @@ type PTZPMController struct {
 	ProfileToken string
 	Profile      *xml.Profile
 	stepMu       sync.Mutex
+	log          logger.Logger
 }
 
 
@@ -47,6 +50,7 @@ func NewPTZPMController(cam *models.Camera, profileToken string, port int, key [
 	return &PTZPMController{
 		Manager:       manager,
 		ProfileToken: profileToken,
+		log: *LOG.Prefix("[ptz.pm.controller]"),
 		// Profile: profile,
 	}, nil
 }
@@ -196,6 +200,8 @@ func (pc *PTZPMController) MoveAbsolute(ctx context.Context, pan, tilt, zoom flo
 // it falls back to a time-based ContinuousMove to simulate the step.
 func (pc *PTZPMController) Step(ctx context.Context, pan, tilt, zoom float64, speed float64) error {
 
+	ll := pc.log.Prefix("[step]").Lin("pan", pan, "tilt", tilt, "zoom", zoom)
+
 	// TryLock instantly returns false if another Step is currently running.
 	if !pc.stepMu.TryLock() {
 		return fmt.Errorf("PTZ step already in progress")
@@ -216,15 +222,22 @@ func (pc *PTZPMController) Step(ctx context.Context, pan, tilt, zoom float64, sp
 
 	// relErr := err
 
+	ll.Info("moving")
+
 	// Start the motors
 	err := pc.MoveContinuous(ctx, pan, tilt, zoom)
 	if err != nil {
 		return fmt.Errorf("fallback ContinuousMove failed: %w", err)
 	}
 
+	ll.Info("sleeping")
+
 	// Let the motors run for a brief moment (e.g., 300 milliseconds).
 	// You can expose this duration as a configuration setting later if needed.
 	time.Sleep(1000 * time.Millisecond)
+
+
+	ll.Info("stop")
 
 	// Force the motors to stop
 	err = pc.Stop(ctx, true, true)

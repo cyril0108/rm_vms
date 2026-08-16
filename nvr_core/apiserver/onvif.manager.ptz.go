@@ -1,6 +1,7 @@
 package apiserver
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -44,6 +45,8 @@ func (s *APIServer) getOnvifPTZManager(w http.ResponseWriter, r *http.Request) (
 		return nil
 	}
 
+	LOG.Info("[OMCameraPTZ] new ptz.pm.controller")
+
 	return pm
 }
 
@@ -52,6 +55,8 @@ func (s *APIServer) getOnvifPTZManager(w http.ResponseWriter, r *http.Request) (
 // =============================================================================
 
 func (s *APIServer) OMCameraPTZStatus(w http.ResponseWriter, r *http.Request) {
+
+	LOG.Info("OMCameraPTZStatus")
 
 	session, ok := middleware.GetSession(r.Context())
 	if !ok || !session.HasPermissionCameraPTZ() {
@@ -83,8 +88,41 @@ func (s *APIServer) OMCameraPTZStatus(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (s *APIServer) OMCameraPTZStop(w http.ResponseWriter, r *http.Request) {
+
+	LOG.Info("OMCameraPTZStop")
+
+	session, ok := middleware.GetSession(r.Context())
+	if !ok || !session.HasPermissionCameraPTZ() {
+		utils.RespondErrForbidden(w)
+		return
+	}
+
+	// ll := LOG.Prefix("[CameraPTZ]")
+
+	pm := s.getOnvifPTZManager(w, r)
+	if pm == nil {
+		// getOnvifPTZManager will send respond, so here we just return
+		return
+	}
+
+	ctx := r.Context()
+
+	err := pm.Stop(ctx, true, true)
+	if err != nil {
+		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := utils.RespondJSON(w, "", "success"); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	}
+
+}
 
 func (s *APIServer) OMCameraPTZContinuousMove(w http.ResponseWriter, r *http.Request) {
+
+	LOG.Info("OMCameraPTZContinuousMove")
 
 	session, ok := middleware.GetSession(r.Context())
 	if !ok || !session.HasPermissionCameraPTZ() {
@@ -123,6 +161,8 @@ func (s *APIServer) OMCameraPTZContinuousMove(w http.ResponseWriter, r *http.Req
 
 func (s *APIServer) OMCameraPTZRelativeMove(w http.ResponseWriter, r *http.Request) {
 
+	LOG.Info("OMCameraPTZRelativeMove")
+
 	session, ok := middleware.GetSession(r.Context())
 	if !ok || !session.HasPermissionCameraPTZ() {
 		utils.RespondErrForbidden(w)
@@ -160,6 +200,8 @@ func (s *APIServer) OMCameraPTZRelativeMove(w http.ResponseWriter, r *http.Reque
 
 func (s *APIServer) OMCameraPTZAbsoluteMove(w http.ResponseWriter, r *http.Request) {
 
+	LOG.Info("OMCameraPTZAbsoluteMove")
+
 	session, ok := middleware.GetSession(r.Context())
 	if !ok || !session.HasPermissionCameraPTZ() {
 		utils.RespondErrForbidden(w)
@@ -195,7 +237,9 @@ func (s *APIServer) OMCameraPTZAbsoluteMove(w http.ResponseWriter, r *http.Reque
 }
 
 
-func (s *APIServer) OMCameraPTZAbsoluteCanter(w http.ResponseWriter, r *http.Request) {
+func (s *APIServer) OMCameraPTZAbsoluteCenter(w http.ResponseWriter, r *http.Request) {
+
+	LOG.Info("OMCameraPTZAbsoluteCenter")
 
 	session, ok := middleware.GetSession(r.Context())
 	if !ok || !session.HasPermissionCameraPTZ() {
@@ -230,6 +274,10 @@ func (s *APIServer) OMCameraPTZAbsoluteCanter(w http.ResponseWriter, r *http.Req
 
 func (s *APIServer) OMCameraPTZStep(w http.ResponseWriter, r *http.Request) {
 
+	ll := LOG.Prefix("OMCameraPTZStep")
+
+	ll.Info("")
+
 	session, ok := middleware.GetSession(r.Context())
 	if !ok || !session.HasPermissionCameraPTZ() {
 		utils.RespondErrForbidden(w)
@@ -244,30 +292,44 @@ func (s *APIServer) OMCameraPTZStep(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	dir := r.URL.Query().Get("dir")
+	dir := r.PathValue("dir")
+
+	ll.Info("", "dir", dir)
 
 	var err error
 	switch dir {
 	case "up":
 		err = pm.StepUp(ctx)
+		ll.Info("up")
 	case "down":
 		err = pm.StepDown(ctx)
+		ll.Info("down")
 	case "left":
 		err = pm.StepLeft(ctx)
+		ll.Info("left")
 	case "right":
 		err = pm.StepRight(ctx)
+		ll.Info("right")
 	case "in":
 		err = pm.StepZoomIn(ctx)
+		ll.Info("in")
 	case "out":
 		err = pm.StepZoomOut(ctx)
+		ll.Info("out")
+	default:
+		// Handle unknown directions gracefully
+		ll.Warn("unknown direction received: " + dir)
+		err = fmt.Errorf("invalid direction: %s", dir)
 	}
+
+	ll.Info("", "err", err)
 
 	if err != nil {
 		utils.RespondJSONHTTPStatus(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := utils.RespondJSON(w, "", "success"); err != nil {
+	if err := utils.RespondJSON(w, dir, "success"); err != nil {
 		log.Printf("Error encoding response: %v", err)
 	}
 
