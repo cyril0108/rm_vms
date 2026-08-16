@@ -14,6 +14,7 @@ type LayoutRepository interface {
 
 	Create(ctx context.Context, userID int64, layout *models.Layout) (int64, error)
 	Update(ctx context.Context, userID int64, layout *models.Layout) error
+	UpdatePartial(ctx context.Context, userID int64, layout *models.Layout, updateItems bool) error
 	Delete(ctx context.Context, userID int64, id int64) error
 }
 
@@ -251,6 +252,59 @@ func (r *layoutRepo) Update(ctx context.Context, userID int64, layout *models.La
 
 	return tx.Commit()
 }
+
+
+// Update completely replaces a layout's parent data.
+// If updateItems is true, it will also completely rewrite the layout's child items.
+func (r *layoutRepo) UpdatePartial(ctx context.Context, userID int64, layout *models.Layout, updateItems bool) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Unconditionally update the parent layout (Only if it belongs to this user!)
+	res, err := tx.ExecContext(ctx, 
+		`UPDATE layouts SET name = ?, mode = ?, payload = ? WHERE id = ? AND user_id = ?`,
+		layout.Name, layout.Mode, string(layout.Payload), layout.ID, userID,
+	)
+	if err != nil {
+		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil || affected == 0 {
+		return fmt.Errorf("layout not found or unauthorized")
+	}
+
+	// Only touch the items if the frontend explicitly included them in the JSON
+	if updateItems {
+		// Wipe existing items for this layout
+		_, err = tx.ExecContext(ctx, `DELETE FROM layout_items WHERE layout_id = ?`, layout.ID)
+		if err != nil {
+			return err
+		}
+
+		// Insert the new items (if the array isn't empty)
+		if len(layout.Items) > 0 {
+			stmt, err := tx.PrepareContext(ctx, `INSERT INTO layout_items (layout_id, type, payload) VALUES (?, ?, ?)`)
+			if err != nil {
+				return err
+			}
+			defer stmt.Close()
+
+			for _, item := range layout.Items {
+				_, err = stmt.ExecContext(ctx, layout.ID, item.Type, string(item.Payload))
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return tx.Commit()
+}
+
 
 // Delete removes a layout. The SQLite `ON DELETE CASCADE` handles wiping the layout_items automatically.
 func (r *layoutRepo) Delete(ctx context.Context, userID int64, id int64) error {

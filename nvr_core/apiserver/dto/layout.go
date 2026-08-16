@@ -23,6 +23,13 @@ type LayoutItemRequest struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
+type LayoutPartialUpdateRequest struct {
+	Name    *string               `json:"name"`
+	Mode    *string               `json:"mode"`
+	Payload json.RawMessage       `json:"payload"` // nil if omitted, []byte if present
+	Items   *[]LayoutItemRequest  `json:"items"`   // nil if omitted, pointer to array if present
+}
+
 // ================================
 // Results (Outgoing to Vue UI)
 // ================================

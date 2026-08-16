@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"nvr_core/apiserver/dto"
 	"nvr_core/apiserver/middleware"
+	"nvr_core/service"
 	"nvr_core/utils"
 )
 
@@ -28,7 +29,7 @@ func (s *APIServer) GetUserLayouts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	list := make([]*dto.LayoutResult, len(data))
+	list := make([]*dto.LayoutResult, 0, len(data))
 	for _, lo := range data {
 		lr := &dto.LayoutResult{}
 		lr.LoadFrom(lo)
@@ -63,7 +64,7 @@ func (s *APIServer) GetLayout(w http.ResponseWriter, r *http.Request) {
 
 	data, err := s.Services.Layout.GetLayout(ctx, userID, id)
 	if err != nil {
-		utils.RespondJSONHTTPStatus(w, "failed to get bookmark.", http.StatusInternalServerError)
+		utils.RespondJSONHTTPStatus(w, "failed to get layout.", http.StatusInternalServerError)
 		return
 	}
 
@@ -89,7 +90,7 @@ func (s *APIServer) HandleCreateLayout(w http.ResponseWriter, r *http.Request) {
 	var layoutReq dto.LayoutRequest
 	err := decodeRequest(r, &layoutReq)
 	if err != nil {
-		LOG.Info("[HandleCreateBookmark] payload error", "err", err)
+		LOG.Info("[HandleCreateLayout] payload error", "err", err)
 		utils.RespondErrInvalidPayloadWError(w, err)
 		return
 	}
@@ -99,12 +100,12 @@ func (s *APIServer) HandleCreateLayout(w http.ResponseWriter, r *http.Request) {
 	ctx := s.Context
 	model := layoutReq.AsModel(userID)
 
-	LOG.Info("[HandleCreateBookmark] ", "model", model)
+	LOG.Info("[HandleCreateLayout] ", "model", model)
 
 	data, err := s.Services.Layout.AddLayout(ctx, userID, model)
 	if err != nil {
-		LOG.Info("[HandleCreateBookmark] error", "err", err)
-		utils.RespondJSONHTTPStatus(w, "failed to add bookmark.", http.StatusInternalServerError)
+		LOG.Info("[HandleCreateLayout] error", "err", err)
+		utils.RespondJSONHTTPStatus(w, "failed to add layout.", http.StatusInternalServerError)
 		return
 	}
 
@@ -120,7 +121,7 @@ func (s *APIServer) HandleCreateLayout(w http.ResponseWriter, r *http.Request) {
 
 
 
-// @Router       /api/layout [put]
+// @Router       /api/layout/{id} [put]
 func (s *APIServer) HandleUpdateLayout(w http.ResponseWriter, r *http.Request) {
 
 	session, ok := middleware.GetSession(r.Context())
@@ -129,24 +130,31 @@ func (s *APIServer) HandleUpdateLayout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var layoutReq dto.LayoutRequest
-	err := decodeRequest(r, &layoutReq)
+	var req dto.LayoutPartialUpdateRequest
+	err := decodeRequest(r, &req)
 	if err != nil {
-		LOG.Info("[HandleCreateBookmark] payload error", "err", err)
+		LOG.Info("[HandleUpdateLayout] payload error", "err", err)
 		utils.RespondErrInvalidPayloadWError(w, err)
+		return
+	}
+
+	id, err := getPathID(r, "id")
+	if err != nil {
+		utils.RespondErrInvalidPayload(w)
 		return
 	}
 
 	userID := session.UserID
 
 	ctx := s.Context
-	model := layoutReq.AsModel(userID)
 
-	LOG.Info("[HandleCreateBookmark] ", "model", model)
-
-	err = s.Services.Layout.UpdateLayout(ctx, userID, model)
+	err = s.Services.Layout.UpdatePartial(ctx, userID, id, &req)
 	if err != nil {
-		LOG.Info("[HandleCreateBookmark] error", "err", err)
+		if err == service.ErrLayoutNotFound {
+			utils.RespondJSONHTTPStatus(w, err, http.StatusNotFound)
+			return
+		}
+		LOG.Info("[HandleUpdateLayout] error", "err", err)
 		utils.RespondJSONHTTPStatus(w, "failed to add bookmark.", http.StatusInternalServerError)
 		return
 	}
